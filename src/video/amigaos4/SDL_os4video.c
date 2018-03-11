@@ -442,7 +442,7 @@ os4video_VideoInit(_THIS, SDL_PixelFormat *vformat)
 
 	if (FALSE == os4video_PixelFormatFromModeID(vformat, displayID))
 	{
-		dprintf("Cannot get pixelf format\n");
+		dprintf("Cannot get pixel format\n");
 		SDL_SetError("Cannot get pixel format from screenmode ID");
 		return -1;
 	}

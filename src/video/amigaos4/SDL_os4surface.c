@@ -465,6 +465,9 @@ os4video_SetHWAlpha(_THIS, SDL_Surface *src, Uint8 value)
 		return 0;
 	}
 
+	dprintf("Failed to set HW alpha\n");
+	SDL_SetError("Failed to set HW alpha");
+
 	return -1;
 }
 
@@ -569,6 +572,7 @@ os4video_SetHWColorKey(_THIS, SDL_Surface *src, Uint32 key)
 		}
 	}
 
+	dprintf("Failed to set HW color key\n");
 	SDL_SetError("Failed to set HW color key");
 	return -1;
 }
