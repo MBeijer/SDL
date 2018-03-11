@@ -1085,9 +1085,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 	current->hwdata = &hidden->screenHWData;
 	SDL_memset(current->hwdata, 0, sizeof(struct private_hwdata));
 
-    BOOL fullscreen = (flags & SDL_FULLSCREEN) == SDL_FULLSCREEN;
-
-	if (!fullscreen)
+	if (!(flags & SDL_FULLSCREEN))
 	{
 		dprintf("Window mode\n");
 
@@ -1129,7 +1127,8 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 			}
 		}
 	}
-	else
+
+	if (flags & SDL_FULLSCREEN)
 	{
 		uint32 modeId;
 		uint32 fmt;
@@ -1201,7 +1200,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 
 	BOOL hwSurface = (flags & SDL_HWSURFACE) == SDL_HWSURFACE;
 
-	if (!hwSurface || !fullscreen)
+	if (!hwSurface || !(flags & SDL_FULLSCREEN))
 	{
 		/*
 		 * Initialize off-screen buffer for this surface
@@ -1217,7 +1216,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		current->hwdata->bm = hidden->offScreenBuffer.bitmap;
 
 		/* Set update function for windowed surface */
-		if (bpp > 8 || scr_depth == 8 || fullscreen)
+		if (bpp > 8 || scr_depth == 8 || (flags & SDL_FULLSCREEN))
 			_this->UpdateRects = os4video_UpdateRectsOffscreen;
 		else
 			_this->UpdateRects = os4video_UpdateRectsOffscreen_8bit;
