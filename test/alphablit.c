@@ -64,7 +64,7 @@ static void debugSurface(SDL_Surface *surface)
 static void paintTexture32(SDL_Surface *texture, Uint32 color, SDL_bool useColorKey, Uint32 colorKey)
 {
 	Uint32 * p = (Uint32 *)texture->pixels;
-    
+
 	const int pitch = texture->pitch / 4;
 	color |= ALPHA;
 
@@ -97,14 +97,14 @@ static void paintTexture32(SDL_Surface *texture, Uint32 color, SDL_bool useColor
 static void paintTexture16(SDL_Surface* texture, Uint16 color, SDL_bool useColorKey, Uint16 colorKey)
 {
 	Uint16 * p = (Uint16 *)texture->pixels;
-	   
+
 	const int pitch = texture->pitch / 2;
 
 	int y;
 	for (y = 0; y < texture->h; y++, p += pitch )
 	{
 		int x;
-    
+
 		for (x = 0; x < texture->w; x++ )
 		{
 			p[x] = color;
@@ -129,18 +129,18 @@ static void paintTexture8(SDL_Surface* texture, Uint8 color, SDL_bool useColorKe
 	Uint8* p = (Uint8 *)texture->pixels;
 	//printf("Color %d\n", color);
 	const int pitch = texture->pitch;
-	
+
 	int y;
-	
+
 	for(y = 0; y < texture->h; y++, p += pitch)
 	{
 		int x;
-		
+
 		for (x = 0; x < texture->w; x++)
 		{
 			p[x] = color;
 		}
-		
+
 		if (useColorKey)
 		{
 			// Make stripes
@@ -158,16 +158,16 @@ static void paintTexture8(SDL_Surface* texture, Uint8 color, SDL_bool useColorKe
 static SDL_Surface *allocTexture(Uint32 depth, int useHardware, int usePerSurfaceAlpha)
 {
 	int flags = (useHardware) ? SDL_HWSURFACE : SDL_SWSURFACE;
-	
+
 	Uint32 rmask = 0x0;
 	Uint32 gmask = 0x0;
 	Uint32 bmask = 0x0;
 	Uint32 amask = 0x0;
-	
+
 	if (depth == 32)
 	{
 		flags |= SDL_SRCALPHA;
-	    
+
 		rmask = 0x00FF0000;
 		gmask = 0x0000FF00;
 		bmask = 0x000000FF;
@@ -193,7 +193,7 @@ static void createPalette(SDL_Surface * surface)
 		{  0, 255,   0, 255}, // green
 		{  0,   0, 255, 255}, // blue
 		};
-		
+
 	SDL_SetColors(surface, colors, 0, sizeof(colors) / sizeof(SDL_Color));
 }
 
@@ -231,7 +231,7 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	//debugSurface(texture);
 
 	Uint32 colorKey = 0;
-	
+
 	if (mi.useColorKey)
 	{
 		colorKey = SDL_MapRGB(texture->format, 0xFF, 0xFF, 0xFF);
@@ -239,7 +239,7 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	}
 
 	Uint32 surfaceColor = SDL_MapRGB(texture->format, color.r, color.g, color.b);
-	
+
 	if (SDL_MUSTLOCK(texture))
 	{
 		if (SDL_LockSurface(texture) < 0)
@@ -247,7 +247,7 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 			return texture;
 		}
 	}
-	
+
 	if (mi.depth == 32)
 	{
 	    paintTexture32(texture, surfaceColor, mi.useColorKey, colorKey);
@@ -255,12 +255,12 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	else if (mi.depth == 16)
 	{
 		paintTexture16(texture, surfaceColor, mi.useColorKey, colorKey);
-    }
-    else if (mi.depth == 8)
-    {
-    	paintTexture8(texture, surfaceColor, mi.useColorKey, colorKey);
-    }
-    
+	}
+	else if (mi.depth == 8)
+	{
+		paintTexture8(texture, surfaceColor, mi.useColorKey, colorKey);
+	}
+
 	if (SDL_MUSTLOCK(texture))
 	{
 		SDL_UnlockSurface(texture);
@@ -281,13 +281,13 @@ static void freeTextures()
 		SDL_FreeSurface(red);
 		red = NULL;
 	}
-	
+
 	if (green)
 	{
 		SDL_FreeSurface(green);
 		green = NULL;
-	}    
-	
+	}
+
 	if (blue)
 	{
 		SDL_FreeSurface(blue);
@@ -301,19 +301,19 @@ static void generateTextures(ModeInfo mi)
 
 	red = createTexture(RED_COLOR, mi);
 	green = createTexture(GREEN_COLOR, mi);
-	blue = createTexture(BLUE_COLOR, mi);	
+	blue = createTexture(BLUE_COLOR, mi);
 }
 
 
 static const char * getAlphaString(Uint32 type)
 {
 	static const char * strings[] = { "Per-pixel", "Per-surface", "No" };
-	
+
 	if (type < sizeof(strings) / sizeof(strings[0]))
 	{
 		return strings[type];
 	}
-	
+
 	return strings[2];
 }
 
@@ -327,56 +327,56 @@ static void setMode(ModeInfo mi)
 		mi.useFullscreen ? "fullscreen" : "window",
 		getAlphaString(mi.useSurfaceAlpha),
 		mi.useColorKey ? "" : "no ");
-    
+
 	view = SDL_SetVideoMode(WIDTH, HEIGHT, mi.depth, flags);
 
-    if (!view)
-    {
-        printf("SDL_SetVideoMode: %s\n", SDL_GetError());
-        return;
-    }
+	if (!view)
+	{
+		printf("SDL_SetVideoMode: %s\n", SDL_GetError());
+		return;
+	}
 
 	//printf("Display surface flags: 0x%X\n", view->flags);
-	
+
 	generateTextures(mi);
 
 	if (mi.depth == 8)
 	{
 		createPalette(view);
 	}
-	
+
 	//SDL_Delay(1000);
 }
 
 static void draw(SDL_Surface * texture, Uint32 sleep)
 {
 	int i;
- 
+
 	for (i = 0; i < BLITS_PER_ITERATION; i++)
 	{
 		SDL_Rect s, d;
-	        
+
 		s.w = BLIT_WIDTH;
 		s.h = BLIT_HEIGHT;
 		s.x = 0;
 		s.y = 0;
-	
+
 		d.w = BLIT_WIDTH;
 		d.h = BLIT_HEIGHT;
 		d.x = rand() % (WIDTH - BLIT_WIDTH);
 		d.y = rand() % (HEIGHT - BLIT_HEIGHT);
 
 		if (SDL_BlitSurface(texture, &s, view, &d))
-        {
-            printf("SDL_BlitSurface: %s\n", SDL_GetError());
-            return;
-        }
+		{
+			printf("SDL_BlitSurface: %s\n", SDL_GetError());
+			return;
+		}
 	}
-	
+
 	if (SDL_Flip(view))
-    {
-        printf("SDL_Flip: %s\n", SDL_GetError());
-    }
+	{
+		printf("SDL_Flip: %s\n", SDL_GetError());
+	}
 
 	if (sleep)
 	{
@@ -387,7 +387,7 @@ static void draw(SDL_Surface * texture, Uint32 sleep)
 static SDL_bool checkQuit()
 {
 	SDL_Event e;
-	
+
 	while(SDL_PollEvent(&e))
 	{
 		switch (e.type)
@@ -402,14 +402,14 @@ static SDL_bool checkQuit()
 			} break;
 		}
 	}
-	
+
 	return quit;
 }
 
 static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
-{   
+{
 	Uint32 start = SDL_GetTicks();
-    
+
 	Uint32 i;
 
 	for (i = 0; i < iterations; i++)
@@ -418,26 +418,26 @@ static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
 		{
 			return;
 		}
-		
+
 		draw(red, sleep);
 		draw(green, sleep);
 		draw(blue, sleep);
 	}
-	
+
 	Uint32 finish = SDL_GetTicks();
-	
+
 	Uint32 duration = finish - start;
-	
+
 	Uint32 frames = iterations * 3;
 	Uint32 blits = frames * BLITS_PER_ITERATION;
 	Uint64 bytes = blits * BLIT_WIDTH * BLIT_HEIGHT * bytesPerPixel;
 
-    if (duration == 0)
-    {
-        puts("Duration 0");
-        return;
-    }
-	
+	if (duration == 0)
+	{
+		puts("Duration 0");
+		return;
+	}
+
 	printf("RESULT: duration %u ms, %.1f frames/s, %u blits, %.1f blits/s, %llu bytes, %llu bytes/s\n",
 		duration,
 		1000.0f * frames / duration,
@@ -453,13 +453,13 @@ static void parseArgs(int argc, char* argv[], Uint32 *iterations, Uint32 *sleep)
 	if (argc > 1)
 	{
 		*iterations = atoi(argv[1]);
-		
+
 		if (argc > 2)
 		{
 			*sleep = atoi(argv[2]);
 		}
 	}
-	
+
 	printf("Iterations=%d, Blits=%d, Delay=%d ms\n", *iterations, BLITS_PER_ITERATION, *sleep);
 }
 
@@ -469,12 +469,12 @@ static void checkVersion(void)
 
 	SDL_VERSION(&compiled);
 
-    puts("SDL blit benchmark, version " BENCHMARK_VERSION);
+	puts("SDL blit benchmark, version " BENCHMARK_VERSION);
 
 	printf("Compiled library version: %d.%d.%d\n",
 			compiled.major, compiled.minor, compiled.patch);
-	
-    printf("Linked library version: %d.%d.%d\n",
+
+	printf("Linked library version: %d.%d.%d\n",
 			SDL_Linked_Version()->major,
 			SDL_Linked_Version()->minor,
 			SDL_Linked_Version()->patch);
@@ -483,7 +483,7 @@ static void checkVersion(void)
 static void printHelp(void)
 {
 	puts("USAGE: 'alphablit <ITER> <DELAY>', where");
-    puts("\t<ITER> is number of test iterations per mode and");
+	puts("\t<ITER> is number of test iterations per mode and");
 	puts("\t<DELAY> is delay in milliseconds after each blit sequence, for visual debugging.");
 }
 
@@ -548,11 +548,11 @@ static void runTests(Uint32 iterations, Uint32 sleep)
 			IExec->DebugPrintF("...Running test #%d\n", t);
 			printf("...Running test #%d...\n", t);
 
-            tests[t].useHardware = SW;
-            runTest(tests[t], iterations, sleep);
+			tests[t].useHardware = SW;
+			runTest(tests[t], iterations, sleep);
 
-            tests[t].useHardware = HW;
-            runTest(tests[t], iterations, sleep);
+			tests[t].useHardware = HW;
+			runTest(tests[t], iterations, sleep);
 		}
 	}
 }
@@ -563,25 +563,25 @@ int main(int argc, char* argv[])
 	Uint32 sleep = 0;
 
 	if (SDL_Init(SDL_INIT_VIDEO))
-    {
-        printf("SDL_Init: %s\n", SDL_GetError());
-        return 0;
-    }
+	{
+		printf("SDL_Init: %s\n", SDL_GetError());
+		return 0;
+	}
 
-    checkVersion();
+	checkVersion();
 	printHelp();
 
 	checkVideoInfo();
-    
+
 	parseArgs(argc, argv, &iterations, &sleep);
-    
+
 	printf("Display size %d*%d, blit size %d*%d\n", WIDTH, HEIGHT, BLIT_WIDTH, BLIT_HEIGHT);
 
-    runTests(iterations, sleep);
+	runTests(iterations, sleep);
 
 	freeTextures();
 
 	SDL_Quit();
-    
+
 	return 0;
 }
