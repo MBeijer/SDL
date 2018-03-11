@@ -1,23 +1,6 @@
 /*
 
-************************************************************
-**
-** Created by: CodeBench 0.42 (14.10.2013)
-**
-** Project: SDL
-**
-** File: 
-**
-** Date: 09-10-2015 18:55:06
-**
-************************************************************
-
 gcc alphablit.c -Isdk:local/common/include/SDL -use-dynld -lSDL -lauto -g -Wall -O2
-
-TODO: 
-
-SDL: window mode HW surface?
-SDL: replace deprecated OS functions
 
 */
 
@@ -25,6 +8,8 @@ SDL: replace deprecated OS functions
 
 #include <stdio.h>
 #include <proto/exec.h>
+
+#define BENCHMARK_VERSION "0.2"
 
 #ifndef MIN
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
@@ -212,7 +197,6 @@ static void createPalette(SDL_Surface * surface)
 	SDL_SetColors(surface, colors, 0, sizeof(colors) / sizeof(SDL_Color));
 }
 
-
 typedef struct ModeInfo
 {
 	int useFullscreen;
@@ -223,14 +207,13 @@ typedef struct ModeInfo
 	int iterations;
 }  ModeInfo;
 
-
 static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 {
 	SDL_Surface * texture = allocTexture(mi.depth, mi.useHardware, mi.useSurfaceAlpha);
 
 	if (texture == NULL)
 	{
-		printf("Couldn't create surface\n");
+		puts("Couldn't create surface");
 
 		return NULL;
 	}
@@ -324,7 +307,7 @@ static void generateTextures(ModeInfo mi)
 
 static const char * getAlphaString(Uint32 type)
 {
-	static const char * strings[] = { "Per-pixel", "Per-surface", "No alpha" };
+	static const char * strings[] = { "Per-pixel", "Per-surface", "No" };
 	
 	if (type < sizeof(strings) / sizeof(strings[0]))
 	{
@@ -337,19 +320,23 @@ static const char * getAlphaString(Uint32 type)
 static void setMode(ModeInfo mi)
 {
 	int flags = (mi.useFullscreen ? SDL_FULLSCREEN : 0) | (mi.useHardware ? SDL_HWSURFACE : SDL_SWSURFACE) | SDL_HWPALETTE;
-    
-	printf("Requested mode: [%s] HW acceleration: [%s], Depth: [%d-bit], Alpha: [%s], Colorkey: [%s]\n",
-		mi.useFullscreen ? "Fullscreen" : "Window",
-		mi.useHardware ? "Yes" : "No",
+
+	printf("Requested mode: %d-bit %s %s. %s alpha, %scolor key\n",
 		mi.depth,
+		mi.useHardware ? "accelerated" : "non-accelerated",
+		mi.useFullscreen ? "fullscreen" : "window",
 		getAlphaString(mi.useSurfaceAlpha),
-		mi.useColorKey ? "Yes" : "No");
+		mi.useColorKey ? "" : "no ");
     
 	view = SDL_SetVideoMode(WIDTH, HEIGHT, mi.depth, flags);
-  
-	checkVideoInfo();
 
-	printf("Display surface flags: 0x%X\n", view->flags);
+    if (!view)
+    {
+        printf("SDL_SetVideoMode: %s\n", SDL_GetError());
+        return;
+    }
+
+	//printf("Display surface flags: 0x%X\n", view->flags);
 	
 	generateTextures(mi);
 
@@ -378,11 +365,18 @@ static void draw(SDL_Surface * texture, Uint32 sleep)
 		d.h = BLIT_HEIGHT;
 		d.x = rand() % (WIDTH - BLIT_WIDTH);
 		d.y = rand() % (HEIGHT - BLIT_HEIGHT);
-	    	
-		SDL_BlitSurface(texture, &s, view, &d);
+
+		if (SDL_BlitSurface(texture, &s, view, &d))
+        {
+            printf("SDL_BlitSurface: %s\n", SDL_GetError());
+            return;
+        }
 	}
 	
-	SDL_Flip(view);
+	if (SDL_Flip(view))
+    {
+        printf("SDL_Flip: %s\n", SDL_GetError());
+    }
 
 	if (sleep)
 	{
@@ -402,7 +396,7 @@ static SDL_bool checkQuit()
 			{
 				if (e.key.keysym.sym == SDLK_q)
 				{
-					printf("*** QUIT ***\n");
+					puts("*** QUIT ***");
 					quit = SDL_TRUE;
 				}
 			} break;
@@ -417,7 +411,7 @@ static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
 	Uint32 start = SDL_GetTicks();
     
 	Uint32 i;
-    
+
 	for (i = 0; i < iterations; i++)
 	{
 		if (checkQuit())
@@ -437,6 +431,12 @@ static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
 	Uint32 frames = iterations * 3;
 	Uint32 blits = frames * BLITS_PER_ITERATION;
 	Uint64 bytes = blits * BLIT_WIDTH * BLIT_HEIGHT * bytesPerPixel;
+
+    if (duration == 0)
+    {
+        puts("Duration 0");
+        return;
+    }
 	
 	printf("RESULT: duration %u ms, %.1f frames/s, %u blits, %.1f blits/s, %llu bytes, %llu bytes/s\n",
 		duration,
@@ -460,7 +460,7 @@ static void parseArgs(int argc, char* argv[], Uint32 *iterations, Uint32 *sleep)
 		}
 	}
 	
-	printf("Iterations=%d, Delay=%d ms\n", *iterations, *sleep);
+	printf("Iterations=%d, Blits=%d, Delay=%d ms\n", *iterations, BLITS_PER_ITERATION, *sleep);
 }
 
 static void checkVersion(void)
@@ -469,22 +469,38 @@ static void checkVersion(void)
 
 	SDL_VERSION(&compiled);
 
-	printf("Compiled version: %d.%d.%d\n",
+    puts("SDL blit benchmark, version " BENCHMARK_VERSION);
+
+	printf("Compiled library version: %d.%d.%d\n",
 			compiled.major, compiled.minor, compiled.patch);
 	
-    printf("Linked version: %d.%d.%d\n",
+    printf("Linked library version: %d.%d.%d\n",
 			SDL_Linked_Version()->major,
 			SDL_Linked_Version()->minor,
 			SDL_Linked_Version()->patch);
 }
+
 static void printHelp(void)
 {
-	printf("USAGE: 'alphablit <ITER> <DELAY>', where\n"
-		"\t<ITER> is number of test iterations per mode and\n"
-		"\t<DELAY> is delay in milliseconds after each blit sequence, for visual debugging.\n");
+	puts("USAGE: 'alphablit <ITER> <DELAY>', where");
+    puts("\t<ITER> is number of test iterations per mode and");
+	puts("\t<DELAY> is delay in milliseconds after each blit sequence, for visual debugging.");
 }
 
-// TODO: what about enums or bitfields
+static void runTest(ModeInfo mi, Uint32 iterations, Uint32 sleep)
+{
+	setMode(mi);
+
+	if (view)
+	{
+		test(mi.depth / 8, MIN(mi.iterations, iterations), sleep);
+	}
+	else
+	{
+		puts("Failed to open screen");
+	}
+}
+
 #define WINDOW 0
 #define FULLSCREEN 1
 
@@ -498,80 +514,70 @@ static void printHelp(void)
 #define NO_COLOR_KEY 0
 #define USE_COLOR_KEY 1
 
-int main(int argc, char* argv[])
+static void runTests(Uint32 iterations, Uint32 sleep)
 {
-	SDL_Init(SDL_INIT_VIDEO);
-    
 	ModeInfo tests[] =
 	{
-#if 0
-		// Window modes are currently always SW-only, but let's have them as a reference
-		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16 },
-		{ WINDOW, HW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16 },
-		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32 },
-		{ WINDOW, HW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32 },
+#if 1
+		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16, 100 },
+		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32, 100 },
+		{ WINDOW, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
+		{ WINDOW, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32, 100 },
 
-		{ WINDOW, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16 },
-		{ WINDOW, HW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16 },
-		{ WINDOW, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32 },
-		{ WINDOW, HW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32 },
+		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16, 100 },
+		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32, 100 },
 
-		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16 },
-		{ WINDOW, HW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16 },
-		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32 },
-		{ WINDOW, HW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32 },
-#else
 		{ FULLSCREEN, SW, NO_ALPHA, NO_COLOR_KEY, 8, 100 },
-		{ FULLSCREEN, HW, NO_ALPHA, NO_COLOR_KEY, 8, 100 },
 		{ FULLSCREEN, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16, 100 },
-		{ FULLSCREEN, HW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16, 100 },
 		{ FULLSCREEN, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32, 100 },
-		{ FULLSCREEN, HW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32, 100 },
-		
-		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
-		{ FULLSCREEN, HW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
-		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32, 100 },
-		{ FULLSCREEN, HW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32, 100 },
 
-		{ FULLSCREEN, SW, NO_ALPHA, USE_COLOR_KEY, 8, 10 },
-		{ FULLSCREEN, HW, NO_ALPHA, USE_COLOR_KEY, 8, 10 }, // 8-bit colorkey HW test is really slow, let's test only 10 iterations
+		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
+		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32, 100 },
+
+		{ FULLSCREEN, SW, NO_ALPHA, USE_COLOR_KEY, 8, 5 },
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16, 100 },
-		{ FULLSCREEN, HW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16, 100 },
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32, 100 },
-		{ FULLSCREEN, HW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32, 100 },
 #endif
 	};
-
-    checkVersion();
-	printHelp();
-
-	Uint32 iterations = 100;
-	Uint32 sleep = 0;
-    
-	parseArgs(argc, argv, &iterations, &sleep);
-    
-	printf("Display size %d*%d, blit size %d*%d\n", WIDTH, HEIGHT, BLIT_WIDTH, BLIT_HEIGHT);
 
 	int t;
 	for (t = 0; t < (sizeof(tests) / sizeof(ModeInfo)); t++)
 	{
 		if (quit == SDL_FALSE)
 		{
-			IExec->DebugPrintF("...Running test #%d...\n", t);
+			IExec->DebugPrintF("...Running test #%d\n", t);
 			printf("...Running test #%d...\n", t);
-		
-			setMode(tests[t]);
 
-			if (view)
-			{
-				test(tests[t].depth / 8, MIN(tests[t].iterations, iterations), sleep);
-			}
-			else
-			{
-				printf("Failed to open screen\n");
-			}
+            tests[t].useHardware = SW;
+            runTest(tests[t], iterations, sleep);
+
+            tests[t].useHardware = HW;
+            runTest(tests[t], iterations, sleep);
 		}
 	}
+}
+
+int main(int argc, char* argv[])
+{
+	Uint32 iterations = 50;
+	Uint32 sleep = 0;
+
+	if (SDL_Init(SDL_INIT_VIDEO))
+    {
+        printf("SDL_Init: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    checkVersion();
+	printHelp();
+
+	checkVideoInfo();
+    
+	parseArgs(argc, argv, &iterations, &sleep);
+    
+	printf("Display size %d*%d, blit size %d*%d\n", WIDTH, HEIGHT, BLIT_WIDTH, BLIT_HEIGHT);
+
+    runTests(iterations, sleep);
 
 	freeTextures();
 
