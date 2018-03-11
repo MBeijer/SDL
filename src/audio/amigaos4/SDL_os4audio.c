@@ -36,7 +36,7 @@
 #include <dos/dos.h>
 #include <proto/exec.h>
 
-#undef DEBUG
+//#undef DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
 

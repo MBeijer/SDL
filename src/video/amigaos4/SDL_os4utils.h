@@ -25,6 +25,9 @@
 #include <exec/types.h>
 #include "../SDL_sysvideo.h"
 
+PIX_FMT     os4video_PFtoPIXF               (const SDL_PixelFormat *vf);
+uint32      os4video_PIXF2Bits              (PIX_FMT rgbfmt);
+
 uint32		os4video_PFtoPPF				(const SDL_PixelFormat *vf);
 BOOL		os4video_PPFtoPF				(SDL_PixelFormat *vformat, RGBFTYPE p96Format);
 BOOL		os4video_PixelFormatFromModeID	(SDL_PixelFormat *vformat, uint32 displayID);

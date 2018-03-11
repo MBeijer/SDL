@@ -28,15 +28,10 @@
 #include "SDL_timer.h"
 #include "../SDL_timer_c.h"
 
-#include <proto/exec.h>
-#include <proto/timer.h>
-#include <devices/timer.h>
-
 #include "../../main/amigaos4/SDL_os4timer_c.h"
 
-#undef DEBUG
-#include "../../main/amigaos4/SDL_os4debug.h"
-
+//#define DEBUG
+//#include "../../main/amigaos4/SDL_os4debug.h"
 
 void SDL_StartTicks(void)
 {
@@ -45,13 +40,7 @@ void SDL_StartTicks(void)
 
 Uint32 SDL_GetTicks(void)
 {
-	extern struct TimeVal os4timer_starttime;
-	struct TimeVal cur;
-
-	ITimer->GetSysTime(&cur);
-	ITimer->SubTime(&cur, &os4timer_starttime);
-
-	return cur.Seconds * 1000 + cur.Microseconds / 1000;
+	return os4timer_GetTicks();
 }
 
 void SDL_Delay(Uint32 ms)
@@ -59,16 +48,15 @@ void SDL_Delay(Uint32 ms)
 	os4timer_WaitUntil(SDL_GetTicks() + ms);
 }
 
-
 #include "SDL_thread.h"
 
 /* Data to handle a single periodic alarm */
-static int timer_alive = 0;
+static SDL_bool timer_alive = SDL_FALSE;
 static SDL_Thread *timer_thread = NULL;
 
 static int RunTimer(void *unused)
 {
-   Uint32 next_tick = SDL_GetTicks();
+	Uint32 next_tick = SDL_GetTicks();
 
 	while (timer_alive)
 	{
@@ -76,24 +64,32 @@ static int RunTimer(void *unused)
 		{
 			SDL_ThreadedTimerCheck();
 		}
+
 		os4timer_WaitUntil(++next_tick);
 	}
+
 	return 0;
 }
 
 /* This is only called if the event thread is not running */
 int SDL_SYS_TimerInit(void)
 {
-	timer_alive = 1;
+	timer_alive = SDL_TRUE;
 	timer_thread = SDL_CreateThread(RunTimer, NULL);
+
 	if (timer_thread == NULL)
+	{
+		SDL_SetError("Failed to create timer thread");
 		return -1;
+	}
+
 	return SDL_SetTimerThreaded(1);
 }
 
 void SDL_SYS_TimerQuit(void)
 {
-	timer_alive = 0;
+	timer_alive = SDL_FALSE;
+
 	if (timer_thread)
 	{
 		SDL_WaitThread(timer_thread, NULL);

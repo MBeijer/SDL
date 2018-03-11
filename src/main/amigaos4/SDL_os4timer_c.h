@@ -23,6 +23,8 @@
 #ifndef SDL_OS4TIMER_C_H
 #define SDL_OS4TIMER_C_H
 
+#include <exec/types.h>
+
 struct MsgPort;
 struct timerequest;
 
@@ -38,5 +40,6 @@ BOOL os4timer_SetAlarm(os4timer_Instance *timer, Uint32 alarmTicks, ULONG *alarm
 VOID os4timer_ClearAlarm(os4timer_Instance *timer);
 
 BOOL os4timer_WaitUntil(Uint32 ticks);
+Uint32 os4timer_GetTicks(void);
 
 #endif

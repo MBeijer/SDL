@@ -31,7 +31,6 @@
  */
 
 #include "SDL_config.h"
-
 #include "SDL_types.h"
 
 #include <proto/exec.h>
@@ -50,32 +49,44 @@
  *
  * This is initialized in th constructor below...
  */
-struct TimeVal os4timer_starttime;
-
+static struct TimeVal os4timer_starttime;
 
 /*
  * Management of interface to timer.device
  */
 struct TimerIFace *ITimer = 0;
 
-void os4timer_init(void)
+void os4timer_initialize(void)
 {
-	struct ExecBase *sysbase = (struct ExecBase*) IExec->Data.LibBase;
+	struct ExecBase *sysbase = (struct ExecBase *)IExec->Data.LibBase;
 
-	struct Library *timer = (struct Library *)IExec->FindName(&sysbase->DeviceList, "timer.device");
-	ITimer = (struct TimerIFace *)IExec->GetInterface(timer, "main", 1, 0);
+	struct Library *timer = (struct Library *)IExec->FindName(&sysbase->DeviceList, TIMERNAME);
 
-	dprintf("ITimer = %p\n", ITimer);
+	dprintf("timer=%p\n", timer);
 
-	/* Set up reference time. */
-	ITimer->GetSysTime(&os4timer_starttime);
+	if (timer) {
+		ITimer = (struct TimerIFace *)IExec->GetInterface(timer, "main", 1, NULL);
+
+		dprintf("ITimer=%p\n", ITimer);
+
+		if (ITimer)
+		{
+			/* Set up reference time. */
+			ITimer->GetSysTime(&os4timer_starttime);
+		}
+	}
 }
 
 void os4timer_quit(void)
 {
-	IExec->DropInterface((struct Interface *)ITimer);
-}
+	dprintf("Called\n");
 
+	if (ITimer)
+	{
+		IExec->DropInterface((struct Interface *)ITimer);
+		ITimer = NULL;
+	}
+}
 
 /*
  * Accessor to local timer instance.
@@ -97,7 +108,6 @@ static os4timer_Instance timerInstance;
 
 #endif
 
-
 /*
  * Allocate resources for a timer instance.
  */
@@ -105,7 +115,7 @@ BOOL os4timer_Init(os4timer_Instance *timer)
 {
 	BOOL success = FALSE;
 
-	dprintf("Initializing timer for thread %p\n", IExec->FindTask(NULL));
+	dprintf("Initializing timer for process %p\n", IExec->FindTask(NULL));
 
 	timer->timerport = IExec->AllocSysObject(ASOT_PORT, NULL);
 
@@ -118,13 +128,15 @@ BOOL os4timer_Init(os4timer_Instance *timer)
 
 		if (timer->timerrequest)
 		{
-			if (!(IExec->OpenDevice("timer.device", UNIT_WAITUNTIL, (struct IORequest *)timer->timerrequest, 0)))
+			if (!(IExec->OpenDevice(TIMERNAME, UNIT_WAITUNTIL, (struct IORequest *)timer->timerrequest, 0)))
+			{
 				success = TRUE;
+			}
 			else
 			{
 				IExec->FreeSysObject(ASOT_IOREQUEST, timer->timerrequest);
 				timer->timerrequest = 0;
-	    	}
+			}
 		}
 		else
 		{
@@ -143,7 +155,7 @@ BOOL os4timer_Init(os4timer_Instance *timer)
  */
 void os4timer_Destroy(os4timer_Instance *timer)
 {
-	dprintf("Freeing timer for thread %p\n", IExec->FindTask(NULL));
+	dprintf("Freeing timer for process %p\n", IExec->FindTask(NULL));
 
 	if (timer->timerrequest)
 	{
@@ -153,6 +165,9 @@ void os4timer_Destroy(os4timer_Instance *timer)
 			IExec->AbortIO((struct IORequest *)timer->timerrequest);
 			IExec->WaitIO((struct IORequest *)timer->timerrequest);
 		}
+
+		IExec->CloseDevice((struct IORequest *)timer->timerrequest);
+
 		IExec->FreeSysObject(ASOT_IOREQUEST, timer->timerrequest);
 		timer->timerrequest = 0;
 	}
@@ -176,6 +191,12 @@ void os4timer_Destroy(os4timer_Instance *timer)
  */
 BOOL os4timer_SetAlarm(os4timer_Instance *timer, Uint32 alarmTicks, ULONG *alarmSignal)
 {
+	if (!ITimer)
+	{
+		dprintf("ITimer NULL\n");
+		return FALSE;
+	}
+
 	/* Set up the timer request. */
 	timer->timerrequest->Request.io_Command = TR_ADDREQUEST;
 	timer->timerrequest->Time.Seconds       = alarmTicks / 1000;
@@ -184,7 +205,6 @@ BOOL os4timer_SetAlarm(os4timer_Instance *timer, Uint32 alarmTicks, ULONG *alarm
 
 	IExec->SetSignal(0, 1L << timer->timerport->mp_SigBit);
 
-	/* Send the request. */
 	IExec->SendIO((struct IORequest *)timer->timerrequest);
 
 	/* Return alarm signal to caller. */
@@ -202,7 +222,9 @@ VOID os4timer_ClearAlarm(os4timer_Instance *timer)
 {
 	/* If the timer request did not complete, abort the request. */
 	if (!IExec->CheckIO((struct IORequest *)timer->timerrequest))
+	{
 		IExec->AbortIO((struct IORequest *)timer->timerrequest);
+	}
 
 	/* Remove the complete or aborted time request. */
 	IExec->WaitIO((struct IORequest *)timer->timerrequest);
@@ -229,4 +251,21 @@ BOOL os4timer_WaitUntil(Uint32 ticks)
 	os4timer_ClearAlarm(timer);
 
 	return (sigsReceived & alarmSig) == alarmSig;
+}
+
+Uint32 os4timer_GetTicks(void)
+{
+	if (ITimer)
+	{
+		struct TimeVal cur;
+
+		ITimer->GetSysTime(&cur);
+		ITimer->SubTime(&cur, &os4timer_starttime);
+
+		return cur.Seconds * 1000 + cur.Microseconds / 1000;
+	}
+
+	dprintf("ITimer NULL\n");
+
+	return 0;
 }

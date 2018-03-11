@@ -33,7 +33,7 @@
 #include <proto/exec.h>
 #include <proto/amigainput.h>
 
-#define DEBUG
+//#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
 /*

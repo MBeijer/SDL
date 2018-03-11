@@ -23,6 +23,7 @@ LDFLAGS =
 AR	= ppc-amigaos-ar
 RANLIB	= ppc-amigaos-ranlib
 PIC_CFLAGS = -fPIC -DPIC
+DEBUG_CFLAGS = -DDEBUG
 
 ### Sources and objects files, build directories ###
 
@@ -51,7 +52,7 @@ SHARED_TESTS := $(patsubst %.c,%, $(addprefix $(SHARED_OBJDIR)/,$(TESTS_SOURCES)
 
 $(STATIC_OBJDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(INCLUDE) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	$(CC) $(INCLUDE) $(CFLAGS) $(DEBUG_CFLAGS) -o $@ -c $<
 
 $(STATIC_OBJDIR)/test/%: $(STATIC_OBJDIR)/test/%.o
 	@echo Link test $@
@@ -60,7 +61,7 @@ $(STATIC_OBJDIR)/test/%: $(STATIC_OBJDIR)/test/%.o
 
 $(SHARED_OBJDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(PIC_CFLAGS) $(INCLUDE) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	$(CC) $(PIC_CFLAGS) $(INCLUDE) $(CFLAGS) $(DEBUG_CFLAGS) -o $@ -c $<
 
 $(SHARED_OBJDIR)/test/%: $(SHARED_OBJDIR)/test/%.o
 	@echo Link test $@

@@ -32,13 +32,12 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
-#include <proto/utility.h>
 #include <proto/layers.h>
 
 #include <intuition/intuition.h>
 #include <libraries/Picasso96.h>
 
-#define DEBUG
+//#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
 extern struct GraphicsIFace  *SDL_IGraphics;
@@ -54,12 +53,12 @@ get_flags_str(Uint32 flags)
 
 	buffer[0] = '\0';
 
-	if (flags & SDL_HWSURFACE)		SDL_strlcat(buffer, "HWSURFACE ", 256);
-	if (flags & SDL_SRCCOLORKEY)	SDL_strlcat(buffer, "SRCCOLORKEY ", 256);
-	if (flags & SDL_RLEACCELOK)		SDL_strlcat(buffer, "RLEACCELOK ", 256);
-	if (flags & SDL_RLEACCEL)		SDL_strlcat(buffer, "RLEACCEL ", 256);
-	if (flags & SDL_SRCALPHA)		SDL_strlcat(buffer, "SRCALPHA ", 256);
-	if (flags & SDL_PREALLOC)		SDL_strlcat(buffer, "PREALLOC ", 256);
+	if (flags & SDL_HWSURFACE)		SDL_strlcat(buffer, "HWSURFACE ", sizeof(buffer));
+	if (flags & SDL_SRCCOLORKEY)	SDL_strlcat(buffer, "SRCCOLORKEY ", sizeof(buffer));
+	if (flags & SDL_RLEACCELOK)		SDL_strlcat(buffer, "RLEACCELOK ", sizeof(buffer));
+	if (flags & SDL_RLEACCEL)		SDL_strlcat(buffer, "RLEACCEL ", sizeof(buffer));
+	if (flags & SDL_SRCALPHA)		SDL_strlcat(buffer, "SRCALPHA ", sizeof(buffer));
+	if (flags & SDL_PREALLOC)		SDL_strlcat(buffer, "PREALLOC ", sizeof(buffer));
 
 	return buffer;
 }
@@ -351,11 +350,10 @@ os4video_HWAccelBlit(SDL_Surface *src, SDL_Rect *srcrect,
 		{
 			uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly;
 
-			float surface_alpha = 1.0f;
+			// Per-surface alpha
+			float surface_alpha = src->format->alpha / 255.0f;
 
-			surface_alpha = src->format->alpha / 255.0f;
-
-//			dprintf("Per-surface alpha: %d\n", src->format->alpha);
+			// dprintf("Per-surface alpha: %d\n", src->format->alpha);
 
 			BOOL ret = os4video_composite(src_bm, dst->hwdata->bm, surface_alpha,
 				src->hwdata->colorkey_bm,

@@ -29,9 +29,6 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
-#include <proto/keymap.h>
-#include <proto/layers.h>
-#include <proto/Picasso96API.h>
 #include <proto/input.h>
 #include <proto/wb.h>
 #include <proto/icon.h>
@@ -56,10 +53,10 @@ struct WMcursor
 	int16 YOffset;
 };
 
-static struct IOStdReq  *inputReq = 0;
-static struct MsgPort   *inputPort = 0;
+static struct IOStdReq  *inputReq = NULL;
+static struct MsgPort   *inputPort = NULL;
 
-void os4video_init(void)
+void os4video_initialize(void)
 {
 	inputPort = IExec->AllocSysObjectTags(ASOT_PORT, TAG_DONE);
 	if (inputPort)
@@ -96,6 +93,8 @@ void os4video_quit(void)
 		dprintf("Deleting MsgPort\n");
 		IExec->FreeSysObject(ASOT_PORT, (void *)inputPort);
 		dprintf("Done\n");
+
+		inputReq = NULL;
 	}
 }
 
@@ -107,9 +106,11 @@ void os4video_SetCaption(_THIS, const char *title, const char *icon)
 		dprintf("Setting title to %s\n", title);
 		SDL_strlcpy(hidden->currentCaption, title, 127);
 		if (hidden->win)
+		{
 			SDL_IIntuition->SetWindowTitles(hidden->win, hidden->currentCaption, hidden->currentCaption);
+		}
 	}
-        if (icon) {
+	if (icon) {
 		dprintf("Setting icon caption to %s\n", title);
 		SDL_strlcpy(hidden->currentIconCaption, icon, 127);
 	}
@@ -192,11 +193,15 @@ void os4video_FreeWMCursor(_THIS, WMcursor *cursor)
 
 	dprintf("Freeing %p\n", cursor);
 
-	if (cursor && cursor->Image)
-		IExec->FreeVec(cursor->Image);
-
 	if (cursor)
+	{
+		if (cursor->Image)
+		{
+			IExec->FreeVec(cursor->Image);
+		}
+
 		SaveFreePooled(hidden, cursor, sizeof(struct WMcursor));
+	}
 }
 
 void os4video_ResetCursor(struct SDL_PrivateVideoData *hidden)
@@ -232,7 +237,9 @@ int	os4video_ShowWMCursor(_THIS, WMcursor *cursor)
 	hidden->currentCursor = (void *)cursor;
 
 	if (hidden->win && (hidden->pointerState != pointer_outside_window))
+	{
 		os4video_ResetCursor(hidden);
+	}
 
 	SDL_Unlock_EventThread();
 
@@ -242,7 +249,9 @@ int	os4video_ShowWMCursor(_THIS, WMcursor *cursor)
 void ResetMouseState(_THIS)
 {
 	if (_this->ShowWMCursor)
+	{
 		_this->ShowWMCursor(_this, _this->hidden->currentCursor);
+	}
 }
 
 void os4video_WarpWMCursor(_THIS, Uint16 x, Uint16 y)
@@ -285,10 +294,7 @@ void os4video_WarpWMCursor(_THIS, Uint16 x, Uint16 y)
 
 			NeoPix = (struct IEPointerPixel *) (FakeEvent + 1);
 
-			if (hidden->scr)
-				NeoPix->iepp_Screen = hidden->scr;
-			else
-				NeoPix->iepp_Screen = hidden->publicScreen;
+			NeoPix->iepp_Screen = hidden->scr ? hidden->scr : hidden->publicScreen;
 
 			NeoPix->iepp_Position.Y = y + hidden->win->BorderTop  + hidden->win->TopEdge;
 			NeoPix->iepp_Position.X = x + hidden->win->BorderLeft + hidden->win->LeftEdge;
@@ -304,11 +310,11 @@ void os4video_WarpWMCursor(_THIS, Uint16 x, Uint16 y)
 			inputReq->io_Length  = sizeof(struct InputEvent);
 			inputReq->io_Command = IND_WRITEEVENT;
 
-			dprintf("Fire!\n");
+			dprintf("Sending fake event\n");
 
 			IExec->DoIO((struct IORequest *)inputReq);
 
-			SaveFreePooled(hidden, (void *)FakeEvent,  sizeof(struct InputEvent)+sizeof(struct IEPointerPixel));
+			SaveFreePooled(hidden, (void *)FakeEvent, sizeof(struct InputEvent) + sizeof(struct IEPointerPixel));
 		}
 	}
 	else
@@ -321,7 +327,6 @@ void os4video_WarpWMCursor(_THIS, Uint16 x, Uint16 y)
 	dprintf("Done\n");
 }
 
-
 void SetMouseColors(_THIS)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
@@ -329,9 +334,13 @@ void SetMouseColors(_THIS)
 	uint32 colors[15];
 
 	if (hidden->scr)
+	{
 		vp = &hidden->scr->ViewPort;
+	}
 	else
+	{
 		vp = &hidden->publicScreen->ViewPort;
+	}
 
 	if (!hidden->mouseColorsValid)
 	{
@@ -374,12 +383,18 @@ void ResetMouseColors(_THIS)
 	struct ViewPort *vp;
 
 	if (!hidden->mouseColorsValid)
+	{
 		return;
+	}
 
 	if (hidden->scr)
+	{
 		vp = &hidden->scr->ViewPort;
+	}
 	else
+	{
 		vp = &hidden->publicScreen->ViewPort;
+	}
 
 	/* Finish the color array */
 	hidden->mouseColors[0] = 4 << 16 | 16;
@@ -389,7 +404,6 @@ void ResetMouseColors(_THIS)
 	SDL_IGraphics->LoadRGB32(vp, hidden->mouseColors);
 	hidden->mouseColorsValid = 0;
 }
-
 
 void os4video_UpdateMouse(_THIS)
 {
@@ -410,12 +424,15 @@ void os4video_UpdateMouse(_THIS)
 		MouseY = hidden->publicScreen->MouseY - hidden->win->TopEdge - hidden->win->BorderTop;
 	}
 
-
 	/* Check if the mouse is inside the window */
 	if (MouseX >= 0 && MouseX < SDL_VideoSurface->w && MouseY >= 0 && MouseY < SDL_VideoSurface->h)
+	{
 		SDL_PrivateAppActive(1, SDL_APPMOUSEFOCUS);
+	}
 	else
+	{
 		SDL_PrivateAppActive(0, SDL_APPMOUSEFOCUS);
+	}
 
 	SDL_PrivateMouseMotion(0, 0, MouseX, MouseY);
 
@@ -435,10 +452,7 @@ BOOL CreateAppIcon(_THIS)
 								hidden->appPort, 0, hidden->currentIcon,
 								TAG_DONE);
 
-	if (hidden->currentAppIcon)
-		return TRUE;
-	else
-		return FALSE;
+	return hidden->currentAppIcon ? TRUE : FALSE;
 }
 
 void DeleteAppIcon(_THIS)
@@ -446,9 +460,10 @@ void DeleteAppIcon(_THIS)
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
 	if (hidden->currentAppIcon)
+	{
 		SDL_IWorkbench->RemoveAppIcon(hidden->currentAppIcon);
-
-	hidden->currentAppIcon = 0;
+		hidden->currentAppIcon = 0;
+	}
 }
 
 int os4video_IconifyWindow(_THIS)
@@ -457,10 +472,14 @@ int os4video_IconifyWindow(_THIS)
 
 	/* If we have an app icon, we're already iconified */
 	if (hidden->currentAppIcon)
+	{
 		return 1;
+	}
 
 	if (!CreateAppIcon(_this))
+	{
 		return 0;
+	}
 
 	if (SDL_VideoSurface->flags & SDL_FULLSCREEN)
 	{
@@ -498,7 +517,6 @@ void os4video_UniconifyWindow(_THIS)
 	}
 }
 
-
 void os4video_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
@@ -515,7 +533,9 @@ void os4video_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
 		{
 			struct AppMessage *amsg;
 			while (NULL != (amsg = (struct AppMessage *)IExec->GetMsg(hidden->appPort)))
+			{
 				IExec->ReplyMsg((struct Message *)amsg);
+			}
 
 			DeleteAppIcon(_this);
 			SDL_IIcon->FreeDiskObject(hidden->currentIcon);
@@ -523,16 +543,13 @@ void os4video_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
 		}
 	}
 
-
 	hidden->currentIcon = SDL_IIcon->GetDefDiskObject(WBTOOL);
 	//hidden->currentIcon = SDL_IIcon->NewDiskObject(WBTOOL);
 	hidden->currentIcon->do_Type = 0;
-
 }
 
-
 int os4video_GetWMInfo(_THIS, SDL_SysWMinfo *info)
-{		
+{
 	SDL_VERSION(&(info->version));
 	info->window = _this->hidden->win;
 	return 1;

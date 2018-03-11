@@ -20,16 +20,15 @@
     slouken@libsdl.org
 */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "SDL_error.h"
 #include "SDL_thread.h"
 #include "SDL_systhread_c.h"
 
 #include <proto/exec.h>
 #include <exec/semaphores.h>
+
+//#define DEBUG
+#include "../../main/amigaos4/SDL_os4debug.h"
 
 struct SDL_mutex {
 	struct SignalSemaphore *sem;
@@ -42,7 +41,8 @@ SDL_mutex *SDL_CreateMutex(void)
 
 	/* Allocate mutex memory */
 	mutex = (SDL_mutex *)SDL_malloc(sizeof(*mutex));
-	if ( mutex )
+
+	if (mutex)
 	{
 		/* Create the mutex semaphore, with initial value 1 */
 		mutex->sem = (struct SignalSemaphore *)IExec->AllocSysObjectTags(ASOT_SEMAPHORE,
@@ -56,6 +56,7 @@ SDL_mutex *SDL_CreateMutex(void)
 	}
 	else
 	{
+		dprintf("Allocation failed\n");
 		SDL_OutOfMemory();
 	}
 
@@ -73,6 +74,10 @@ void SDL_DestroyMutex(SDL_mutex *mutex)
 		}
 		SDL_free(mutex);
 	}
+	else
+	{
+		dprintf("NULL mutex\n");
+	}
 }
 
 /* Lock the semaphore */
@@ -80,6 +85,7 @@ int SDL_mutexP(SDL_mutex *mutex)
 {
 	if (mutex == NULL)
 	{
+		dprintf("NULL mutex\n");
 		SDL_SetError("Passed a NULL mutex");
 		return -1;
 	}
@@ -94,6 +100,7 @@ int SDL_mutexV(SDL_mutex *mutex)
 {
 	if (mutex == NULL)
 	{
+		dprintf("NULL mutex\n");
 		SDL_SetError("Passed a NULL mutex");
 		return -1;
 	}

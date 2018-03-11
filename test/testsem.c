@@ -1,4 +1,3 @@
-
 /* Simple test of the SDL semaphore code */
 
 #include <stdio.h>
@@ -11,20 +10,21 @@
 #define NUM_THREADS 10
 
 static SDL_sem *sem;
-int alive = 1;
+static int alive = 1;
 
 int SDLCALL ThreadFunc(void *data)
 {
 	int threadnum = (int)(uintptr_t)data;
 	while ( alive ) {
 		SDL_SemWait(sem);
+
 		fprintf(stderr, "Thread number %d has got the semaphore (value = %d)!\n", threadnum, SDL_SemValue(sem));
 		SDL_Delay(200);
 		SDL_SemPost(sem);
 		fprintf(stderr, "Thread number %d has released the semaphore (value = %d)!\n", threadnum, SDL_SemValue(sem));
 		SDL_Delay(1); /* For the scheduler */
 	}
-	printf("Thread number %d exiting.\n", threadnum);
+	printf("Thread number %d exiting. Alive=%d\n", threadnum, alive);
 	return 0;
 }
 
@@ -48,7 +48,7 @@ static void TestWaitTimeout(void)
 	end_ticks = SDL_GetTicks();
 
 	duration = end_ticks - start_ticks;
-	
+
 	/* Accept a little offset in the effective wait */
 	if (duration > 1900 && duration < 2050)
 		printf("Wait done.\n");
@@ -58,6 +58,8 @@ static void TestWaitTimeout(void)
 	/* Check to make sure the return value indicates timed out */
 	if (retval != SDL_MUTEX_TIMEDOUT) 
 		fprintf(stderr, "SDL_SemWaitTimeout returned: %d; expected: %d\n", retval, SDL_MUTEX_TIMEDOUT);
+
+	SDL_DestroySemaphore(sem);
 }
 
 int main(int argc, char **argv)
@@ -78,18 +80,17 @@ int main(int argc, char **argv)
 	}
 	signal(SIGTERM, killed);
 	signal(SIGINT, killed);
-	
+
 	init_sem = atoi(argv[1]);
 	sem = SDL_CreateSemaphore(init_sem);
-	
-	printf("Running %d threads, semaphore value = %d\n", NUM_THREADS, init_sem);
+
+	printf("Running %d threads, semaphore (%p) value = %d\n", NUM_THREADS, sem, init_sem);
 	/* Create all the threads */
 	for( i = 0; i < NUM_THREADS; ++i ) {
 		threads[i] = SDL_CreateThread(ThreadFunc, (void*)i);
 	}
 
-	/* Wait 10 seconds */
-	SDL_Delay(10 * 1000);
+	SDL_Delay(NUM_THREADS * 1000);
 
 	/* Wait for all threads to finish */
 	printf("Waiting for threads to finish\n");
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
 	printf("Finished waiting for threads\n");
 
 	SDL_DestroySemaphore(sem);
+	sem = NULL;
 
 	TestWaitTimeout();
 

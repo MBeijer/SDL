@@ -37,7 +37,7 @@
 #include <proto/Picasso96API.h>
 #include <proto/icon.h>
 
-#define DEBUG
+//#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
 extern void SDL_Quit(void);
@@ -287,7 +287,7 @@ os4video_CreateDevice(int devnum)
 	}
 
 	os4video_device->hidden = (struct SDL_PrivateVideoData *)IExec->AllocVecTags(sizeof(struct SDL_PrivateVideoData), AVT_ClearWithValue, 0, AVT_Type, MEMF_SHARED, TAG_DONE );
-	if (!os4video_device)
+	if (!os4video_device->hidden)
 	{
 		SDL_OutOfMemory();
 		dprintf("No memory for private data\n");
@@ -1317,15 +1317,15 @@ get_flags_str(Uint32 flags)
 
     buffer[0] = '\0';
 
-	if  (flags & SDL_ANYFORMAT)						SDL_strlcat(buffer, "ANYFORMAT ", 256);
-	if  (flags & SDL_HWSURFACE)						SDL_strlcat(buffer, "HWSURFACE ", 256);
-	if  (flags & SDL_HWPALETTE)						SDL_strlcat(buffer, "HWPALETTE ", 256);
-	if  (flags & SDL_DOUBLEBUF)						SDL_strlcat(buffer, "DOUBLEFUF ", 256);
-	if  (flags & SDL_FULLSCREEN)					SDL_strlcat(buffer, "FULLSCREEN ", 256);
-	if  (flags & SDL_OPENGL)						SDL_strlcat(buffer, "OPENGL ", 256);
-	if ((flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT)	SDL_strlcat(buffer, "OPENGLBLIT ", 256);
-	if  (flags & SDL_RESIZABLE)						SDL_strlcat(buffer, "RESIZEABLE ", 256);
-	if  (flags & SDL_NOFRAME)						SDL_strlcat(buffer, "NOFRAME ", 256);
+	if (flags & SDL_ANYFORMAT)					   SDL_strlcat(buffer, "ANYFORMAT ", sizeof(buffer));
+	if (flags & SDL_HWSURFACE)					   SDL_strlcat(buffer, "HWSURFACE ", sizeof(buffer));
+	if (flags & SDL_HWPALETTE)					   SDL_strlcat(buffer, "HWPALETTE ", sizeof(buffer));
+	if (flags & SDL_DOUBLEBUF)					   SDL_strlcat(buffer, "DOUBLEFUF ", sizeof(buffer));
+	if (flags & SDL_FULLSCREEN)					   SDL_strlcat(buffer, "FULLSCREEN ", sizeof(buffer));
+	if (flags & SDL_OPENGL)						   SDL_strlcat(buffer, "OPENGL ", sizeof(buffer));
+	if ((flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT)	SDL_strlcat(buffer, "OPENGLBLIT ", sizeof(buffer));
+	if (flags & SDL_RESIZABLE)					   SDL_strlcat(buffer, "RESIZEABLE ", sizeof(buffer));
+	if (flags & SDL_NOFRAME)					   SDL_strlcat(buffer, "NOFRAME ", sizeof(buffer));
 
 	return buffer;
 }
