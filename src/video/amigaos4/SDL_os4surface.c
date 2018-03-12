@@ -585,7 +585,7 @@ os4video_FlipHWSurface(_THIS, SDL_Surface *surface)
 	{
 		struct DoubleBufferData *dbData = &hidden->dbData;
 
-		dprintf("Flipping double-buffered surface\n");
+		//dprintf("Flipping double-buffered surface\n");
 
 		if (!dbData->SafeToFlip)
 		{
