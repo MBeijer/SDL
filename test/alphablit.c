@@ -15,12 +15,12 @@ gcc alphablit.c -Isdk:local/common/include/SDL -use-dynld -lSDL -lauto -g -Wall 
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 #endif
 
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 800
+#define HEIGHT 600
 
-#define BLIT_WIDTH 100
-#define BLIT_HEIGHT 100
-#define BLITS_PER_ITERATION 100
+#define BLIT_WIDTH 256
+#define BLIT_HEIGHT 256
+#define BLITS_PER_ITERATION 10
 
 #define ALPHA 0x80000000
 
@@ -32,9 +32,9 @@ static SDL_Surface * red;
 static SDL_Surface * green;
 static SDL_Surface * blue;
 
-static const SDL_Color RED_COLOR = { 255,   0,   0, 255 };
-static const SDL_Color GREEN_COLOR = {   0, 255,   0, 255 };
-static const SDL_Color BLUE_COLOR = {   0,   0, 255, 255 };
+static const SDL_Color RED_COLOR = { 255, 0, 0, 255 };
+static const SDL_Color GREEN_COLOR = { 0, 255, 0, 255 };
+static const SDL_Color BLUE_COLOR = { 0, 0, 255, 255 };
 
 #if 0
 #define DEBUGME IExec->DebugPrintF("%s %d\n", __FUNCTION__, __LINE__);
@@ -61,95 +61,88 @@ static void debugSurface(SDL_Surface *surface)
 }
 */
 
-static void paintTexture32(SDL_Surface *texture, Uint32 color, SDL_bool useColorKey, Uint32 colorKey)
+static void paintTexture32(SDL_Surface *texture, SDL_Color color, SDL_bool useColorKey, Uint32 colorKey)
 {
 	Uint32 * p = (Uint32 *)texture->pixels;
-
 	const int pitch = texture->pitch / 4;
-	color |= ALPHA;
-
-	//IExec->DebugPrintF("Pixels %x, pitch %d\n", p, pitch);
 
 	int y;
-	for (y = 0; y < texture->h; y++, p += pitch )
+	for (y = 0; y < texture->h; y++, p += pitch)
 	{
-		int x;
+		Uint8 alpha = y % 256;
 
-		for (x = 0; x < texture->w; x++ )
+		int x;
+		for (x = 0; x < texture->w; x++)
 		{
-			p[x] = color;
+			Uint8 r = x & color.r;
+			Uint8 g = x & color.g;
+			Uint8 b = x & color.b;
+
+			p[x] = SDL_MapRGBA(texture->format, r, g, b, alpha);
 		}
 
 		if (useColorKey)
 		{
 			// Make stripes
-			for (x = 1; x < texture->w - 1; x++ )
+			for (x = 1; x < texture->w; x += 2)
 			{
-				if ((x % 2) == 1)
-				{
-					p[x] = colorKey;
-				}
+				p[x] = colorKey;
 			}
 		}
 	}
 }
 
-static void paintTexture16(SDL_Surface* texture, Uint16 color, SDL_bool useColorKey, Uint16 colorKey)
+static void paintTexture16(SDL_Surface* texture, SDL_Color color, SDL_bool useColorKey, Uint16 colorKey)
 {
 	Uint16 * p = (Uint16 *)texture->pixels;
-
 	const int pitch = texture->pitch / 2;
 
 	int y;
-	for (y = 0; y < texture->h; y++, p += pitch )
+	for (y = 0; y < texture->h; y++, p += pitch)
 	{
 		int x;
-
-		for (x = 0; x < texture->w; x++ )
+		for (x = 0; x < texture->w; x++)
 		{
-			p[x] = color;
+			Uint8 r = x & color.r;
+			Uint8 g = x & color.g;
+			Uint8 b = x & color.b;
+
+			p[x] = SDL_MapRGB(texture->format, r, g, b);
 		}
 
 		if (useColorKey)
 		{
 			// Make stripes
-			for (x = 1; x < texture->w - 1; x++ )
+			for (x = 1; x < texture->w; x += 2)
 			{
-				if ((x % 2) == 1)
-				{
-					p[x] = colorKey;
-				}
+				p[x] = colorKey;
 			}
 		}
 	}
 }
 
-static void paintTexture8(SDL_Surface* texture, Uint8 color, SDL_bool useColorKey, Uint16 colorKey)
+static void paintTexture8(SDL_Surface* texture, SDL_Color color, SDL_bool useColorKey, Uint16 colorKey)
 {
 	Uint8* p = (Uint8 *)texture->pixels;
-	//printf("Color %d\n", color);
 	const int pitch = texture->pitch;
 
-	int y;
+	Uint8 mapped = SDL_MapRGB(texture->format, color.r, color.g, color.b);
 
-	for(y = 0; y < texture->h; y++, p += pitch)
+	int y;
+	for (y = 0; y < texture->h; y++, p += pitch)
 	{
 		int x;
-
 		for (x = 0; x < texture->w; x++)
 		{
-			p[x] = color;
+			p[x] = mapped;
 		}
 
 		if (useColorKey)
 		{
 			// Make stripes
-			for (x = 1; x < texture->w - 1; x++ )
+			for (x = 1; x < texture->w; x += 2)
 			{
-				if ((x % 2) == 1)
-				{
-					p[x] = colorKey;
-				}
+				p[x] = colorKey;
 			}
 		}
 	}
@@ -207,6 +200,25 @@ typedef struct ModeInfo
 	int iterations;
 }  ModeInfo;
 
+static void Lock(SDL_Surface *texture)
+{
+	if (SDL_MUSTLOCK(texture))
+	{
+		if (SDL_LockSurface(texture) < 0)
+		{
+			printf("SDL_LockSurface: %s\n", SDL_GetError());
+		}
+	}
+}
+
+static void Unlock(SDL_Surface *texture)
+{
+	if (SDL_MUSTLOCK(texture))
+	{
+		SDL_UnlockSurface(texture);
+	}
+}
+
 static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 {
 	SDL_Surface * texture = allocTexture(mi.depth, mi.useHardware, mi.useSurfaceAlpha);
@@ -214,7 +226,6 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	if (texture == NULL)
 	{
 		puts("Couldn't create surface");
-
 		return NULL;
 	}
 
@@ -224,7 +235,11 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	}
 	else if (mi.useSurfaceAlpha)
 	{
-		SDL_SetAlpha(texture, SDL_SRCALPHA, 0x80);
+		if (SDL_SetAlpha(texture, SDL_SRCALPHA, 0x80))
+		{
+			printf("SDL_SetAlpha: %s\n", SDL_GetError());
+		}
+
 		//printf("psa %d am 0x%x\n", texture->format->alpha, texture->format->Amask);
 	}
 
@@ -238,37 +253,29 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 		//printf("Color key: 0x%X\n", colorKey);
 	}
 
-	Uint32 surfaceColor = SDL_MapRGB(texture->format, color.r, color.g, color.b);
+	Lock(texture);
 
-	if (SDL_MUSTLOCK(texture))
+	switch (mi.depth)
 	{
-		if (SDL_LockSurface(texture) < 0)
-		{
-			return texture;
-		}
-	}
-
-	if (mi.depth == 32)
-	{
-	    paintTexture32(texture, surfaceColor, mi.useColorKey, colorKey);
-	}
-	else if (mi.depth == 16)
-	{
-		paintTexture16(texture, surfaceColor, mi.useColorKey, colorKey);
-	}
-	else if (mi.depth == 8)
-	{
-		paintTexture8(texture, surfaceColor, mi.useColorKey, colorKey);
+		case 32:
+    		paintTexture32(texture, color, mi.useColorKey, colorKey);
+			break;
+		case 16:
+    		paintTexture16(texture, color, mi.useColorKey, colorKey);
+			break;
+		case 8:
+		    paintTexture8(texture, color, mi.useColorKey, colorKey);
+			break;
 	}
 
-	if (SDL_MUSTLOCK(texture))
-	{
-		SDL_UnlockSurface(texture);
-	}
+	Unlock(texture);
 
 	if (mi.useColorKey)
 	{
-		SDL_SetColorKey(texture, SDL_SRCCOLORKEY, colorKey);
+		if (SDL_SetColorKey(texture, SDL_SRCCOLORKEY, colorKey))
+		{
+			printf("SDL_SetColorKey: %s\n", SDL_GetError());
+		}
 	}
 
 	return texture;
@@ -319,15 +326,17 @@ static const char * getAlphaString(Uint32 type)
 
 static void setMode(ModeInfo mi)
 {
+	char buffer[128];
 	int flags = (mi.useFullscreen ? SDL_FULLSCREEN : 0) | (mi.useHardware ? SDL_HWSURFACE : SDL_SWSURFACE) | SDL_HWPALETTE;
 
-	printf("Requested mode: %d-bit %s %s. %s alpha, %scolor key\n",
+	snprintf(buffer, sizeof(buffer), "%d-bit %s surface %s. %s alpha, %scolor key",
 		mi.depth,
-		mi.useHardware ? "accelerated" : "non-accelerated",
+		mi.useHardware ? "HW" : "SW",
 		mi.useFullscreen ? "fullscreen" : "window",
 		getAlphaString(mi.useSurfaceAlpha),
 		mi.useColorKey ? "" : "no ");
 
+	printf("%s. ", buffer);
 	view = SDL_SetVideoMode(WIDTH, HEIGHT, mi.depth, flags);
 
 	if (!view)
@@ -335,6 +344,8 @@ static void setMode(ModeInfo mi)
 		printf("SDL_SetVideoMode: %s\n", SDL_GetError());
 		return;
 	}
+
+	SDL_WM_SetCaption(buffer, buffer);
 
 	//printf("Display surface flags: 0x%X\n", view->flags);
 
@@ -430,7 +441,6 @@ static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
 
 	Uint32 frames = iterations * 3;
 	Uint32 blits = frames * BLITS_PER_ITERATION;
-	Uint64 bytes = blits * BLIT_WIDTH * BLIT_HEIGHT * bytesPerPixel;
 
 	if (duration == 0)
 	{
@@ -438,13 +448,11 @@ static void test(Uint32 bytesPerPixel, Uint32 iterations, Uint32 sleep)
 		return;
 	}
 
-	printf("RESULT: duration %u ms, %.1f frames/s, %u blits, %.1f blits/s, %llu bytes, %llu bytes/s\n",
+	printf("RESULT: duration %u ms, %.1f frames/s, %u blits, %.1f blits/s\n",
 		duration,
 		1000.0f * frames / duration,
 		blits,
-		1000.0f * blits / duration,
-		bytes,
-		1000 * bytes / duration);
+		1000.0f * blits / duration);
 }
 
 
@@ -518,7 +526,6 @@ static void runTests(Uint32 iterations, Uint32 sleep)
 {
 	ModeInfo tests[] =
 	{
-#if 1
 		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16, 100 },
 		{ WINDOW, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32, 100 },
 		{ WINDOW, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
@@ -527,17 +534,16 @@ static void runTests(Uint32 iterations, Uint32 sleep)
 		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16, 100 },
 		{ WINDOW, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32, 100 },
 
-		{ FULLSCREEN, SW, NO_ALPHA, NO_COLOR_KEY, 8, 100 },
+		//{ FULLSCREEN, SW, NO_ALPHA, NO_COLOR_KEY, 8, 100 },
 		{ FULLSCREEN, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 16, 100 },
 		{ FULLSCREEN, SW, PER_PIXEL_ALPHA, NO_COLOR_KEY, 32, 100 },
 
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 16, 100 },
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, NO_COLOR_KEY, 32, 100 },
 
-		{ FULLSCREEN, SW, NO_ALPHA, USE_COLOR_KEY, 8, 5 },
+		//{ FULLSCREEN, SW, NO_ALPHA, USE_COLOR_KEY, 8, 5 },
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 16, 100 },
 		{ FULLSCREEN, SW, PER_SURFACE_ALPHA, USE_COLOR_KEY, 32, 100 },
-#endif
 	};
 
 	int t;
