@@ -107,8 +107,7 @@ os4video_AllocHWSurface(_THIS, SDL_Surface *surface)
 
 		if (surface->hwdata->bm)
 		{
-			/* Successfully created bitmap */
-			dprintf ("Created bitmap %p\n", surface->hwdata->bm);
+			dprintf("Created bitmap %p\n", surface->hwdata->bm);
 
 			dprintf("BITMAP w %d, h %d, depth %d, bytes %d, bits %d\n",
 				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_WIDTH),
@@ -122,7 +121,7 @@ os4video_AllocHWSurface(_THIS, SDL_Surface *surface)
 		}
 		else
 		{
-			dprintf ("Failed to create bitmap\n");
+			dprintf("Failed to create bitmap\n");
 			SDL_SetError("Failed to create bitmap");
 
 			SaveFreePooled(_this->hidden, surface->hwdata, sizeof(struct private_hwdata));
@@ -205,7 +204,7 @@ os4video_LockHWSurface(_THIS, SDL_Surface *surface)
 		}
 		else
 		{
-			dprintf ("Failed to lock bitmap:%p\n", surface->hwdata->bm);
+			dprintf("Failed to lock bitmap: %p\n", surface->hwdata->bm);
 			SDL_SetError("Failed to lock bitmap");
 		}
 	}
@@ -315,7 +314,7 @@ os4video_composite(struct BitMap *src_bm, struct BitMap *dst_bm,
 		COMPTAG_SrcHeight,  height,
 		COMPTAG_OffsetX,    dst_x,
 		COMPTAG_OffsetY,    dst_y,
-		COMPTAG_Flags,      flags,
+		COMPTAG_Flags,      COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly | flags,
 		TAG_END);
 
 	if (ret_code)
@@ -336,31 +335,68 @@ os4video_composite(struct BitMap *src_bm, struct BitMap *dst_bm,
 	return TRUE;
 }
 
+static BOOL
+os4video_hasAlphaBlending(SDL_Surface *src)
+{
+	return ((src->flags & SDL_SRCALPHA) == SDL_SRCALPHA);
+}
+
+static BOOL
+os4video_hasAlphaChannel(SDL_Surface *src)
+{
+	return (src->format->Amask == 0xFF000000 || src->format->Amask == 0x000000FF);
+}
+
+static BOOL
+os4video_hasColorKey(SDL_Surface *src)
+{
+	return ((src->flags & SDL_SRCCOLORKEY) == SDL_SRCCOLORKEY);
+}
+
+static float
+os4video_getSurfaceAlpha(SDL_Surface *src)
+{
+	if (os4video_hasAlphaChannel(src))
+	{
+		//dprintf("Surface has alpha channel, per-surface alpha %d ignored\n",
+		//	  src->format->alpha);
+
+		return 1.0f;
+	}
+
+	//dprintf("Using per-surface alpha %d\n", src->format->alpha);
+
+	return src->format->alpha / 255.0f;
+}
+
+static uint32
+os4video_getOverrideFlag(SDL_Surface *src)
+{
+	if (os4video_hasAlphaChannel(src) || os4video_hasColorKey(src))
+	{
+		return 0;
+	}
+
+	return COMPFLAG_SrcAlphaOverride;
+}
+
 static int
 os4video_HWAccelBlit(SDL_Surface *src, SDL_Rect *srcrect,
 	SDL_Surface *dst, SDL_Rect *dstrect)
 {
-	struct BitMap   *src_bm = src->hwdata->bm;
-
-	//dprintf("src_bm %p, dst->hwdata->bm %p\n", src_bm, dst->hwdata->bm);
+	struct BitMap *src_bm = src->hwdata->bm;
 
 	if (src_bm)
 	{
-		if (src->flags & SDL_SRCALPHA)
+		if (os4video_hasAlphaBlending(src))
 		{
-			uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly;
-
-			// Per-surface alpha
-			float surface_alpha = src->format->alpha / 255.0f;
-
-			// dprintf("Per-surface alpha: %d\n", src->format->alpha);
-
-			BOOL ret = os4video_composite(src_bm, dst->hwdata->bm, surface_alpha,
+			BOOL ret = os4video_composite(src_bm, dst->hwdata->bm,
+				os4video_getSurfaceAlpha(src),
 				src->hwdata->colorkey_bm,
 				srcrect->x, srcrect->y,
 				srcrect->w, srcrect->h,
 				dstrect->x, dstrect->y,
-				flags);
+				os4video_getOverrideFlag(src));
 
 			if (!ret)
 			{
@@ -369,17 +405,15 @@ os4video_HWAccelBlit(SDL_Surface *src, SDL_Rect *srcrect,
 		}
 		else
 		{
-			if (src->flags & SDL_SRCCOLORKEY)
+			if (os4video_hasColorKey(src))
 			{
-				uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly;
-				float surface_alpha = 1.0f;
-
-				BOOL ret = os4video_composite(src_bm, dst->hwdata->bm, surface_alpha,
+				BOOL ret = os4video_composite(src_bm, dst->hwdata->bm,
+					1.0f,
 					src->hwdata->colorkey_bm,
 					srcrect->x, srcrect->y,
 					srcrect->w, srcrect->h,
 					dstrect->x, dstrect->y,
-					flags);
+					0);
 
 				if (!ret)
 				{
@@ -401,12 +435,16 @@ os4video_HWAccelBlit(SDL_Surface *src, SDL_Rect *srcrect,
 
 				if (error != -1)
 				{
-					dprintf("BltBitMapTags() returned %d", error);
+					dprintf("BltBitMapTags() returned %d\n", error);
 					SDL_SetError("BltBitMapTags failed");
 					return -1;
 				}
 			}
 		}
+	}
+	else
+	{
+		dprintf("NULL bitmap\n");
 	}
 
 	return 0;
