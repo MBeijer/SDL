@@ -180,11 +180,11 @@ static void createPalette(SDL_Surface * surface)
 {
 	// r, g, b, unused
 	SDL_Color colors[] = {
-		{  0,   0,   0, 255}, // black
+		{0, 0, 0, 255}, // black
 		{255, 255, 255, 255}, // white
-		{255,   0,   0, 255}, // red
-		{  0, 255,   0, 255}, // green
-		{  0,   0, 255, 255}, // blue
+		{255, 0, 0, 255}, // red
+		{0, 255, 0, 255}, // green
+		{0, 0, 255, 255}, // blue
 		};
 
 	SDL_SetColors(surface, colors, 0, sizeof(colors) / sizeof(SDL_Color));
@@ -258,13 +258,13 @@ static SDL_Surface * createTexture(SDL_Color color, ModeInfo mi)
 	switch (mi.depth)
 	{
 		case 32:
-    		paintTexture32(texture, color, mi.useColorKey, colorKey);
+			paintTexture32(texture, color, mi.useColorKey, colorKey);
 			break;
 		case 16:
-    		paintTexture16(texture, color, mi.useColorKey, colorKey);
+			paintTexture16(texture, color, mi.useColorKey, colorKey);
 			break;
 		case 8:
-		    paintTexture8(texture, color, mi.useColorKey, colorKey);
+			paintTexture8(texture, color, mi.useColorKey, colorKey);
 			break;
 	}
 
