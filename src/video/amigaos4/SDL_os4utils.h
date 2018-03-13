@@ -25,14 +25,16 @@
 #include <exec/types.h>
 #include "../SDL_sysvideo.h"
 
+uint32      os4video_GetWidthFromMode       (uint32 displayId);
+uint32      os4video_GetHeightFromMode      (uint32 displayId);
+
 PIX_FMT     os4video_PFtoPIXF               (const SDL_PixelFormat *vf);
 uint32      os4video_PIXF2Bits              (PIX_FMT rgbfmt);
+BOOL        os4video_PIXFtoPF               (SDL_PixelFormat *vformat, PIX_FMT pixf);
 
-uint32		os4video_PFtoPPF				(const SDL_PixelFormat *vf);
-BOOL		os4video_PPFtoPF				(SDL_PixelFormat *vformat, RGBFTYPE p96Format);
+PIX_FMT     os4video_GetPixelFormatFromMode (uint32 displayId);
 BOOL		os4video_PixelFormatFromModeID	(SDL_PixelFormat *vformat, uint32 displayID);
-uint32		os4video_RTGFB2Bits				(RGBFTYPE rgbfmt);
-RGBFTYPE   *os4video_GetP96FormatsForBpp	(uint32 bpp);
+PIX_FMT    *os4video_GetPixelFormatsForBpp	(uint32 bpp);
 SDL_Rect  **os4video_MakeResArray			(const SDL_PixelFormat *format);
 uint32		os4video_FindMode				(uint32 w, uint32 h, uint32 bpp, uint32 flags);
 

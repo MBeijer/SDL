@@ -25,7 +25,6 @@
 
 #include <exec/types.h>
 #include <intuition/intuition.h>
-#include <libraries/Picasso96.h>
 #include <workbench/icon.h>
 
 #include "../SDL_sysvideo.h"
@@ -38,7 +37,7 @@
  */
 struct OffScreenBuffer
 {
-	struct BitMap 		   *bitmap;							/* P96 bitmap holding the actual pixels */
+	struct BitMap 		   *bitmap;							/* Bitmap holding the actual pixels */
 	uint32					width;
 	uint32					height;
 	SDL_PixelFormat			format;							/* SDL pixel format of this surface */
@@ -70,7 +69,7 @@ typedef enum
 } pointer_state;
 
 /*
- * Identifier describing an SDL surface's P96 bitmap
+ * Identifier describing an SDL surface's bitmap
  */
 typedef enum en_hwdata_type
 {
@@ -91,13 +90,15 @@ struct private_hwdata
 	APTR               lock;
 };
 
+#define MAX_PIXEL_FORMATS 22
+
 /*
  * Data private to the OS4 video driver
  */
 struct SDL_PrivateVideoData
 {
 	struct Screen *			publicScreen;
-	SDL_Rect **				Modes[RGBFB_MaxFormats];
+	SDL_Rect **				Modes[MAX_PIXEL_FORMATS];
 	struct MsgPort *		userPort;
 	struct Screen *			scr;
 
@@ -111,8 +112,8 @@ struct SDL_PrivateVideoData
 
 	SDL_Color				currentPalette[256];			/* Actual palette */
 
-	RGBFTYPE				screenP96Format;				/* P96 pixel format of screen */
-	SDL_PixelFormat			screenFormat;					/* SDL pixel format of screen */
+	PIX_FMT				    screenNativeFormat;				/* Native pixel format of screen */
+	SDL_PixelFormat			screenSdlFormat;				/* SDL pixel format of screen */
 
 	struct OffScreenBuffer  offScreenBuffer;				/* Offscreen buffer for software surfaces */
 
@@ -138,8 +139,6 @@ struct SDL_PrivateVideoData
 	struct GLContextIFace *IGL;
 	struct BitMap *m_frontBuffer;
 	struct BitMap *m_backBuffer;
-	
-	BOOL 					haveCompositing; 				/* needs graphics.library V53 */
 };
 
 #endif

@@ -31,18 +31,15 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
-#include <proto/Picasso96API.h>
 #include <proto/layers.h>
 
 #include <intuition/intuition.h>
-#include <libraries/Picasso96.h>
 
 //#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
 extern struct GraphicsIFace  *SDL_IGraphics;
 extern struct LayersIFace    *SDL_ILayers;
-extern struct P96IFace       *SDL_IP96;
 extern struct IntuitionIFace *SDL_IIntuition;
 
 #ifdef DEBUG
@@ -107,14 +104,13 @@ os4video_AllocHWSurface(_THIS, SDL_Surface *surface)
 
 		if (surface->hwdata->bm)
 		{
-			dprintf("Created bitmap %p\n", surface->hwdata->bm);
-
-			dprintf("BITMAP w %d, h %d, depth %d, bytes %d, bits %d\n",
-				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_WIDTH),
-				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_HEIGHT),
-				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_DEPTH),
-				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_BYTESPERPIXEL),
-				SDL_IP96->p96GetBitMapAttr(surface->hwdata->bm, P96BMA_BITSPERPIXEL));
+			dprintf("Bitmap %p created. Width %d, height %d, depth %d, bytes %d, bits %d\n",
+				surface->hwdata->bm,
+				SDL_IGraphics->GetBitMapAttr(surface->hwdata->bm, BMA_WIDTH),
+				SDL_IGraphics->GetBitMapAttr(surface->hwdata->bm, BMA_HEIGHT),
+				SDL_IGraphics->GetBitMapAttr(surface->hwdata->bm, BMA_DEPTH),
+				SDL_IGraphics->GetBitMapAttr(surface->hwdata->bm, BMA_BYTESPERPIXEL),
+				SDL_IGraphics->GetBitMapAttr(surface->hwdata->bm, BMA_BITSPERPIXEL));
 
 			surface->flags |= SDL_HWSURFACE | SDL_PREALLOC | SDL_HWACCEL;
 			result = 0;
@@ -461,11 +457,8 @@ os4video_CheckHWBlit(_THIS, SDL_Surface *src, SDL_Surface *dst)
 	{
 		if (src->format->BitsPerPixel > 8)
 		{
-			/* With compositing feature we can accelerate alpha and color key too */
-			if ((_this->hidden->haveCompositing == TRUE) || !(src->flags & (SDL_SRCALPHA | SDL_SRCCOLORKEY)))
-			{
-				accelerated = 1;
-			}
+			/* With compositing feature we can accelerate alpha blending and color key too */
+			accelerated = 1;
 		}
 		else
 		{
@@ -496,7 +489,7 @@ os4video_CheckHWBlit(_THIS, SDL_Surface *src, SDL_Surface *dst)
 int
 os4video_SetHWAlpha(_THIS, SDL_Surface *src, Uint8 value)
 {
-	if (src->hwdata && (src->format->BitsPerPixel > 8) && (_this->hidden->haveCompositing == TRUE))
+	if (src->hwdata && (src->format->BitsPerPixel > 8))
 	{
 		return 0;
 	}
@@ -582,7 +575,7 @@ os4video_CreateAlphaMask(struct BitMap *src_bm, struct BitMap *mask_bm, Uint32 k
 int
 os4video_SetHWColorKey(_THIS, SDL_Surface *src, Uint32 key)
 {
-	if (src->hwdata && (src->format->BitsPerPixel > 8) && (_this->hidden->haveCompositing == TRUE))
+	if (src->hwdata && (src->format->BitsPerPixel > 8))
 	{
 		if (src->hwdata->colorkey_bm == NULL)
 		{

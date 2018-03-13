@@ -37,7 +37,6 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
-#include <proto/Picasso96API.h>
 #include <graphics/blitattr.h>
 
 #include <GL/gl.h>
@@ -46,15 +45,12 @@
 //#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
-extern struct P96IFace *SDL_IP96;
-
 static struct MiniGLIFace *IMiniGL = 0;
 static struct Library *MiniGLBase = 0;
 //static struct GLContextIFace *IGL;
 
 extern struct IntuitionIFace *SDL_IIntuition;
 extern struct GraphicsIFace  *SDL_IGraphics;
-extern struct P96IFace       *SDL_IP96;
 
 /* The client program needs access to this context pointer
  * to be able to make GL calls. This presents no problems when
@@ -187,14 +183,14 @@ int	os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 	struct BitMap *bm = hidden->screenHWData.bm;
 	SDL_PixelFormat pf;
-	uint32 rgbFormat;
+	PIX_FMT rgbFormat;
 
 	if (!bm)
 		return -1;
 
-	rgbFormat = SDL_IP96->p96GetBitMapAttr(bm, P96BMA_RGBFORMAT);
+	rgbFormat = SDL_IGraphics->GetBitMapAttr(bm, BMA_PIXELFORMAT);
 
-	if (!os4video_PPFtoPF(&pf, rgbFormat))
+	if (!os4video_PIXFtoPF(&pf, rgbFormat))
 		return -1;
 
 	switch (attrib)
@@ -212,8 +208,8 @@ int	os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 			return 0;
 
 		case SDL_GL_ALPHA_SIZE:
-			if (rgbFormat == RGBFB_A8R8G8B8 || rgbFormat == RGBFB_A8B8G8R8
-			 || rgbFormat ==  RGBFB_R8G8B8A8 || rgbFormat == RGBFB_B8G8R8A8)
+			if (rgbFormat == PIXF_A8R8G8B8 || rgbFormat == PIXF_A8B8G8R8
+			 || rgbFormat == PIXF_R8G8B8A8 || rgbFormat == PIXF_B8G8R8A8)
 				*value = 8;
 			else
 				*value = 0;

@@ -34,7 +34,6 @@
 #include <proto/graphics.h>
 #include <proto/keymap.h>
 #include <proto/layers.h>
-#include <proto/Picasso96API.h>
 #include <proto/icon.h>
 
 //#define DEBUG
@@ -100,7 +99,6 @@ extern void DeleteAppIcon(_THIS);
 
 static struct Library	*gfxbase;
 static struct Library	*layersbase;
-static struct Library	*p96base;
 static struct Library	*intuitionbase;
 static struct Library	*iconbase;
 static struct Library	*workbenchbase;
@@ -108,7 +106,6 @@ static struct Library	*keymapbase;
 
 struct GraphicsIFace	*SDL_IGraphics;
 struct LayersIFace		*SDL_ILayers;
-struct P96IFace			*SDL_IP96;
 struct IntuitionIFace	*SDL_IIntuition;
 struct IconIFace		*SDL_IIcon;
 struct WorkbenchIFace	*SDL_IWorkbench;
@@ -121,24 +118,22 @@ open_libraries(void)
 {
 	gfxbase       = IExec->OpenLibrary("graphics.library", 54);
 	layersbase    = IExec->OpenLibrary("layers.library", MIN_LIB_VERSION);
-	p96base       = IExec->OpenLibrary("Picasso96API.library", 0);
 	intuitionbase = IExec->OpenLibrary("intuition.library", MIN_LIB_VERSION);
 	iconbase      = IExec->OpenLibrary("icon.library", MIN_LIB_VERSION);
 	workbenchbase = IExec->OpenLibrary("workbench.library", MIN_LIB_VERSION);
 	keymapbase    = IExec->OpenLibrary("keymap.library", MIN_LIB_VERSION);
 
-	if (!gfxbase || !layersbase || !p96base || !intuitionbase || !iconbase || !workbenchbase || !keymapbase)
+	if (!gfxbase || !layersbase || !intuitionbase || !iconbase || !workbenchbase || !keymapbase)
 		return FALSE;
 
 	SDL_IGraphics  = (struct GraphicsIFace *)  IExec->GetInterface(gfxbase, "main", 1, NULL);
 	SDL_ILayers    = (struct LayersIFace *)    IExec->GetInterface(layersbase, "main", 1, NULL);
-	SDL_IP96       = (struct P96IFace *)       IExec->GetInterface(p96base, "main", 1, NULL);
 	SDL_IIntuition = (struct IntuitionIFace *) IExec->GetInterface(intuitionbase, "main", 1, NULL);
 	SDL_IIcon      = (struct IconIFace *)      IExec->GetInterface(iconbase, "main", 1, NULL);
 	SDL_IWorkbench = (struct WorkbenchIFace *) IExec->GetInterface(workbenchbase, "main", 1, NULL);
 	SDL_IKeymap    = (struct KeymapIFace *)    IExec->GetInterface(keymapbase, "main", 1, NULL);
 
-	if (!SDL_IGraphics || !SDL_ILayers || !SDL_IP96 || !SDL_IIntuition || !SDL_IIcon || !SDL_IWorkbench || !SDL_IKeymap)
+	if (!SDL_IGraphics || !SDL_ILayers || !SDL_IIntuition || !SDL_IIcon || !SDL_IWorkbench || !SDL_IKeymap)
 		return FALSE;
 
 	return TRUE;
@@ -162,10 +157,6 @@ close_libraries(void)
 	if (SDL_IIntuition) {
 		IExec->DropInterface((struct Interface *) SDL_IIntuition);
 		SDL_IIntuition = NULL;
-	}
-	if (SDL_IP96) {
-		IExec->DropInterface((struct Interface *) SDL_IP96);
-		SDL_IP96 = NULL;
 	}
 	if (SDL_ILayers) {
 		IExec->DropInterface((struct Interface *) SDL_ILayers);
@@ -191,10 +182,6 @@ close_libraries(void)
 	if (intuitionbase) {
 		IExec->CloseLibrary(intuitionbase);
 		intuitionbase = NULL;
-	}
-	if (p96base) {
-		IExec->CloseLibrary(p96base);
-		p96base = NULL;
 	}
 	if (layersbase) {
 		IExec->CloseLibrary(layersbase);
@@ -223,20 +210,7 @@ swapshort(uint16 x)
 static int
 os4video_Available(void)
 {
-	struct Library *p96;
-
-	dprintf("Probing Picasso96API.library\n");
-
-	p96 = IExec->OpenLibrary("Picasso96API.library", 0);
-	if (p96)
-	{
-		dprintf("Success\n");
-		IExec->CloseLibrary(p96);
-		return 1;
-	}
-
-	dprintf("Not found\n");
-	return 0;
+	return 1;
 }
 
 static void
@@ -323,12 +297,6 @@ os4video_CreateDevice(int devnum)
 	if (!open_libraries())
 		goto fail;
 
-	if (gfxbase->lib_Version >= 53)
-	{
-		dprintf("Compositing should be possible, gfx version %d\n", gfxbase->lib_Version);
-		os4video_device->hidden->haveCompositing = TRUE;
-	}
-
 	SDL_strlcpy(os4video_device->hidden->currentCaption, "SDL_Window", 128);
 	SDL_strlcpy(os4video_device->hidden->currentIconCaption, "SDL Application", 128);
 
@@ -406,7 +374,8 @@ static int
 os4video_VideoInit(_THIS, SDL_PixelFormat *vformat)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
-	uint32 displayID, freeMem;
+	uint32 displayID;
+	uint64 freeMem = 0;
 
 	hidden->dontdeletecontext = FALSE;
 
@@ -434,10 +403,18 @@ os4video_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	_this->info.wm_available = 1;
 	_this->info.blit_hw      = 1;
 	_this->info.blit_fill    = 1;
-	_this->info.blit_hw_A    = hidden->haveCompositing ? 1 : 0;
-	_this->info.blit_hw_CC   = hidden->haveCompositing ? 1 : 0;
+	_this->info.blit_hw_A    = 1;
+	_this->info.blit_hw_CC   = 1;
 
-	SDL_IP96->p96GetBoardDataTags(0, P96BD_FreeMemory, &freeMem);
+	if (SDL_IGraphics->GetBoardDataTags(0, GBD_FreeMemory, &freeMem, TAG_DONE) == 1)
+	{
+		dprintf("Free video memory %u\n", (uint32)freeMem);
+	}
+	else
+	{
+		dprintf("Failed to query free video memory\n");
+	}
+
 	_this->info.video_mem = freeMem;
 
 	if (FALSE == os4video_PixelFormatFromModeID(vformat, displayID))
@@ -468,7 +445,7 @@ os4video_VideoQuit(_THIS)
 	{
 		SDL_IIntuition->UnlockPubScreen(NULL, hidden->publicScreen);
 		hidden->publicScreen = NULL;
-		for (i=0; i<RGBFB_MaxFormats; i++)
+		for (i = 0; i < MAX_PIXEL_FORMATS; i++)
 		{
 			if (hidden->Modes[i]) IExec->FreeVec(hidden->Modes[i]);
 		}
@@ -491,52 +468,51 @@ os4video_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 		/* Handle the case when we've been supplied a desired
 		 * bits-per-pixel, but no colour masks.
 		 *
-		 * We search for screens modes in appropriate P96 pixel formats
+		 * We search for screens modes in appropriate pixel formats
 		 * for this depth (in order of preference) until we find a pixel
 		 * format that has valid modes.
 		 */
-		const RGBFTYPE *p96format;
+		const PIX_FMT *pixelFormat;
 		SDL_PixelFormat sdlformat;
 
 		dprintf("Listing %d-bit screenmodes\n", format->BitsPerPixel);
 
-		p96format = os4video_GetP96FormatsForBpp(format->BitsPerPixel);
+		pixelFormat = os4video_GetPixelFormatsForBpp(format->BitsPerPixel);
 
-		while (*p96format != RGBFB_NONE)
+		while (*pixelFormat != PIXF_NONE && *pixelFormat < MAX_PIXEL_FORMATS)
 		{
-			dprintf("Looking for modes with p96 format=%d\n", *p96format);
+			dprintf("Looking for modes with format=%d\n", *pixelFormat);
 
-			if (hidden->Modes[*p96format] == NULL)
+			if (hidden->Modes[*pixelFormat] == NULL)
 			{
 				/* If we haven't already got a list of modes for this
 				 * format, try to build one now
 				 */
-				os4video_PPFtoPF(&sdlformat, *p96format);
-				hidden->Modes[*p96format] = os4video_MakeResArray(&sdlformat);
+				os4video_PIXFtoPF(&sdlformat, *pixelFormat);
+				hidden->Modes[*pixelFormat] = os4video_MakeResArray(&sdlformat);
 			}
 
-			/* Stop searching, if we have modes in this p96 format */
-			if (hidden->Modes[*p96format] != NULL)
+			/* Stop searching, if we have modes in this format */
+			if (hidden->Modes[*pixelFormat] != NULL)
 			{
 				dprintf("Found some\n");
-
 				break;
 			}
 
 			/* Otherwise, no modes found for this format. Try next one */
-			p96format++;
+			pixelFormat++;
 		}
 
-		if (*p96format != RGBFB_NONE)
+		if (*pixelFormat != PIXF_NONE && *pixelFormat < MAX_PIXEL_FORMATS)
 		{
 			/* We found some modes with this format. Return the list */
-			return hidden->Modes[*p96format];
+			return hidden->Modes[*pixelFormat];
 		}
 		else
 		{
 			dprintf("Found no %d-bit modes in any pixel format\n", format->BitsPerPixel);
 
-			/* We found no modes in any p96format at this bpp */
+			/* We found no modes in any format at this bpp */
 			return (SDL_Rect **)NULL;
 		}
 	}
@@ -545,25 +521,31 @@ os4video_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 		/* We have been supplied colour masks. Look for modes
 		 * which match precisely
 		 */
-		RGBFTYPE p96format = os4video_PFtoPPF(format);
+		PIX_FMT pixelFormat = os4video_PFtoPIXF(format);
 
-		dprintf("Listing %d-bit modes with p96 format=%d\n", format->BitsPerPixel, p96format);
+		dprintf("Listing %d-bit modes with format=%d\n", format->BitsPerPixel, pixelFormat);
 
-		if (p96format == RGBFB_NONE)
+		if (pixelFormat >= MAX_PIXEL_FORMATS)
+		{
+			dprintf("Invalid pixel format\n");
+			return (SDL_Rect **)NULL;
+		}
+
+		if (pixelFormat == PIXF_NONE)
 		{
 			dprintf("No modes\n");
 			return (SDL_Rect **)NULL;
 		}
 
-		if (hidden->Modes[p96format])
+		if (hidden->Modes[pixelFormat])
 		{
 			dprintf("Returning prebuilt array\n");
-			return hidden->Modes[p96format];
+			return hidden->Modes[pixelFormat];
 		}
 
-		hidden->Modes[p96format] = os4video_MakeResArray(format);
+		hidden->Modes[pixelFormat] = os4video_MakeResArray(format);
 
-		return hidden->Modes[p96format];
+		return hidden->Modes[pixelFormat];
 	}
 }
 
@@ -577,8 +559,8 @@ openSDLscreen(int width, int height, uint32 modeId)
 	uint32         screen_leftedge = 0;
 
 	/* Get the real width/height of this mode */
-	screen_width  = SDL_IP96->p96GetModeIDAttr(modeId, P96IDA_WIDTH);
-	screen_height = SDL_IP96->p96GetModeIDAttr(modeId, P96IDA_HEIGHT);
+	screen_width  = os4video_GetWidthFromMode(modeId);
+	screen_height = os4video_GetHeightFromMode(modeId);
 
 	/* If requested width is smaller than this mode's width, then centre
 	 * the screen horizontally.
@@ -782,7 +764,7 @@ openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *user
 		/* In windowed mode, use our custom backfill to clear the layer to black for
 		 * high/true-colour screens; otherwise, use the default clear-to-pen-0
 		 * backfill */
-		if (SDL_IP96->p96GetBitMapAttr(screen->RastPort.BitMap, P96BMA_DEPTH) > 8)
+		if (SDL_IGraphics->GetBitMapAttr(screen->RastPort.BitMap, BMA_BITSPERPIXEL) > 8)
 			backfillHook = &blackBackFillHook;
 		else
 			backfillHook = LAYERS_BACKFILL;
@@ -849,7 +831,6 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 	dprintf("Allocating a %dx%dx%d off-screen buffer with rgbtype=%d, hwSurface %d\n",
 		width, height, bpp, pixelFormat, hwSurface);
 
-	/* Allocate private p96 bitmap using the pixel format */
 	offBuffer->bitmap = SDL_IGraphics->AllocBitMapTags(
 		width,
 		height,
@@ -873,8 +854,8 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 		}
 		else
 		{
-			offBuffer->pixels = (void*)SDL_IP96->p96GetBitMapAttr(offBuffer->bitmap, P96BMA_MEMORY);
-			offBuffer->pitch  =        SDL_IP96->p96GetBitMapAttr(offBuffer->bitmap, P96BMA_BYTESPERROW);
+			offBuffer->pixels = (void *)SDL_IGraphics->GetBitMapAttr(offBuffer->bitmap, BMA_BASEADDRESS);
+			offBuffer->pitch  = SDL_IGraphics->GetBitMapAttr(offBuffer->bitmap, BMA_BYTESPERROW);
 		}
 
 		dprintf("pixels %p, pitch %d\n", offBuffer->pixels, offBuffer->pitch);
@@ -1094,10 +1075,10 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		hidden->scr = 0;
 
 		/* Check depth of screen */
-		hidden->screenP96Format = SDL_IP96->p96GetBitMapAttr(scr->RastPort.BitMap, P96BMA_RGBFORMAT);
-		scr_depth				= os4video_RTGFB2Bits(hidden->screenP96Format);
+		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(scr->RastPort.BitMap, BMA_PIXELFORMAT);
+		scr_depth = os4video_PIXF2Bits(hidden->screenNativeFormat);
 
-		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenP96Format);
+		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenNativeFormat);
 
 		if (scr_depth > 8)
 		{
@@ -1154,10 +1135,10 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		 * the early Radeon drivers only supported little-endian modes) which
 		 * we cannot express to SDL with a simple shift and mask alone.
 		 */
-		fmt = SDL_IP96->p96GetModeIDAttr(modeId, P96IDA_RGBFORMAT);
+		fmt = os4video_GetPixelFormatFromMode(modeId);
 
-		if (fmt == RGBFB_R5G6B5PC || fmt == RGBFB_R5G5B5PC ||
-			fmt == RGBFB_B5G6R5PC || fmt == RGBFB_B5G5R5PC)
+		if (fmt == PIXF_R5G6B5PC || fmt == PIXF_R5G5B5PC ||
+			fmt == PIXF_B5G6R5PC || fmt == PIXF_B5G5R5PC)
 		{
 			dprintf("Unsupported mode, switching to off-screen rendering\n");
 			flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF);
@@ -1172,25 +1153,25 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 			_this->UpdateRects = os4video_UpdateRectsNone;
 		}
 
-		hidden->screenP96Format = SDL_IP96->p96GetBitMapAttr(scr->RastPort.BitMap, P96BMA_RGBFORMAT);
-		scr_depth       		= os4video_RTGFB2Bits(hidden->screenP96Format);
+		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(scr->RastPort.BitMap, BMA_PIXELFORMAT);
+		scr_depth = os4video_PIXF2Bits(hidden->screenNativeFormat);
 
-		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenP96Format);
+		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenNativeFormat);
 	}
 
 	/*
 	 * Set up SDL pixel format for surface
 	 */
-	os4video_PPFtoPF(&hidden->screenFormat, hidden->screenP96Format);
+	os4video_PIXFtoPF(&hidden->screenSdlFormat, hidden->screenNativeFormat);
 
 	if (bpp == scr_depth)
 	{
 		/* Set pixel format of surface to match the screen's format */
 		SDL_ReallocFormat (current, bpp,
-						   hidden->screenFormat.Rmask,
-						   hidden->screenFormat.Gmask,
-						   hidden->screenFormat.Bmask,
-						   hidden->screenFormat.Amask);
+						   hidden->screenSdlFormat.Rmask,
+						   hidden->screenSdlFormat.Gmask,
+						   hidden->screenSdlFormat.Bmask,
+						   hidden->screenSdlFormat.Amask);
 	}
 	else
 	{
@@ -1527,22 +1508,22 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 		/* Windowed mode, or palette on direct color screen */
 		dprintf("Windowed\n");
 		dprintf("Using color format %d bpp, masks = %p, %p, %p\n",
-			hidden->screenFormat.BitsPerPixel,
-			hidden->screenFormat.Rmask,
-			hidden->screenFormat.Gmask,
-			hidden->screenFormat.Bmask);
+			hidden->screenSdlFormat.BitsPerPixel,
+			hidden->screenSdlFormat.Rmask,
+			hidden->screenSdlFormat.Gmask,
+			hidden->screenSdlFormat.Bmask);
 
-		switch (hidden->screenP96Format)
+		switch (hidden->screenNativeFormat)
 		{
-			case RGBFB_R5G6B5PC:
-			case RGBFB_R5G5B5PC:
-			case RGBFB_B5G6R5PC:
-			case RGBFB_B5G5R5PC:
+			case PIXF_R5G6B5PC:
+			case PIXF_R5G5B5PC:
+			case PIXF_B5G6R5PC:
+			case PIXF_B5G5R5PC:
 				dprintf("Little endian screen format\n");
 				for (i = firstcolor; i < firstcolor+ncolors; i++)
 				{
 					hidden->offScreenBuffer.palette[i] =
-						swapshort(SDL_MapRGB(&hidden->screenFormat,
+						swapshort(SDL_MapRGB(&hidden->screenSdlFormat,
 							colors[i-firstcolor].r,
 							colors[i-firstcolor].g,
 							colors[i-firstcolor].b));
@@ -1554,7 +1535,7 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 				for (i = firstcolor; i < firstcolor+ncolors; i++)
 				{
 					hidden->offScreenBuffer.palette[i] =
-						SDL_MapRGB(&hidden->screenFormat,
+						SDL_MapRGB(&hidden->screenSdlFormat,
 							colors[i-firstcolor].r,
 							colors[i-firstcolor].g,
 							colors[i-firstcolor].b);

@@ -29,55 +29,12 @@
 
 //#define DEBUG_FINDMODE		/* Define me to get verbose output when searching for a screenmode */
 
-
-#include <libraries/Picasso96.h>
-#include <proto/Picasso96API.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
 
 #include <limits.h>
 
 extern struct GraphicsIFace *SDL_IGraphics;
-extern struct P96IFace      *SDL_IP96;
-
-uint32
-os4video_PFtoPPF(const SDL_PixelFormat *vf)
-{
-	if (vf->BitsPerPixel == 8)
-		return RGBFB_CLUT;
-	if (vf->BitsPerPixel == 24)
-	{
-		if (vf->Rmask == 0x00FF0000 && vf->Gmask == 0x0000FF00 && vf->Bmask == 0x000000FF)
-			return RGBFB_R8G8B8;
-		if (vf->Rmask == 0x000000FF && vf->Gmask == 0x0000FF00 && vf->Bmask == 0x00FF0000)
-			return RGBFB_B8G8R8;
-	}
-	else if (vf->BitsPerPixel == 32)
-	{
-		if (vf->Rmask == 0xFF000000 && vf->Gmask == 0x00FF0000 && vf->Bmask == 0x0000FF00)
-			return RGBFB_R8G8B8A8;
-		if (vf->Rmask == 0x00FF0000 && vf->Gmask == 0x0000FF00 && vf->Bmask == 0x000000FF)
-			return RGBFB_A8R8G8B8;
-		if (vf->Bmask == 0x00FF0000 && vf->Gmask == 0x0000FF00 && vf->Rmask == 0x000000FF)
-			return RGBFB_A8B8G8R8;
-		if (vf->Bmask == 0xFF000000 && vf->Gmask == 0x00FF0000 && vf->Rmask == 0x0000FF00)
-			return RGBFB_B8G8R8A8;
-	}
-	else if (vf->BitsPerPixel == 16)
-	{
-		if (vf->Rmask == 0xf800 && vf->Gmask == 0x07e0 && vf->Bmask == 0x001f)
-			return RGBFB_R5G6B5;
-		if (vf->Rmask == 0x7C00 && vf->Gmask == 0x03e0 && vf->Bmask == 0x001f)
-			return RGBFB_R5G5B5;
-	}
-	else if (vf->BitsPerPixel == 15)
-	{
-		if (vf->Rmask == 0x7C00 && vf->Gmask == 0x03e0 && vf->Bmask == 0x001f)
-			return RGBFB_R5G5B5;
-	}
-
-	return RGBFB_NONE;
-}
 
 PIX_FMT
 os4video_PFtoPIXF(const SDL_PixelFormat *vf)
@@ -119,20 +76,20 @@ os4video_PFtoPIXF(const SDL_PixelFormat *vf)
 }
 
 BOOL
-os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
+os4video_PIXFtoPF(SDL_PixelFormat *vformat, PIX_FMT pixf)
 {
 	vformat->Rmask = vformat->Gmask = vformat->Bmask = vformat->Amask = 0;
 	vformat->Rshift = vformat->Gshift = vformat->Bshift = vformat->Ashift = 0;
 	vformat->Rloss = vformat->Gloss = vformat->Bloss = vformat->Aloss = 8;
 
-	switch(p96Format)
+	switch(pixf)
 	{
-	case RGBFB_CLUT:
+	case PIXF_CLUT:
 		vformat->BitsPerPixel = 8;
 		vformat->BytesPerPixel = 1;
 		break;
 
-    case RGBFB_R8G8B8:
+	case PIXF_R8G8B8:
 		vformat->BitsPerPixel = 24;
 		vformat->BytesPerPixel = 3;
 
@@ -147,10 +104,9 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Bmask = 0x000000FF;
 		vformat->Bshift = 0;
 		vformat->Bloss = 0;
-
 		break;
 
-    case RGBFB_B8G8R8:
+	case PIXF_B8G8R8:
 		vformat->BitsPerPixel = 24;
 		vformat->BytesPerPixel = 3;
 
@@ -167,8 +123,8 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Bloss = 0;
 		break;
 
-    case RGBFB_R5G6B5PC:
-    case RGBFB_R5G6B5:
+	case PIXF_R5G6B5PC:
+	case PIXF_R5G6B5:
 		// We handle these equivalent and do swapping elsewhere.
 		// PC format cannot be expressed by mask/shift alone
 		vformat->BitsPerPixel = 16;
@@ -187,8 +143,8 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Bloss = 3;
 		break;
 
-    case RGBFB_R5G5B5PC:
-    case RGBFB_R5G5B5:
+	case PIXF_R5G5B5PC:
+	case PIXF_R5G5B5:
 		vformat->BitsPerPixel = 15;
 		vformat->BytesPerPixel = 2;
 
@@ -205,11 +161,7 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Bloss = 3;
 		break;
 
-    case RGBFB_B5G6R5PC:
-    case RGBFB_B5G5R5PC:
-		return FALSE; // L8r
-
-    case RGBFB_A8R8G8B8:
+	case PIXF_A8R8G8B8:
 		vformat->BitsPerPixel = 32;
 		vformat->BytesPerPixel = 4;
 
@@ -228,10 +180,9 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Amask = 0xFF000000;
 		vformat->Ashift = 24;
 		vformat->Aloss = 0;
-
 		break;
 
-    case RGBFB_A8B8G8R8:
+	case PIXF_A8B8G8R8:
 		vformat->BitsPerPixel = 32;
 		vformat->BytesPerPixel = 4;
 
@@ -250,10 +201,9 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Amask = 0xFF000000;
 		vformat->Ashift = 24;
 		vformat->Aloss = 0;
-
 		break;
 
-    case RGBFB_R8G8B8A8:
+	case PIXF_R8G8B8A8:
 		vformat->BitsPerPixel = 32;
 		vformat->BytesPerPixel = 4;
 
@@ -274,7 +224,7 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		vformat->Rloss = 0;
 		break;
 
-    case RGBFB_B8G8R8A8:
+	case PIXF_B8G8R8A8:
 		vformat->BitsPerPixel = 32;
 		vformat->BytesPerPixel = 4;
 
@@ -296,105 +246,220 @@ os4video_PPFtoPF(SDL_PixelFormat *vformat, uint32 p96Format)
 		break;
 
 	default:
+		dprintf("Unknown pixel format %d\n", pixf);
 		return FALSE;
 	}
 
 	return TRUE;
 }
 
-BOOL
-os4video_PixelFormatFromModeID(SDL_PixelFormat *vformat, uint32 displayID)
+static APTR
+os4video_GetDisplayInfoHandle(uint32 displayId)
 {
-	if (SDL_IP96->p96GetModeIDAttr(displayID, P96IDA_ISP96) == FALSE)
-		return FALSE;
+	APTR handle = SDL_IGraphics->FindDisplayInfo(displayId);
 
-	return os4video_PPFtoPF(vformat, SDL_IP96->p96GetModeIDAttr(displayID, P96IDA_RGBFORMAT));
-}
-
-BOOL
-os4video_CmpPixelFormat(const SDL_PixelFormat *f, const SDL_PixelFormat *g)
-{
-	if (f->BitsPerPixel != g->BitsPerPixel)
-		return FALSE;
-	if (f->BytesPerPixel != g->BytesPerPixel)
-		return FALSE;
-	if (f->Amask != g->Amask || f->Rmask != g->Rmask || f->Gmask != g->Gmask || f->Bmask != g->Bmask)
-		return FALSE;
-	if (f->Ashift != g->Ashift || f->Rshift != g->Rshift || f->Gshift != g->Gshift || f->Bshift != g->Bshift)
-		return FALSE;
-	if (f->Aloss != g->Aloss || f->Rloss != g->Rloss || f->Gloss != g->Gloss || f->Bloss != g->Bloss)
-		return FALSE;
-
-	return TRUE;
-}
-
-uint32
-os4video_CountModes(const SDL_PixelFormat *format)
-{
-	uint32
-		mode = INVALID_ID,
-		mode_count = 0;
-
-	/* TODO: We need to handle systems with muliple monitors -
-	 * this should probably count modes for a specific monitor
-	 */
-    while ((mode = SDL_IGraphics->NextDisplayInfo(mode)) != INVALID_ID)
+	if (!handle)
 	{
-		if ((mode & 0xFF000000) == 0xFF000000)
+		dprintf("FindDisplayInfo() failed\n");
+	}
+
+	return handle;
+}
+
+static BOOL
+os4video_ReadDisplayInfo(uint32 displayId, struct DisplayInfo *dispInfo)
+{
+	APTR handle = os4video_GetDisplayInfoHandle(displayId);
+
+	if (handle)
+	{
+		if (SDL_IGraphics->GetDisplayInfoData(handle, (UBYTE *)dispInfo, sizeof(*dispInfo), DTAG_DISP, 0) > 0)
 		{
-			/* I think this means the mode is disabled... */
-			continue;
+			return TRUE;
 		}
+		else
+		{
+			dprintf("GetDisplayInfoData() failed\n");
+		}
+	}
 
-		SDL_PixelFormat g;
+	return FALSE;
+}
 
-		if (FALSE == os4video_PixelFormatFromModeID(&g, mode))
-			continue;
+static BOOL
+os4video_ReadDimensionInfo(uint32 displayId, struct DimensionInfo *dimInfo)
+{
+	APTR handle = os4video_GetDisplayInfoHandle(displayId);
 
-		if (FALSE == os4video_CmpPixelFormat(format, &g))
-			continue;
+	if (handle)
+	{
+		if (SDL_IGraphics->GetDisplayInfoData(handle, (UBYTE *)dimInfo, sizeof(*dimInfo), DTAG_DIMS, 0) > 0)
+		{
+			return TRUE;
+		}
+		else
+		{
+			dprintf("GetDisplayInfoData() failed\n");
+		}
+	}
 
-		mode_count++;
-    }
-    return mode_count;
+	return FALSE;
+}
+
+static BOOL
+os4video_IsRtgMode(uint32 displayId)
+{
+	struct DisplayInfo dispInfo;
+	
+	if (os4video_ReadDisplayInfo(displayId, &dispInfo))
+	{
+		if (dispInfo.PropertyFlags & DIPF_IS_RTG)
+		{
+			return TRUE;
+		}	 
+	}
+
+	return FALSE;
+}
+
+PIX_FMT
+os4video_GetPixelFormatFromMode(uint32 displayId)
+{
+	struct DisplayInfo dispInfo;
+
+	if (os4video_ReadDisplayInfo(displayId, &dispInfo))
+	{
+		return dispInfo.PixelFormat;
+	}
+
+	return PIXF_NONE;
 }
 
 uint32
-os4video_RTGFB2Bits(uint32 rgbfmt)
+os4video_GetWidthFromMode(uint32 displayId)
 {
-	switch(rgbfmt)
+	struct DimensionInfo dimInfo;
+
+	if (os4video_ReadDimensionInfo(displayId, &dimInfo))
 	{
-		case RGBFB_CLUT:
-			return 8;
-
-		case RGBFB_R8G8B8:
-		case RGBFB_B8G8R8:
-			return 24;
-
-		case RGBFB_R5G6B5PC:
-		case RGBFB_R5G6B5:
-		case RGBFB_B5G6R5PC:
-			return 16;
-
-		case RGBFB_B5G5R5PC:
-		case RGBFB_R5G5B5PC:
-		case RGBFB_R5G5B5:
-			return 15;
-
-		case RGBFB_A8R8G8B8:
-		case RGBFB_A8B8G8R8:
-		case RGBFB_R8G8B8A8:
-		case RGBFB_B8G8R8A8:
-			return 32;
+		return dimInfo.Nominal.MaxX - dimInfo.Nominal.MinX + 1;
 	}
 
 	return 0;
 }
 
 uint32
+os4video_GetHeightFromMode(uint32 displayId)
+{
+	struct DimensionInfo dimInfo;
+
+	if (os4video_ReadDimensionInfo(displayId, &dimInfo))
+	{
+		return dimInfo.Nominal.MaxY - dimInfo.Nominal.MinY + 1;
+	}
+
+	return 0;
+}
+
+BOOL
+os4video_PixelFormatFromModeID(SDL_PixelFormat *vformat, uint32 displayId)
+{
+	if (!os4video_IsRtgMode(displayId))
+	{
+		//dprintf("Skipping non-RTG mode ID 0x%X\n", displayId);
+		return FALSE;
+	}
+
+	return os4video_PIXFtoPF(vformat, os4video_GetPixelFormatFromMode(displayId));
+}
+
+static BOOL
+os4video_CmpPixelFormat(const SDL_PixelFormat *f, const SDL_PixelFormat *g)
+{
+	if (f->BitsPerPixel != g->BitsPerPixel)
+	{
+		return FALSE;
+	}
+
+	if (f->BytesPerPixel != g->BytesPerPixel)
+	{
+	    return FALSE;
+	}
+
+	if (f->Amask != g->Amask)
+	{
+		// HACK: SDL ignores alpha channel during VideoInit procedure and doesn't store it.
+		// If SDL_ListModes() is called without format parameter, we have mismatching formats,
+		// that's why alpha check is ignored here
+		dprintf("Alpha masks differ\n");
+	}
+
+	if (/*f->Amask != g->Amask ||*/
+		f->Rmask != g->Rmask ||
+		f->Gmask != g->Gmask ||
+		f->Bmask != g->Bmask)
+	{
+		return FALSE;
+	}
+
+	if (f->Ashift != g->Ashift)
+	{
+		dprintf("Alpha shifts differ\n");
+	}
+
+	if (/*f->Ashift != g->Ashift ||*/
+		f->Rshift != g->Rshift ||
+		f->Gshift != g->Gshift ||
+		f->Bshift != g->Bshift)
+	{
+	    return FALSE;
+	}
+
+	if (f->Aloss != g->Aloss)
+	{
+		dprintf("Alpha losses differ\n");
+	}
+
+	if (/*f->Aloss != g->Aloss ||*/
+		f->Rloss != g->Rloss ||
+		f->Gloss != g->Gloss ||
+		f->Bloss != g->Bloss)
+	{
+	    return FALSE;
+	}
+
+	return TRUE;
+}
+
+static uint32
+os4video_CountModes(const SDL_PixelFormat *format)
+{
+	uint32 mode = INVALID_ID;
+	uint32 mode_count = 0;
+
+	/* TODO: We need to handle systems with multiple monitors -
+	 * this should probably count modes for a specific monitor
+	 */
+    while ((mode = SDL_IGraphics->NextDisplayInfo(mode)) != INVALID_ID)
+	{
+		SDL_PixelFormat pf;
+
+		if (FALSE == os4video_PixelFormatFromModeID(&pf, mode))
+			continue;
+
+		if (FALSE == os4video_CmpPixelFormat(format, &pf))
+			continue;
+
+		mode_count++;
+    }
+
+    return mode_count;
+}
+
+uint32
 os4video_PIXF2Bits(PIX_FMT rgbfmt)
 {
-	switch(rgbfmt)
+	switch (rgbfmt)
 	{
 		case PIXF_CLUT:
 			return 8;
@@ -418,17 +483,21 @@ os4video_PIXF2Bits(PIX_FMT rgbfmt)
 		case PIXF_R8G8B8A8:
 		case PIXF_B8G8R8A8:
 			return 32;
+
+		default:
+			dprintf("Unknown pixelformat %d\n", rgbfmt);
+			break;
 	}
 
 	return 0;
 }
 
 static void
-logMode (uint32 mode, uint32 width, uint32 height, uint32 format, const char *message)
+logMode(uint32 mode, uint32 width, uint32 height, uint32 format, const char *message)
 {
 #ifdef DEBUG_FINDMODE
-   IExec->DebugPrintF("  Mode:%08lx (%4d x %4d x %2d : format = %2d) - %s\n",
-		      mode, width, height, os4video_RTGFB2Bits(format), format, message);
+    dprintf("Mode:%08lx (%4d x %4d x %2d : format = %2d) - %s\n",
+		mode, width, height, os4video_RTGFB2Bits(format), format, message);
 #endif
 }
 
@@ -440,7 +509,7 @@ logMode (uint32 mode, uint32 width, uint32 height, uint32 format, const char *me
  * For now we simply pick the last mode in the display database which matches.
  */
 static uint32
-findModeWithPixelFormat (uint32 width, uint32 height, uint32 pixelFormat, uint32 *outWidth, uint32 *outHeight)
+findModeWithPixelFormat(uint32 width, uint32 height, PIX_FMT pixelFormat, uint32 *outWidth, uint32 *outHeight)
 {
 	uint32 bestMode   = INVALID_ID;
 	uint32 bestWidth  = UINT_MAX;
@@ -452,22 +521,19 @@ findModeWithPixelFormat (uint32 width, uint32 height, uint32 pixelFormat, uint32
 
 	while ((mode = SDL_IGraphics->NextDisplayInfo(mode)) != INVALID_ID)
 	{
-		uint32 modeFormat;
+		PIX_FMT modeFormat;
 		uint32 modeWidth;
 		uint32 modeHeight;
 
-		if (SDL_IP96->p96GetModeIDAttr(mode,  P96IDA_ISP96) == FALSE)
+		if (!os4video_IsRtgMode(mode))
 		{
-			dprintf("Skipping non-P96 mode: %08lx\n", mode);
+			//dprintf("Skipping non-RTG mode: %08lx\n", mode);
 			continue;
 		}
 
-		if ((mode & 0xFF000000) == 0xFF000000)
-			continue; /* Mode is unavailable? */
-
-		modeWidth  = SDL_IP96->p96GetModeIDAttr(mode, P96IDA_WIDTH);
-		modeHeight = SDL_IP96->p96GetModeIDAttr(mode, P96IDA_HEIGHT);
-		modeFormat = SDL_IP96->p96GetModeIDAttr(mode, P96IDA_RGBFORMAT);
+		modeWidth  = os4video_GetWidthFromMode(mode);
+		modeHeight = os4video_GetHeightFromMode(mode);
+		modeFormat = os4video_GetPixelFormatFromMode(mode);
 
 		if (pixelFormat != modeFormat)
 		{
@@ -509,14 +575,15 @@ findModeWithPixelFormat (uint32 width, uint32 height, uint32 pixelFormat, uint32
  * Get a list of suitable pixel formats for this bpp sorted by preference.
  * For example, we prefer big-endian modes over little-endian modes
  */
-const RGBFTYPE *os4video_GetP96FormatsForBpp (uint32 bpp)
+const PIX_FMT *
+os4video_GetPixelFormatsForBpp(uint32 bpp)
 {
-	static const RGBFTYPE preferredFmts_8bit[]  = { RGBFB_CLUT, RGBFB_NONE};
-	static const RGBFTYPE preferredFmts_15bit[] = { RGBFB_R5G5B5, RGBFB_R5G5B5PC, RGBFB_NONE};
-	static const RGBFTYPE preferredFmts_16bit[] = { RGBFB_R5G6B5, RGBFB_R5G6B5PC, RGBFB_NONE};
-	static const RGBFTYPE preferredFmts_24bit[] = { RGBFB_R8G8B8, RGBFB_B8G8R8, RGBFB_NONE};
-	static const RGBFTYPE preferredFmts_32bit[] = { RGBFB_A8R8G8B8, RGBFB_R8G8B8A8, RGBFB_B8G8R8A8, /*RGBFB_A8R8G8B8 duplicate?*/ RGBFB_NONE };
-	static const RGBFTYPE unsupportedFmt[]      = { RGBFB_NONE };
+	static const PIX_FMT preferredFmts_8bit[]  = { PIXF_CLUT, PIXF_NONE };
+	static const PIX_FMT preferredFmts_15bit[] = { PIXF_R5G5B5, PIXF_R5G5B5PC, PIXF_NONE };
+	static const PIX_FMT preferredFmts_16bit[] = { PIXF_R5G6B5, PIXF_R5G6B5PC, PIXF_NONE };
+	static const PIX_FMT preferredFmts_24bit[] = { PIXF_R8G8B8, PIXF_B8G8R8, PIXF_NONE };
+	static const PIX_FMT preferredFmts_32bit[] = { PIXF_A8R8G8B8, PIXF_R8G8B8A8, PIXF_B8G8R8A8, PIXF_NONE };
+	static const PIX_FMT unsupportedFmt[]      = { PIXF_NONE };
 
 	switch (bpp)
 	{
@@ -540,18 +607,16 @@ const RGBFTYPE *os4video_GetP96FormatsForBpp (uint32 bpp)
 uint32
 os4video_FindMode(uint32 width, uint32 height, uint32 bpp, uint32 flags)
 {
-	/* Get a list of p96 formats for this bpp */
-	const RGBFTYPE *p96Format = os4video_GetP96FormatsForBpp(bpp);
+	const PIX_FMT *format = os4video_GetPixelFormatsForBpp(bpp);
 
 	uint32 foundWidth = 0;
 	uint32 foundHeight = 0;
 	uint32 foundMode = INVALID_ID;
 
-	/* Try each p96 format in the list */
-	while (*p96Format != RGBFB_NONE)
+	while (*format != PIXF_NONE)
 	{
-		/* And see if there is a mode of sufficient size for the p96 format */
-		foundMode = findModeWithPixelFormat (width, height, *p96Format, &foundWidth, &foundHeight);
+		/* And see if there is a mode of sufficient size for the format */
+		foundMode = findModeWithPixelFormat(width, height, *format, &foundWidth, &foundHeight);
 
 		if (foundMode != INVALID_ID)
 		{
@@ -561,7 +626,7 @@ os4video_FindMode(uint32 width, uint32 height, uint32 bpp, uint32 flags)
 		}
 
 		/* Otherwise try the next format */
-		p96Format++;
+		format++;
 	}
 
 	return INVALID_ID;
@@ -570,11 +635,12 @@ os4video_FindMode(uint32 width, uint32 height, uint32 bpp, uint32 flags)
 /*
  * Insert mode <rect> in <rectArray> queued by reverse order of size
  */
-static void queueMode(const SDL_Rect **rectArray, const SDL_Rect *rect, uint32 count)
+static void
+queueMode(const SDL_Rect **rectArray, const SDL_Rect *rect, uint32 count)
 {
 	uint32 i = 0;
 
-	while (i<count)
+	while (i < count)
 	{
 		if ((rectArray[i]->w <= rect->w) && (rectArray[i]->h <= rect->h))
 			break;
@@ -595,11 +661,10 @@ static void queueMode(const SDL_Rect **rectArray, const SDL_Rect *rect, uint32 c
 static void
 fillModeArray(const SDL_PixelFormat *format, const SDL_Rect **rectArray, SDL_Rect *rects, uint32 maxCount)
 {
-	uint32
-		mode = INVALID_ID,
-		width = 0,
-		height = 0,
-		count = 0;
+	uint32 mode = INVALID_ID;
+	uint32 width = 0;
+	uint32 height = 0;
+	uint32 count = 0;
 
 	/*
 	 * SDL wants the mode list in reverse order by mode size, so we queue
@@ -612,21 +677,15 @@ fillModeArray(const SDL_PixelFormat *format, const SDL_Rect **rectArray, SDL_Rec
 	 */
 	while (maxCount && (mode = SDL_IGraphics->NextDisplayInfo(mode)) != INVALID_ID)
 	{
-		if ((mode & 0xFF000000) == 0xFF000000)
-		{
-			/* I think this means the mode is disabled... */
-			continue;
-		}
+		SDL_PixelFormat pf;
 
-		SDL_PixelFormat g;
-
-		if (FALSE == os4video_PixelFormatFromModeID(&g, mode))
+		if (FALSE == os4video_PixelFormatFromModeID(&pf, mode))
 			continue;
-		if (FALSE == os4video_CmpPixelFormat(format, &g))
+		if (FALSE == os4video_CmpPixelFormat(format, &pf))
 			continue;
 
-		width =  SDL_IP96->p96GetModeIDAttr(mode, P96IDA_WIDTH);
-		height = SDL_IP96->p96GetModeIDAttr(mode, P96IDA_HEIGHT);
+		width  = os4video_GetWidthFromMode(mode);
+		height = os4video_GetHeightFromMode(mode);
 
 		(*rects).x = 0;
 		(*rects).y = 0;
@@ -644,19 +703,17 @@ fillModeArray(const SDL_PixelFormat *format, const SDL_Rect **rectArray, SDL_Rec
 SDL_Rect **
 os4video_MakeResArray(const SDL_PixelFormat *f)
 {
-	uint32
-		allocSize,
-		modeCnt;
+	uint32 allocSize;
+	uint32 modeCnt;
 
-	SDL_Rect
-		*rectBase = NULL,
-		**rectPtr = NULL;
+	SDL_Rect *rectBase = NULL;
+	SDL_Rect **rectPtr = NULL;
 
 	modeCnt = os4video_CountModes(f);
 
-	if(modeCnt) {
+	if (modeCnt) {
 		allocSize = (modeCnt+1) * sizeof(SDL_Rect **) + modeCnt * sizeof(SDL_Rect);
-		dprintf("%d video modes (allocating a %d array)\n", modeCnt, allocSize);
+		dprintf("%d video modes (allocating a %d-byte array)\n", modeCnt, allocSize);
 
 		rectPtr = (SDL_Rect **)IExec->AllocVecTags(allocSize, AVT_Type, MEMF_SHARED, TAG_DONE);
 		if (rectPtr)
@@ -680,7 +737,6 @@ SaveAllocPooled(struct SDL_PrivateVideoData *hidden, uint32 size)
 
 	return res;
 }
-
 
 void *
 SaveAllocVecPooled(struct SDL_PrivateVideoData *hidden, uint32 size)
