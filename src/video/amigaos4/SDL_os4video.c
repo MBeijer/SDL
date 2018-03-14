@@ -843,28 +843,43 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 
 	if (offBuffer->bitmap)
 	{
-		offBuffer->width  =  width;
-		offBuffer->height =  height;
-		offBuffer->format = *format;
+        offBuffer->width  = width;
+        offBuffer->height = height;
+        offBuffer->format = *format;
+        offBuffer->pixels = NULL;
+        offBuffer->pitch = 0;
 
-		if (hwSurface)
-		{
-			offBuffer->pixels = NULL;
-			offBuffer->pitch = 0;
+        if (!hwSurface)
+        {
+            APTR baseAddress;
+            uint32 bytesPerRow;
+
+            APTR lock = SDL_IGraphics->LockBitMapTags(
+                offBuffer->bitmap,
+                LBM_BaseAddress, &baseAddress,
+                LBM_BytesPerRow, &bytesPerRow,
+                TAG_DONE);
+
+            if (lock)
+            {
+                offBuffer->pixels = baseAddress;
+                offBuffer->pitch = bytesPerRow;
+
+                SDL_IGraphics->UnlockBitMap(lock);
+            }
+            else
+            {
+                dprintf("Failed to lock bitmap\n");
+            }
 		}
-		else
-		{
-			offBuffer->pixels = (void *)SDL_IGraphics->GetBitMapAttr(offBuffer->bitmap, BMA_BASEADDRESS);
-			offBuffer->pitch  = SDL_IGraphics->GetBitMapAttr(offBuffer->bitmap, BMA_BYTESPERROW);
-		}
 
-		dprintf("pixels %p, pitch %d\n", offBuffer->pixels, offBuffer->pitch);
+        dprintf("pixels %p, pitch %d\n", offBuffer->pixels, offBuffer->pitch);
 
-		success = TRUE;
+        success = TRUE;
 	}
 	else
 	{
-		dprintf ("Failed to allocate off-screen buffer\n");
+		dprintf("Failed to allocate off-screen buffer\n");
 	}
 
 	return success;
