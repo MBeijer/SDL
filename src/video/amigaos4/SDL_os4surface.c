@@ -645,6 +645,11 @@ os4video_FlipHWSurface(_THIS, SDL_Surface *surface)
 			dbData->SafeToWrite = FALSE;
 			dbData->SafeToFlip  = FALSE;
 		}
+		else
+		{
+			dprintf("ChangeScreenBuffer() failed\n");
+		}
+
 		if (!dbData->SafeToWrite)
 		{
 			/* If the screen has just been flipped, wait until gfx.lib signals us
