@@ -1312,15 +1312,15 @@ get_flags_str(Uint32 flags)
 
     buffer[0] = '\0';
 
-	if (flags & SDL_ANYFORMAT)					   SDL_strlcat(buffer, "ANYFORMAT ", sizeof(buffer));
-	if (flags & SDL_HWSURFACE)					   SDL_strlcat(buffer, "HWSURFACE ", sizeof(buffer));
-	if (flags & SDL_HWPALETTE)					   SDL_strlcat(buffer, "HWPALETTE ", sizeof(buffer));
-	if (flags & SDL_DOUBLEBUF)					   SDL_strlcat(buffer, "DOUBLEFUF ", sizeof(buffer));
-	if (flags & SDL_FULLSCREEN)					   SDL_strlcat(buffer, "FULLSCREEN ", sizeof(buffer));
-	if (flags & SDL_OPENGL)						   SDL_strlcat(buffer, "OPENGL ", sizeof(buffer));
-	if ((flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT)	SDL_strlcat(buffer, "OPENGLBLIT ", sizeof(buffer));
-	if (flags & SDL_RESIZABLE)					   SDL_strlcat(buffer, "RESIZEABLE ", sizeof(buffer));
-	if (flags & SDL_NOFRAME)					   SDL_strlcat(buffer, "NOFRAME ", sizeof(buffer));
+	if (flags & SDL_ANYFORMAT)                      SDL_strlcat(buffer, "ANYFORMAT ", sizeof(buffer));
+	if (flags & SDL_HWSURFACE)                      SDL_strlcat(buffer, "HWSURFACE ", sizeof(buffer));
+	if (flags & SDL_HWPALETTE)                      SDL_strlcat(buffer, "HWPALETTE ", sizeof(buffer));
+	if (flags & SDL_DOUBLEBUF)                      SDL_strlcat(buffer, "DOUBLEBUF ", sizeof(buffer));
+	if (flags & SDL_FULLSCREEN)                     SDL_strlcat(buffer, "FULLSCREEN ", sizeof(buffer));
+	if (flags & SDL_OPENGL)                         SDL_strlcat(buffer, "OPENGL ", sizeof(buffer));
+	if ((flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT) SDL_strlcat(buffer, "OPENGLBLIT ", sizeof(buffer));
+	if (flags & SDL_RESIZABLE)                      SDL_strlcat(buffer, "RESIZEABLE ", sizeof(buffer));
+	if (flags & SDL_NOFRAME)                        SDL_strlcat(buffer, "NOFRAME ", sizeof(buffer));
 
 	return buffer;
 }
