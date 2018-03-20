@@ -111,12 +111,12 @@ struct IconIFace		*SDL_IIcon;
 struct WorkbenchIFace	*SDL_IWorkbench;
 struct KeymapIFace		*SDL_IKeymap;
 
-#define MIN_LIB_VERSION	51
+#define MIN_LIB_VERSION	54
 
 static BOOL
 open_libraries(void)
 {
-	gfxbase       = IExec->OpenLibrary("graphics.library", 54);
+	gfxbase       = IExec->OpenLibrary("graphics.library", MIN_LIB_VERSION);
 	layersbase    = IExec->OpenLibrary("layers.library", MIN_LIB_VERSION);
 	intuitionbase = IExec->OpenLibrary("intuition.library", MIN_LIB_VERSION);
 	iconbase      = IExec->OpenLibrary("icon.library", MIN_LIB_VERSION);
@@ -263,8 +263,9 @@ os4video_CreateDevice(int devnum)
 	os4video_device->hidden = (struct SDL_PrivateVideoData *)IExec->AllocVecTags(sizeof(struct SDL_PrivateVideoData), AVT_ClearWithValue, 0, AVT_Type, MEMF_SHARED, TAG_DONE );
 	if (!os4video_device->hidden)
 	{
-		SDL_OutOfMemory();
 		dprintf("No memory for private data\n");
+		SDL_OutOfMemory();
+
 		IExec->FreeVec(os4video_device);
 		return 0;
 	}
@@ -274,28 +275,31 @@ os4video_CreateDevice(int devnum)
 		goto fail;
 
 	/* Create the pool we'll be using (Shared, might be used from threads) */
-	os4video_device->hidden->pool = IExec->AllocSysObjectTags( ASOT_MEMPOOL,
+	os4video_device->hidden->pool = IExec->AllocSysObjectTags(ASOT_MEMPOOL,
 		ASOPOOL_MFlags,    MEMF_SHARED,
 		ASOPOOL_Threshold, 16384,
 		ASOPOOL_Puddle,    16384,
-		TAG_DONE );
+		TAG_DONE);
 
 	if (!os4video_device->hidden->pool)
 		goto fail;
 
 	os4video_device->hidden->mouse = IExec->AllocVecTags( 8, AVT_ClearWithValue, 0, AVT_Type, MEMF_SHARED, TAG_DONE );
 
-	os4video_device->hidden->userPort = IExec->AllocSysObject(ASOT_PORT, 0);
+	os4video_device->hidden->userPort = IExec->AllocSysObject(ASOT_PORT, NULL);
 
 	if (!os4video_device->hidden->userPort)
 		goto fail;
 
-	os4video_device->hidden->appPort = IExec->AllocSysObject(ASOT_PORT, 0);
+	os4video_device->hidden->appPort = IExec->AllocSysObject(ASOT_PORT, NULL);
 	if (!os4video_device->hidden->appPort)
 		goto fail;
 
 	if (!open_libraries())
+	{
+		dprintf("Failed to open libraries\n");
 		goto fail;
+	}
 
 	SDL_strlcpy(os4video_device->hidden->currentCaption, "SDL_Window", 128);
 	SDL_strlcpy(os4video_device->hidden->currentIconCaption, "SDL Application", 128);
@@ -925,11 +929,13 @@ resizeOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 he
 static BOOL
 initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 {
+	dprintf("Allocating resources for double-buffering\n");
+
 	dbData->sb[0] = SDL_IIntuition->AllocScreenBuffer(screen, NULL, SB_SCREEN_BITMAP);
 	dbData->sb[1] = SDL_IIntuition->AllocScreenBuffer(screen, NULL, 0);
 
-	dbData->SafeToFlip_MsgPort  = IExec->AllocSysObjectTags( ASOT_PORT, TAG_DONE );
-	dbData->SafeToWrite_MsgPort = IExec->AllocSysObjectTags( ASOT_PORT, TAG_DONE );
+	dbData->SafeToFlip_MsgPort  = IExec->AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+	dbData->SafeToWrite_MsgPort = IExec->AllocSysObjectTags(ASOT_PORT, TAG_DONE);
 
 	if (!dbData->sb[0] || !dbData->sb[1] || !dbData->SafeToFlip_MsgPort || !dbData->SafeToWrite_MsgPort)
 	{
@@ -937,15 +943,18 @@ initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 
 		if (dbData->sb[0])
 			SDL_IIntuition->FreeScreenBuffer(screen, dbData->sb[0]);
+
 		if (dbData->sb[1])
 			SDL_IIntuition->FreeScreenBuffer(screen, dbData->sb[1]);
+
 		if (dbData->SafeToFlip_MsgPort)
 			IExec->FreeSysObject(ASOT_PORT,dbData->SafeToFlip_MsgPort);
+
 		if (dbData->SafeToWrite_MsgPort)
 			IExec->FreeSysObject(ASOT_PORT,dbData->SafeToWrite_MsgPort);
 
-		dbData->sb[0] = 0;
-		dbData->sb[1] = 0;
+		dbData->sb[0] = NULL;
+		dbData->sb[1] = NULL;
 
 		return FALSE;
 	}
@@ -954,6 +963,7 @@ initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 	 * from gfx.lib */
 	dbData->sb[0]->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort = dbData->SafeToWrite_MsgPort;
 	dbData->sb[0]->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort = dbData->SafeToFlip_MsgPort;
+	
 	dbData->sb[1]->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort = dbData->SafeToWrite_MsgPort;
 	dbData->sb[1]->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort = dbData->SafeToFlip_MsgPort;
 
@@ -970,28 +980,33 @@ initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 static void
 freeDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 {
+	dprintf("Freeing double-buffering resources\n");
+
 	if (dbData->SafeToFlip_MsgPort) {
-		while (IExec->GetMsg (dbData->SafeToFlip_MsgPort) != NULL)
-			;
-		IExec->FreeSysObject (ASOT_PORT,dbData->SafeToFlip_MsgPort);
+		while (IExec->GetMsg(dbData->SafeToFlip_MsgPort) != NULL)
+		{}
+
+		IExec->FreeSysObject(ASOT_PORT,dbData->SafeToFlip_MsgPort);
 	}
 
 	if (dbData->SafeToWrite_MsgPort) {
-		while (IExec->GetMsg (dbData->SafeToWrite_MsgPort) != NULL)
-			;
-		IExec->FreeSysObject (ASOT_PORT,dbData->SafeToWrite_MsgPort);
+		while (IExec->GetMsg(dbData->SafeToWrite_MsgPort) != NULL)
+		{}
+
+		IExec->FreeSysObject(ASOT_PORT,dbData->SafeToWrite_MsgPort);
 	}
 
-	dbData->SafeToFlip_MsgPort  = 0;
-	dbData->SafeToWrite_MsgPort = 0;
+	dbData->SafeToFlip_MsgPort  = NULL;
+	dbData->SafeToWrite_MsgPort = NULL;
 
 	if (dbData->sb[0])
 		SDL_IIntuition->FreeScreenBuffer(screen, dbData->sb[0]);
+
 	if (dbData->sb[1])
 		SDL_IIntuition->FreeScreenBuffer(screen, dbData->sb[1]);
 
-	dbData->sb[0] = 0;
-	dbData->sb[1] = 0;
+	dbData->sb[0] = NULL;
+	dbData->sb[1] = NULL;
 }
 
 
@@ -1021,18 +1036,16 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 
 	if (hidden->win)
 	{
-		dprintf("Closing window\n");
+		dprintf("Closing window %p\n", hidden->win);
 		SDL_IIntuition->CloseWindow(hidden->win);
 		hidden->win = NULL;
 	}
 
 	if (hidden->scr)
 	{
-		dprintf("Freeing double-buffering resources\n");
-
 		freeDoubleBuffering(&hidden->dbData, hidden->scr);
 
-		dprintf("Closing screen\n");
+		dprintf("Closing screen %p\n", hidden->scr);
 
 		SDL_IIntuition->CloseScreen(hidden->scr);
 		hidden->scr = NULL;
@@ -1100,7 +1113,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 			/* Mark the surface as windowed */
 			if ((flags & SDL_OPENGL) == 0)
 			{
-				flags &= ~(SDL_FULLSCREEN | /*SDL_HWSURFACE |*/ SDL_DOUBLEBUF);
+				flags &= ~(SDL_FULLSCREEN | SDL_DOUBLEBUF);
 			}
 
 			current->flags = flags;
@@ -1203,7 +1216,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		 */
 		if (newOffScreenSurface && !initOffScreenBuffer(&hidden->offScreenBuffer, width, height, current->format, hwSurface))
 		{
-			dprintf ("Failed to allocate off-screen buffer\n");
+			dprintf("Failed to allocate off-screen buffer\n");
 			SDL_OutOfMemory();
 			return FALSE;
 		}
@@ -1218,13 +1231,17 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 			_this->UpdateRects = os4video_UpdateRectsOffscreen_8bit;
 	}
 
+	if (!hwSurface && (flags & SDL_DOUBLEBUF))
+	{
+		dprintf("Double-buffering requires HW surface, removing the flag for SW surface\n");
+		flags &= ~SDL_DOUBLEBUF;
+	}
+
 	/*
 	 * Set up double-buffering if requested
 	 */
 	if (flags & SDL_DOUBLEBUF)
 	{
-		dprintf("Allocating resources for double-buffering\n");
-
 		if (initDoubleBuffering(&hidden->dbData, hidden->scr))
 		{
 			/* Set surface to render to off-screen buffer */
@@ -1268,7 +1285,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 
 	if (!hidden->win)
 	{
-		dprintf("Failed\n");
+		dprintf("Failed to open window\n");
 		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface);
 		return FALSE;
 	}
@@ -1351,7 +1368,7 @@ os4video_AllocateOpenGLBuffers(_THIS, int width, int height)
 		BMATags_Friend, hidden->win->RPort->BitMap,
 		TAG_DONE)))
 	{
-		dprintf("Fatal error: Can't allocate memory for buffer bitmap\n");
+		dprintf("Fatal error: Can't allocate memory for OpenGL bitmap\n");
 		SDL_Quit();
 		return SDL_FALSE;
 	}
@@ -1365,17 +1382,17 @@ os4video_AllocateOpenGLBuffers(_THIS, int width, int height)
 		TAG_DONE)))
 	{
 		SDL_IGraphics->FreeBitMap(hidden->m_frontBuffer);
-		dprintf("Fatal error: Can't allocate memory for buffer bitmap\n");
+		dprintf("Fatal error: Can't allocate memory for OpenGL bitmap\n");
 		SDL_Quit();
 		return SDL_FALSE;
 	}
 
 	hidden->IGL->MGLUpdateContextTags(
-					MGLCC_FrontBuffer,hidden->m_frontBuffer,
-					MGLCC_BackBuffer,hidden->m_backBuffer,
+					MGLCC_FrontBuffer, hidden->m_frontBuffer,
+					MGLCC_BackBuffer, hidden->m_backBuffer,
 					TAG_DONE);
 
-	hidden->IGL->GLViewport(0,0,width,height);
+	hidden->IGL->GLViewport(0, 0, width, height);
 
 	return SDL_TRUE;
 }
@@ -1463,7 +1480,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 
 		if (!success)
 		{
-			dprintf("Failed to resize window.\n");
+			dprintf("Failed to resize window\n");
 			os4video_DeleteCurrentDisplay(_this, current, TRUE);
 		}
 	}
@@ -1489,8 +1506,8 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 		dprintf("Calling CreateDisplay\n");
 		if (os4video_CreateDisplay(_this, current, width, height, bpp, flags, TRUE))
 		{
-			dprintf ("New display created\n");
-			dprintf ("Obtained flags: %s\n", get_flags_str(current->flags));
+			dprintf("New display created\n");
+			dprintf("Obtained flags: %s\n", get_flags_str(current->flags));
 		}
 		else
 		{
@@ -1503,6 +1520,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 				os4video_CreateDisplay(_this, current, ow, oh, obpp, oflags, TRUE);
 			}
 		}
+
 		SDL_Unlock_EventThread();
 	}
 
@@ -1518,6 +1536,7 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 	uint32 *current;
 
 	dprintf("Loading colors %d to %d\n", firstcolor, firstcolor+ncolors-1);
+
 	if (!hidden->scr)
 	{
 		/* Windowed mode, or palette on direct color screen */
@@ -1582,7 +1601,7 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 		}
 		*current = 0;
 
-		dprintf("Loading\n");
+		dprintf("Loading RGB\n");
 		SDL_IGraphics->LoadRGB32(&hidden->scr->ViewPort, colTable);
 	}
 
@@ -1608,8 +1627,8 @@ os4video_ToggleFullScreen(_THIS, int on)
 	if (!hidden->windowActive)
 		return 0;
 
-	dprintf("Trying to toggle fullscreen\n");
-	dprintf("Current flags:%s\n", get_flags_str(current->flags));
+	dprintf("Trying to toggle fullscreen (%d)\n", on);
+	dprintf("Current flags: %s\n", get_flags_str(current->flags));
 
 	if (on)
 	{
@@ -1667,12 +1686,13 @@ os4video_ToggleFullScreen(_THIS, int on)
 		ResetMouseState(_this);
 
 		dprintf("Success\n");
-		dprintf("Obtained flags:%s\n", get_flags_str(current->flags));
+		dprintf("Obtained flags: %s\n", get_flags_str(current->flags));
 
 		return 1;
 	}
 
 	dprintf("Switch failed, re-setting old display\n");
+
 	if (os4video_CreateDisplay(_this, current, w, h, bpp, oldFlags, FALSE))
 	{
 		hidden->dontdeletecontext = FALSE;
@@ -1700,7 +1720,8 @@ os4video_ToggleFullScreen(_THIS, int on)
 		return 0;
 	}
 
-	hidden->dontdeletecontext=FALSE;
+	hidden->dontdeletecontext = FALSE;
+
 #if SDL_VIDEO_OPENGL
 	if (hidden->OpenGL)
 		os4video_GL_Term(_this);
