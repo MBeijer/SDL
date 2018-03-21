@@ -111,12 +111,12 @@ struct IconIFace		*SDL_IIcon;
 struct WorkbenchIFace	*SDL_IWorkbench;
 struct KeymapIFace		*SDL_IKeymap;
 
-#define MIN_LIB_VERSION	54
+#define MIN_LIB_VERSION	51
 
 static BOOL
 open_libraries(void)
 {
-	gfxbase       = IExec->OpenLibrary("graphics.library", MIN_LIB_VERSION);
+	gfxbase       = IExec->OpenLibrary("graphics.library", 54);
 	layersbase    = IExec->OpenLibrary("layers.library", MIN_LIB_VERSION);
 	intuitionbase = IExec->OpenLibrary("intuition.library", MIN_LIB_VERSION);
 	iconbase      = IExec->OpenLibrary("icon.library", MIN_LIB_VERSION);
