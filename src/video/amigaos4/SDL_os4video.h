@@ -133,12 +133,9 @@ struct SDL_PrivateVideoData
 	struct MsgPort *		appPort;
 	BOOL					OpenGL;
 
-	/* This are new to allow the new MiniGL buffer mode */
-	BOOL dontdeletecontext;
-
 	struct GLContextIFace *IGL;
-	struct BitMap *m_frontBuffer;
-	struct BitMap *m_backBuffer;
+	struct BitMap *frontBuffer;
+	struct BitMap *backBuffer;
 };
 
 #endif

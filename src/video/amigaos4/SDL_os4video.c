@@ -91,11 +91,13 @@ int 			os4video_GL_Init(_THIS);
 void 			os4video_GL_Term(_THIS);
 
 extern BOOL os4video_PixelFormatFromModeID(SDL_PixelFormat *vformat, uint32 displayID);
-static void os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer);
+static void os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, BOOL keepOpenGlContext);
 extern void ResetMouseColors(_THIS);
 extern void ResetMouseState(_THIS);
 extern void os4video_ResetCursor(struct SDL_PrivateVideoData *hidden);
 extern void DeleteAppIcon(_THIS);
+
+extern SDL_bool os4video_AllocateOpenGLBuffers(_THIS, int width, int height);
 
 static struct Library	*gfxbase;
 static struct Library	*layersbase;
@@ -381,8 +383,6 @@ os4video_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	uint32 displayID;
 	uint64 freeMem = 0;
 
-	hidden->dontdeletecontext = FALSE;
-
 	/* Get the default public screen. For the time being
 	 * we don't care about its screen mode. Assume it's RTG.
 	 */
@@ -442,7 +442,7 @@ os4video_VideoQuit(_THIS)
 	hidden = _this->hidden;
 
 	dprintf("DeleteCurrentDisplay\n");
-	os4video_DeleteCurrentDisplay(_this, 0, FALSE);
+	os4video_DeleteCurrentDisplay(_this, 0, FALSE, FALSE);
 
 	dprintf("Checking pubscreen\n");
 	if (hidden->publicScreen)
@@ -1011,7 +1011,7 @@ freeDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 
 
 static void
-os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer)
+os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, BOOL keepOpenGlContext)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
@@ -1022,7 +1022,7 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 	ResetMouseColors(_this);
 
 #if SDL_VIDEO_OPENGL
-	if (hidden->OpenGL)
+	if (hidden->OpenGL && !keepOpenGlContext)
 		os4video_GL_Term(_this);
 #endif
 
@@ -1286,7 +1286,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 	if (!hidden->win)
 	{
 		dprintf("Failed to open window\n");
-		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface);
+		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, FALSE);
 		return FALSE;
 	}
 
@@ -1298,7 +1298,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		if (os4video_GL_Init(_this) != 0)
 		{
 //			dprintf("Failed OpenGL init\n");
-			os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface);
+			os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, FALSE);
 			return FALSE;
 		}
 		else
@@ -1342,60 +1342,6 @@ get_flags_str(Uint32 flags)
 	return buffer;
 }
 #endif
-
-static SDL_bool
-os4video_AllocateOpenGLBuffers(_THIS, int width, int height)
-{
-	struct SDL_PrivateVideoData *hidden = _this->hidden;
-
-	if (hidden->m_frontBuffer)
-	{
-		SDL_IGraphics->FreeBitMap(hidden->m_frontBuffer);
-		hidden->m_frontBuffer = NULL;
-	}
-
-	if (hidden->m_backBuffer)
-	{
-		SDL_IGraphics->FreeBitMap(hidden->m_backBuffer);
-		hidden->m_backBuffer = NULL;
-	}
-
-	if (!(hidden->m_frontBuffer = SDL_IGraphics->AllocBitMapTags(
-		width,
-		height,
-		16,
-		BMATags_Displayable, TRUE,
-		BMATags_Friend, hidden->win->RPort->BitMap,
-		TAG_DONE)))
-	{
-		dprintf("Fatal error: Can't allocate memory for OpenGL bitmap\n");
-		SDL_Quit();
-		return SDL_FALSE;
-	}
-
-	if (!(hidden->m_backBuffer = SDL_IGraphics->AllocBitMapTags(
-		width,
-		height,
-		16,
-		BMATags_Displayable, TRUE,
-		BMATags_Friend, hidden->win->RPort->BitMap,
-		TAG_DONE)))
-	{
-		SDL_IGraphics->FreeBitMap(hidden->m_frontBuffer);
-		dprintf("Fatal error: Can't allocate memory for OpenGL bitmap\n");
-		SDL_Quit();
-		return SDL_FALSE;
-	}
-
-	hidden->IGL->MGLUpdateContextTags(
-					MGLCC_FrontBuffer, hidden->m_frontBuffer,
-					MGLCC_BackBuffer, hidden->m_backBuffer,
-					TAG_DONE);
-
-	hidden->IGL->GLViewport(0, 0, width, height);
-
-	return SDL_TRUE;
-}
 
 static SDL_Surface *
 os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bpp, Uint32 flags)
@@ -1481,7 +1427,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 		if (!success)
 		{
 			dprintf("Failed to resize window\n");
-			os4video_DeleteCurrentDisplay(_this, current, TRUE);
+			os4video_DeleteCurrentDisplay(_this, current, TRUE, FALSE);
 		}
 	}
 
@@ -1500,7 +1446,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 
 		/* Remove the old display (might want to resize window if not fullscreen) */
 		dprintf("Deleting old display\n");
-		os4video_DeleteCurrentDisplay(_this, current, FALSE);
+		os4video_DeleteCurrentDisplay(_this, current, FALSE, FALSE);
 
 		/* Open the new one */
 		dprintf("Calling CreateDisplay\n");
@@ -1654,14 +1600,10 @@ os4video_ToggleFullScreen(_THIS, int on)
 		SDL_Lock_EventThread();
 	}
 
-  	hidden->dontdeletecontext = TRUE;
-
-	os4video_DeleteCurrentDisplay(_this, current, TRUE);
+	os4video_DeleteCurrentDisplay(_this, current, TRUE, TRUE);
 
 	if (os4video_CreateDisplay(_this, current, w, h, bpp, newFlags, FALSE))
 	{
-		hidden->dontdeletecontext = FALSE;
-
 #if SDL_VIDEO_OPENGL
 		if (oldFlags & SDL_OPENGL)
 		{
@@ -1695,8 +1637,6 @@ os4video_ToggleFullScreen(_THIS, int on)
 
 	if (os4video_CreateDisplay(_this, current, w, h, bpp, oldFlags, FALSE))
 	{
-		hidden->dontdeletecontext = FALSE;
-
 #if SDL_VIDEO_OPENGL
 		if (oldFlags & SDL_OPENGL)
 		{
@@ -1719,8 +1659,6 @@ os4video_ToggleFullScreen(_THIS, int on)
 		dprintf("No Success\n");
 		return 0;
 	}
-
-	hidden->dontdeletecontext = FALSE;
 
 #if SDL_VIDEO_OPENGL
 	if (hidden->OpenGL)
