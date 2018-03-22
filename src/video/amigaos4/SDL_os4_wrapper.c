@@ -1236,12 +1236,6 @@ static void AmiglUnlockArraysEXT( void ) {
 
 /* The GLU API */
 
-/*
- *
- * GLU
- *
- */
-
 static void AmigluLookAt( GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble centerx, GLdouble centery, GLdouble centerz, GLdouble upx, GLdouble upy, GLdouble upz ) {
 	return gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
 }
