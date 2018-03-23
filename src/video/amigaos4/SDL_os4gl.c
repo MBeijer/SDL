@@ -61,6 +61,17 @@ extern void SDL_Quit(void);
  */
 struct GLContextIFace *mini_CurrentContext = 0;
 
+static int os4video_GetPixelDepth(_THIS)
+{
+	int depth = _this->gl_config.buffer_size;
+
+	if (depth < 16) {
+		depth = 16;
+	}
+
+	return depth;
+}
+
 static struct BitMap *
 os4video_AllocateBitMap(_THIS, int width, int height, int depth)
 {
@@ -81,6 +92,7 @@ SDL_bool
 os4video_AllocateOpenGLBuffers(_THIS, int width, int height)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
+	int depth = os4video_GetPixelDepth(_this);
 
 	if (hidden->frontBuffer)
 	{
@@ -94,14 +106,14 @@ os4video_AllocateOpenGLBuffers(_THIS, int width, int height)
 		hidden->backBuffer = NULL;
 	}
 
-	if (!(hidden->frontBuffer = os4video_AllocateBitMap(_this, width, height, 16))) // TODO
+	if (!(hidden->frontBuffer = os4video_AllocateBitMap(_this, width, height, depth)))
 	{
 		dprintf("Fatal error: Can't allocate memory for OpenGL bitmap\n");
 		SDL_Quit();
 		return SDL_FALSE;
 	}
 
-	if (!(hidden->backBuffer = os4video_AllocateBitMap(_this, width, height, 16))) // TODO
+	if (!(hidden->backBuffer = os4video_AllocateBitMap(_this, width, height, depth)))
 	{
 		SDL_IGraphics->FreeBitMap(hidden->frontBuffer);
 
@@ -128,7 +140,7 @@ int
 os4video_GL_Init(_THIS)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
-	int w, h;
+	int width, height, depth;
 
 	dprintf("Initializing MiniGL (window %p)...\n", hidden->win);
 
@@ -175,16 +187,18 @@ os4video_GL_Init(_THIS)
 		}
 	}
 
-	SDL_IIntuition->GetWindowAttrs(hidden->win, WA_InnerWidth, &w, WA_InnerHeight, &h, TAG_DONE);
+	SDL_IIntuition->GetWindowAttrs(hidden->win, WA_InnerWidth, &width, WA_InnerHeight, &height, TAG_DONE);
+	
+	depth = os4video_GetPixelDepth(_this);
 
-	if (!(hidden->frontBuffer = os4video_AllocateBitMap(_this, w, h, 16))) // TODO
+	if (!(hidden->frontBuffer = os4video_AllocateBitMap(_this, width, height, depth)))
 	{
 		dprintf("Failed to allocate bitmap\n");
 		SDL_SetError("Failed to allocate a Bitmap for the front buffer");
 		return -1;
 	}
 
-	if (!(hidden->backBuffer = os4video_AllocateBitMap(_this, w, h, 16))) // TODO
+	if (!(hidden->backBuffer = os4video_AllocateBitMap(_this, width, height, depth)))
 	{
 		dprintf("Failed to allocate bitmap\n");
 		SDL_SetError("Failed to allocate a Bitmap for the back buffer");
@@ -197,7 +211,7 @@ os4video_GL_Init(_THIS)
 		MGLCC_FrontBuffer,      hidden->frontBuffer,
 		MGLCC_BackBuffer,       hidden->backBuffer,
 		MGLCC_Buffers,          2,
-		MGLCC_PixelDepth,       16, // TODO
+		MGLCC_PixelDepth,       depth,
 		MGLCC_StencilBuffer,    TRUE,
 		MGLCC_VertexBufferSize, 1 << 17,
 		TAG_DONE);
@@ -206,7 +220,7 @@ os4video_GL_Init(_THIS)
 	{
 		_this->gl_config.driver_loaded = 1;
 
-		hidden->IGL->GLViewport(0, 0, w, h);
+		hidden->IGL->GLViewport(0, 0, width, height);
 		hidden->OpenGL = TRUE; // TODO: is this flag needed at all?
 
 		mglMakeCurrent(hidden->IGL);
@@ -358,13 +372,13 @@ os4video_GL_SwapBuffers(_THIS)
 	{
 		struct SDL_PrivateVideoData *hidden = _this->hidden;
 
-		int w, h;
+		int width, height;
 		GLint buf;
 		struct BitMap *bitmap;
 
 		mglUnlockDisplay();
 
-		SDL_IIntuition->GetWindowAttrs(hidden->win, WA_InnerWidth, &w, WA_InnerHeight, &h, TAG_DONE);
+		SDL_IIntuition->GetWindowAttrs(hidden->win, WA_InnerWidth, &width, WA_InnerHeight, &height, TAG_DONE);
 
 		hidden->IGL->MGLWaitGL(); /* besure all has finished before we start blitting (testing to find lockup cause */
 
@@ -373,7 +387,7 @@ os4video_GL_SwapBuffers(_THIS)
 		bitmap = (buf == GL_BACK) ? hidden->backBuffer : hidden->frontBuffer;
 
 		SDL_IGraphics->BltBitMapRastPort(bitmap, 0, 0, hidden->win->RPort,
-			hidden->win->BorderLeft, hidden->win->BorderTop, w, h, 0xC0);
+			hidden->win->BorderLeft, hidden->win->BorderTop, width, height, 0xC0);
 
 		/* copy back into front */
 		SDL_IGraphics->BltBitMapTags(
@@ -385,8 +399,8 @@ os4video_GL_SwapBuffers(_THIS)
 			BLITA_DestType, BLITT_BITMAP,
 			BLITA_DestX,    0,
 			BLITA_DestY,    0,
-			BLITA_Width,    w,
-			BLITA_Height,   h,
+			BLITA_Width,    width,
+			BLITA_Height,   height,
 			BLITA_Minterm,  0xC0,
 			TAG_DONE);
 
