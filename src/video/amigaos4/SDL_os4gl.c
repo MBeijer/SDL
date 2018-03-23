@@ -63,7 +63,7 @@ struct GLContextIFace *mini_CurrentContext = 0;
 
 static struct BitMap *
 os4video_AllocateBitMap(_THIS, int width, int height, int depth)
-{	 
+{
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
 	dprintf("Allocating bitmap %d*%d*%d\n", width, height, depth);
@@ -146,11 +146,11 @@ os4video_GL_Init(_THIS)
 	else
 	{
 		MiniGLBase = IExec->OpenLibrary("minigl.library", 2);
-		
+
 		if (!MiniGLBase)
 		{
 			dprintf("Failed to open minigl.library\n");
-            SDL_SetError("Failed to open minigl.library");
+			SDL_SetError("Failed to open minigl.library");
 			hidden->OpenGL = FALSE;
 			return -1;
 		}
@@ -163,10 +163,10 @@ os4video_GL_Init(_THIS)
 	else
 	{
 		IMiniGL = (struct MiniGLIFace *)IExec->GetInterface(MiniGLBase, "main", 1, NULL);
-		
+
 		if (!IMiniGL)
 		{
-            dprintf("Failed to obtain IMiniGL\n");
+			dprintf("Failed to obtain IMiniGL\n");
 			SDL_SetError("Failed to obtain minigl.library interface");
 			hidden->OpenGL = FALSE;
 			IExec->CloseLibrary(MiniGLBase);
@@ -193,14 +193,14 @@ os4video_GL_Init(_THIS)
 	}
 
 	hidden->IGL = IMiniGL->CreateContextTags(
-                                     MGLCC_PrivateBuffers, 	2,
-									 MGLCC_FrontBuffer,		hidden->frontBuffer,
-									 MGLCC_BackBuffer,		hidden->backBuffer,
-									 MGLCC_Buffers,  		2,
-									 MGLCC_PixelDepth,      16,  // TODO
-                                     MGLCC_StencilBuffer,   TRUE,
-                                     MGLCC_VertexBufferSize,1 << 17,
-									 TAG_DONE);
+		MGLCC_PrivateBuffers,   2,
+		MGLCC_FrontBuffer,      hidden->frontBuffer,
+		MGLCC_BackBuffer,       hidden->backBuffer,
+		MGLCC_Buffers,          2,
+		MGLCC_PixelDepth,       16, // TODO
+		MGLCC_StencilBuffer,    TRUE,
+		MGLCC_VertexBufferSize, 1 << 17,
+		TAG_DONE);
 
 	if (hidden->IGL)
 	{
@@ -217,7 +217,7 @@ os4video_GL_Init(_THIS)
 	else
 	{
 		_this->gl_config.driver_loaded = 0;
-		
+
 		dprintf("Failed to create MiniGL context\n");
 		SDL_SetError("Failed to create MiniGL context");
 	}
@@ -235,20 +235,20 @@ os4video_GL_Term(_THIS)
 	if (hidden->OpenGL)
 	{
 		if (hidden->frontBuffer)
-        {
+		{
 			SDL_IGraphics->FreeBitMap(hidden->frontBuffer);
 			hidden->frontBuffer = NULL;
-        }
+		}
 
 		if (hidden->backBuffer)
-        {
+		{
 			SDL_IGraphics->FreeBitMap(hidden->backBuffer);
 			hidden->backBuffer = NULL;
-        }
+		}
 
 		hidden->IGL->DeleteContext();
 		hidden->IGL = NULL;
-		
+
 		IExec->DropInterface((struct Interface *)IMiniGL);
 		IExec->CloseLibrary(MiniGLBase);
 
@@ -261,7 +261,7 @@ os4video_GL_Term(_THIS)
 	}
 }
 
-int	
+int
 os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
@@ -342,7 +342,7 @@ os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 	return -1;
 }
 
-int	
+int
 os4video_GL_MakeCurrent(_THIS)
 {
 	dprintf("Here\n");
@@ -359,7 +359,7 @@ os4video_GL_SwapBuffers(_THIS)
 		struct SDL_PrivateVideoData *hidden = _this->hidden;
 
 		int w, h;
-	    GLint buf;
+		GLint buf;
 		struct BitMap *bitmap;
 
 		mglUnlockDisplay();
@@ -375,28 +375,29 @@ os4video_GL_SwapBuffers(_THIS)
 		SDL_IGraphics->BltBitMapRastPort(bitmap, 0, 0, hidden->win->RPort,
 			hidden->win->BorderLeft, hidden->win->BorderTop, w, h, 0xC0);
 
-        /* copy back into front */
-		SDL_IGraphics->BltBitMapTags(BLITA_Source,	hidden->backBuffer,
-								 	 BLITA_SrcType,	BLITT_BITMAP,
- 								 	 BLITA_SrcX,	0,
- 								 	 BLITA_SrcY,	0,
-									 BLITA_Dest,	hidden->frontBuffer,
-								 	 BLITA_DestType,BLITT_BITMAP,
-								 	 BLITA_DestX,	0,
-								 	 BLITA_DestY,	0,
-								 	 BLITA_Width,	w,
-								 	 BLITA_Height,	h,
-								 	 BLITA_Minterm,	0xC0,
-								 	 TAG_DONE);
+		/* copy back into front */
+		SDL_IGraphics->BltBitMapTags(
+			BLITA_Source,   hidden->backBuffer,
+			BLITA_SrcType,  BLITT_BITMAP,
+			BLITA_SrcX,     0,
+			BLITA_SrcY,     0,
+			BLITA_Dest,     hidden->frontBuffer,
+			BLITA_DestType, BLITT_BITMAP,
+			BLITA_DestX,    0,
+			BLITA_DestY,    0,
+			BLITA_Width,    w,
+			BLITA_Height,   h,
+			BLITA_Minterm,  0xC0,
+			TAG_DONE);
 
 		bitmap = hidden->frontBuffer;
 		hidden->frontBuffer = hidden->backBuffer;
 		hidden->backBuffer = bitmap;
 
 		hidden->IGL->MGLUpdateContextTags(
-							MGLCC_FrontBuffer,hidden->frontBuffer,
-							MGLCC_BackBuffer, hidden->backBuffer,
-							TAG_DONE);
+			MGLCC_FrontBuffer,hidden->frontBuffer,
+			MGLCC_BackBuffer, hidden->backBuffer,
+			TAG_DONE);
 	}
 }
 
@@ -415,7 +416,7 @@ os4video_GL_GetProcAddress(_THIS, const char *proc) {
 	}
 
 	func = AmiGetGLProc(proc);
-	
+
 	if (func)
 	{
 		dprintf("Function '%s' loaded\n", proc);
