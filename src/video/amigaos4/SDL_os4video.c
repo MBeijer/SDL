@@ -122,7 +122,7 @@ struct KeymapIFace		*SDL_IKeymap;
 #define MIN_LIB_VERSION	51
 
 static BOOL
-open_libraries(void)
+os4video_OpenLibraries(void)
 {
 	gfxbase       = IExec->OpenLibrary("graphics.library", 54);
 	layersbase    = IExec->OpenLibrary("layers.library", MIN_LIB_VERSION);
@@ -148,7 +148,7 @@ open_libraries(void)
 }
 
 static void
-close_libraries(void)
+os4video_CloseLibraries(void)
 {
 	if (SDL_IKeymap) {
 		IExec->DropInterface((struct Interface *) SDL_IKeymap);
@@ -210,7 +210,7 @@ VideoBootStrap os4video_bootstrap =
 };
 
 static inline uint16
-swapshort(uint16 x)
+os4video_SwapShort(uint16 x)
 {
 	return ((x&0xff)<<8) | ((x&0xff00)>>8);
 }
@@ -247,7 +247,7 @@ os4video_DeleteDevice(_THIS)
 			SDL_IIcon->FreeDiskObject(_this->hidden->currentIcon);
 		}
 
-		close_libraries();
+		os4video_CloseLibraries();
 
 		IExec->FreeVec(_this->hidden);
 		IExec->FreeVec(_this);
@@ -293,7 +293,6 @@ os4video_CreateDevice(int devnum)
 		goto fail;
 
 	os4video_device->hidden->mouse = IExec->AllocVecTags( 8, AVT_ClearWithValue, 0, AVT_Type, MEMF_SHARED, TAG_DONE );
-
 	os4video_device->hidden->userPort = IExec->AllocSysObject(ASOT_PORT, NULL);
 
 	if (!os4video_device->hidden->userPort)
@@ -303,7 +302,7 @@ os4video_CreateDevice(int devnum)
 	if (!os4video_device->hidden->appPort)
 		goto fail;
 
-	if (!open_libraries())
+	if (!os4video_OpenLibraries())
 	{
 		dprintf("Failed to open libraries\n");
 		goto fail;
@@ -362,7 +361,7 @@ os4video_CreateDevice(int devnum)
 fail:
 	SDL_OutOfMemory();
 
-	close_libraries();
+	os4video_CloseLibraries();
 
 	if (os4video_device->hidden->userPort)
 		IExec->FreeSysObject(ASOT_PORT, os4video_device->hidden->userPort);
@@ -559,18 +558,29 @@ os4video_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 	}
 }
 
-static struct Screen *
-openSDLscreen(int width, int height, uint32 modeId)
+static void
+os4video_ClearScreen(struct Screen *screen, int width, int height)
 {
-	uint32         openError = 0;
-	struct Screen *scr;
-	uint32         screen_width;
-	uint32         screen_height;
-	uint32         screen_leftedge = 0;
+	struct RastPort tmpRP;
 
-	/* Get the real width/height of this mode */
-	screen_width  = os4video_GetWidthFromMode(modeId);
-	screen_height = os4video_GetHeightFromMode(modeId);
+	SDL_IGraphics->InitRastPort(&tmpRP);
+	tmpRP.BitMap = screen->RastPort.BitMap;
+
+	SDL_IGraphics->RectFillColor(&tmpRP, 0, 0, width, height, 0);
+}
+
+static struct Screen *
+os4video_OpenScreen(int width, int height, uint32 modeId)
+{
+	struct Screen *screen;
+
+	uint32         openError = 0;
+	uint32         screenWidth;
+	uint32         screenHeight;
+	uint32         screenLeftEdge = 0;
+
+	screenWidth  = os4video_GetWidthFromMode(modeId);
+	screenHeight = os4video_GetHeightFromMode(modeId);
 
 	/* If requested width is smaller than this mode's width, then centre
 	 * the screen horizontally.
@@ -579,11 +589,13 @@ openSDLscreen(int width, int height, uint32 modeId)
 	 * screens don't support the SA_Top propery. We'll tackle that
 	 * another way shortly...
 	 */
-	if (width < (int)screen_width)
-		screen_leftedge = (screen_width - width) / 2;
+	if (width < (int)screenWidth)
+	{
+		screenLeftEdge = (screenWidth - width) / 2;
+	}
 
-	scr = SDL_IIntuition->OpenScreenTags(NULL,
-									 SA_Left,		screen_leftedge,
+	screen = SDL_IIntuition->OpenScreenTags(NULL,
+									 SA_Left,		screenLeftEdge,
 									 SA_Width, 		width,
 									 SA_Height,		height,
 									 SA_Depth,		8,
@@ -592,16 +604,18 @@ openSDLscreen(int width, int height, uint32 modeId)
 									 SA_ShowTitle,	FALSE,
 									 SA_ErrorCode,	&openError,
 									 TAG_DONE);
-	if (!scr)
+
+	if (!screen)
 	{
 		dprintf("Screen didn't open (err:%d)\n", openError);
+
 		switch (openError)
 		{
 			case OSERR_NOMONITOR:
 				SDL_SetError("Monitor for display mode not available");
 				break;
 			case OSERR_NOCHIPS:
-				SDL_SetError("Newer custom chips requires (yeah, sure!)");
+				SDL_SetError("Newer custom chips required");
 				break;
 			case OSERR_NOMEM:
 			case OSERR_NOCHIPMEM:
@@ -623,19 +637,11 @@ openSDLscreen(int width, int height, uint32 modeId)
 		return NULL;
 	}
 
-	{
-		/* Clear screen's bitmap */
-		struct RastPort tmpRP;
+	os4video_ClearScreen(screen, width, height);
 
-		SDL_IGraphics->InitRastPort(&tmpRP);
-		tmpRP.BitMap = scr->RastPort.BitMap;
+	dprintf("Screen %p opened\n", screen);
 
-		SDL_IGraphics->RectFillColor(&tmpRP, 0, 0, width, height, 0);
-	}
-
-	dprintf("Screen opened\n");
-
-	return scr;
+	return screen;
 }
 
 /*
@@ -644,13 +650,13 @@ openSDLscreen(int width, int height, uint32 modeId)
  * for "auto-scroll" screens.
  */
 static BOOL
-getVisibleScreenBox (struct Screen *screen, struct IBox *screenBox)
+os4video_GetVisibleScreenBox(struct Screen *screen, struct IBox *screenBox)
 {
 	struct Rectangle dclip; /* The display clip - the bounds of the display mode
 							 * relative to top/left corner of the overscan area */
 
 	/* Get the screen's display clip */
-	if (!SDL_IIntuition->GetScreenAttr (screen, SA_DClip, &dclip, sizeof dclip))
+	if (!SDL_IIntuition->GetScreenAttr(screen, SA_DClip, &dclip, sizeof dclip))
 		return FALSE;
 
 	/* Work out the geometry of the visible area
@@ -668,16 +674,13 @@ getVisibleScreenBox (struct Screen *screen, struct IBox *screenBox)
  * size <width> x <height> on the specified screen.
  */
 static void
-getBestWindowPosition (struct Screen *screen, int width, int height, uint32 *left, uint32 *top, BOOL addBorders)
+os4video_GetBestWindowPosition (struct Screen *screen, int width, int height, uint32 *left, uint32 *top, BOOL addBorders)
 {
-	/* Geometry of screen's visible area */
 	struct IBox screenBox =  {
-		/* Some sensible defaults - just in case */
 		0, 0, screen->Width - 1, screen->Height -1
 	};
 
-	/* Get geometry of visible screen */
-	getVisibleScreenBox(screen, &screenBox);
+	os4video_GetVisibleScreenBox(screen, &screenBox);
 
 	dprintf("Visible screen: (%d,%d)/(%dx%d)\n", screenBox.Left, screenBox.Top, screenBox.Width, screenBox.Height);
 
@@ -710,7 +713,7 @@ getBestWindowPosition (struct Screen *screen, int width, int height, uint32 *lef
  * Layer backfill hook for the SDL window on high/true-colour screens
  */
 static void
-do_blackBackFill(const struct Hook *hook, struct RastPort *rp, const int *message)
+os4video_BlackBackFill(const struct Hook *hook, struct RastPort *rp, const int *message)
 {
 	struct Rectangle *rect = (struct Rectangle *)(message + 1);  // The area to back-fill
 	struct RastPort backfillRP;
@@ -724,18 +727,15 @@ do_blackBackFill(const struct Hook *hook, struct RastPort *rp, const int *messag
 
 static const struct Hook blackBackFillHook = {
 	{0, 0},							/* h_MinNode */
-	(ULONG(*)())do_blackBackFill,	/* h_Entry */
+	(ULONG(*)())os4video_BlackBackFill,	  /* h_Entry */
 	0,								/* h_SubEntry */
 	0		 						/* h_Data */
 };
 
-/*
- * Open and initialize intuition window for SDL to use
- */
 static struct Window *
-openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *userport, Uint32 flags, const char *caption)
+os4video_OpenWindow(int width, int height, struct Screen *screen, struct MsgPort *userport, Uint32 flags, const char *caption)
 {
-	struct Window *w;
+	struct Window *window;
 	uint32 windowFlags;
 	uint32 IDCMPFlags = IDCMP_NEWSIZE | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE |
 						IDCMP_DELTAMOVE | IDCMP_RAWKEY | IDCMP_ACTIVEWINDOW |
@@ -769,7 +769,7 @@ openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *user
 			IDCMPFlags  |= IDCMP_SIZEVERIFY;
 		}
 
-		getBestWindowPosition (screen, width, height, &wX, &wY, !(flags & SDL_NOFRAME));
+		os4video_GetBestWindowPosition (screen, width, height, &wX, &wY, !(flags & SDL_NOFRAME));
 
 		/* In windowed mode, use our custom backfill to clear the layer to black for
 		 * high/true-colour screens; otherwise, use the default clear-to-pen-0
@@ -784,7 +784,7 @@ openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *user
 
 	dprintf("Trying to open window at (%d,%d) of size (%dx%d)\n", wX, wY, width, height);
 
-	w = SDL_IIntuition->OpenWindowTags (NULL,
+	window = SDL_IIntuition->OpenWindowTags (NULL,
 									WA_Left,			wX,
 									WA_Top,				wY,
 									WA_InnerWidth,		width,
@@ -797,7 +797,7 @@ openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *user
 									WA_BackFill,		backfillHook,
 									TAG_DONE);
 
-	if (w)
+	if (window)
 	{
 		if (flags & SDL_RESIZABLE)
 		{
@@ -806,29 +806,28 @@ openSDLwindow(int width, int height, struct Screen *screen, struct MsgPort *user
 			 *
 			 * What's a useful minimum size, anyway?
 			 */
-			SDL_IIntuition->WindowLimits(w,
-									 w->BorderLeft + w->BorderRight  + 100,
-									 w->BorderTop  + w->BorderBottom + 100,
+			SDL_IIntuition->WindowLimits(window,
+									 window->BorderLeft + window->BorderRight  + 100,
+									 window->BorderTop  + window->BorderBottom + 100,
 									 -1,
 									 -1);
 		}
 
-		SDL_IIntuition->SetWindowTitles(w, caption, caption);
+		SDL_IIntuition->SetWindowTitles(window, caption, caption);
 
-		/* We're ready to go. Bring screen to front
-		 * and activate window.
-		 */
 		if (flags & SDL_FULLSCREEN)
+		{
 			SDL_IIntuition->ScreenToFront(screen);
+		}
 
-		SDL_IIntuition->ActivateWindow(w);
+		SDL_IIntuition->ActivateWindow(window);
 	}
 
-	return w;
+	return window;
 }
 
 static BOOL
-initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 height, SDL_PixelFormat *format, BOOL hwSurface)
+os4video_InitOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 height, SDL_PixelFormat *format, BOOL hwSurface)
 {
 	BOOL     success     = FALSE;
 	PIX_FMT  pixelFormat = os4video_PFtoPIXF(format);
@@ -838,8 +837,8 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 	width  = (width + 3) & (~3);
 	height = (height + 3) & (~3);
 
-	dprintf("Allocating a %dx%dx%d off-screen buffer with rgbtype=%d, hwSurface %d\n",
-		width, height, bpp, pixelFormat, hwSurface);
+	dprintf("Allocating a %dx%dx%d off-screen buffer with pixel format %d, %sWSURFACE\n",
+		width, height, bpp, pixelFormat, hwSurface ? "H" : "S");
 
 	offBuffer->bitmap = SDL_IGraphics->AllocBitMapTags(
 		width,
@@ -883,7 +882,7 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 			}
 		}
 
-		dprintf("pixels %p, pitch %d\n", offBuffer->pixels, offBuffer->pitch);
+		dprintf("Pixels %p, pitch %d\n", offBuffer->pixels, offBuffer->pitch);
 
 		success = TRUE;
 	}
@@ -896,7 +895,7 @@ initOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 heig
 }
 
 static void
-freeOffScreenBuffer(struct OffScreenBuffer *offBuffer)
+os4video_FreeOffScreenBuffer(struct OffScreenBuffer *offBuffer)
 {
 	if (offBuffer->bitmap)
 	{
@@ -909,19 +908,18 @@ freeOffScreenBuffer(struct OffScreenBuffer *offBuffer)
 }
 
 static BOOL
-resizeOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 height, BOOL hwSurface)
+os4video_ResizeOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 height, BOOL hwSurface)
 {
 	BOOL success = TRUE;
 
 	if (width > offBuffer->width || height > offBuffer->height ||
 		(offBuffer->width - 4) > width || (offBuffer->height - 4) > height)
 	{
-		/* If current surface is too small or too large, free it and
-		 * create a new one
-		 */
-		SDL_PixelFormat format = offBuffer->format;		/* Remember the pixel format */
-		freeOffScreenBuffer(offBuffer);
-		success = initOffScreenBuffer(offBuffer, width, height, &format, hwSurface);
+		// If current surface is too small or too large, free it and
+		// create a new one
+		SDL_PixelFormat format = offBuffer->format; // Remember the pixel format
+		os4video_FreeOffScreenBuffer(offBuffer);
+		success = os4video_InitOffScreenBuffer(offBuffer, width, height, &format, hwSurface);
 	}
 
 	return success;
@@ -933,7 +931,7 @@ resizeOffScreenBuffer(struct OffScreenBuffer *offBuffer, uint32 width, uint32 he
  * full-screen double-buffering.
  */
 static BOOL
-initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
+os4video_InitDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 {
 	dprintf("Allocating resources for double-buffering\n");
 
@@ -980,11 +978,8 @@ initDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 	return TRUE;
 }
 
-/*
- * Free resources associated with full-screen double-buffering
- */
 static void
-freeDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
+os4video_FreeDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 {
 	dprintf("Freeing double-buffering resources\n");
 
@@ -1049,7 +1044,7 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 
 	if (hidden->scr)
 	{
-		freeDoubleBuffering(&hidden->dbData, hidden->scr);
+		os4video_FreeDoubleBuffering(&hidden->dbData, hidden->scr);
 
 		dprintf("Closing screen %p\n", hidden->scr);
 
@@ -1058,7 +1053,7 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 	}
 
 	if (!keepOffScreenBuffer)
-		freeOffScreenBuffer(&hidden->offScreenBuffer);
+		os4video_FreeOffScreenBuffer(&hidden->offScreenBuffer);
 
 	if (current)
 	{
@@ -1073,134 +1068,88 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 	hidden->screenHWData.bm   = NULL;
 }
 
-static BOOL
-os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int bpp, Uint32 flags, BOOL newOffScreenSurface)
+static Uint32
+os4video_ForceFullscreenFlags(Uint32 flags)
 {
-	struct Screen *scr;
-	struct SDL_PrivateVideoData *hidden = _this->hidden;
-	int scr_depth;
+	dprintf("Forcing full-screen mode\n");
 
-	dprintf("Creating a %dx%dx%d display\n", width, height, bpp);
-
-	// ALWAYS set prealloc
-	current->flags |= SDL_PREALLOC;
-	flags |= SDL_PREALLOC;
+	flags |= SDL_FULLSCREEN;
 
 	if (flags & SDL_OPENGL)
 	{
-		flags |= SDL_HWSURFACE;
-
-		// The double buffering is handled seperately for OpenGL
-		flags &= ~SDL_DOUBLEBUF;
+		flags &= ~SDL_RESIZABLE;
+	} else {
+		flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
 	}
 
-	/*
-	 * Set up hardware record for this display surface
-	 */
-	current->hwdata = &hidden->screenHWData;
-	SDL_memset(current->hwdata, 0, sizeof(struct private_hwdata));
+	return flags;
+}
 
-	if (!(flags & SDL_FULLSCREEN))
+static Uint32
+os4video_ApplyWindowModeFlags(SDL_Surface *current, Uint32 flags, int screenDepth)
+{
+	if (screenDepth > 8)
 	{
-		dprintf("Window mode\n");
-
-		/* Use the (already locked) public screen */
-		scr = hidden->publicScreen;
-		hidden->scr = 0;
-
-		/* Check depth of screen */
-		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(scr->RastPort.BitMap, BMA_PIXELFORMAT);
-		scr_depth = os4video_PIXF2Bits(hidden->screenNativeFormat);
-
-		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenNativeFormat);
-
-		if (scr_depth > 8)
+		// Mark the surface as windowed
+		if ((flags & SDL_OPENGL) == 0)
 		{
-			/* Mark the surface as windowed */
-			if ((flags & SDL_OPENGL) == 0)
-			{
-				flags &= ~(SDL_FULLSCREEN | SDL_DOUBLEBUF);
-			}
-
-			current->flags = flags;
+			flags &= ~(SDL_FULLSCREEN | SDL_DOUBLEBUF);
 		}
-		else
-		{
-			/* Don't allow palette-mapped windowed surfaces -
-			 * We can't get exclusive access to the palette and
-			 * the results are ugly. Force a screen instead.
-			 */
-			dprintf("Forcing full-screenmode\n");
 
-			flags |= SDL_FULLSCREEN;
-
-			if (flags & SDL_OPENGL)
-			{
-				flags &= ~SDL_RESIZABLE;
-			} else {
-				flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
-			}
-		}
+		current->flags = flags;
 	}
-
-	if (flags & SDL_FULLSCREEN)
+	else
 	{
-		uint32 modeId;
-		uint32 fmt;
+		// Don't allow palette-mapped windowed surfaces -
+		// We can't get exclusive access to the palette and
+		// the results are ugly. Force a screen instead.
+		flags = os4video_ForceFullscreenFlags(flags);
+		dprintf("Forcing full-screenmode\n");
 
-		dprintf("Fullscreen\n");
+		flags |= SDL_FULLSCREEN;
 
-		modeId = os4video_FindMode(width, height, bpp, flags | SDL_ANYFORMAT);
-
-		if (modeId == INVALID_ID)
+		if (flags & SDL_OPENGL)
 		{
-			dprintf("No mode for this resolution\n");
-			return FALSE;
+			flags &= ~SDL_RESIZABLE;
+		} else {
+			flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
 		}
-
-		scr = hidden->scr = openSDLscreen(width, height, modeId);
-
-		if (!scr)
-			return FALSE;
-
-		current->flags |= SDL_FULLSCREEN;
-
-		/* Check if this screen uses a little-endian pixel format (e.g.,
-		 * the early Radeon drivers only supported little-endian modes) which
-		 * we cannot express to SDL with a simple shift and mask alone.
-		 */
-		fmt = os4video_GetPixelFormatFromMode(modeId);
-
-		if (fmt == PIXF_R5G6B5PC || fmt == PIXF_R5G5B5PC ||
-			fmt == PIXF_B5G6R5PC || fmt == PIXF_B5G5R5PC)
-		{
-			dprintf("Unsupported mode, switching to off-screen rendering\n");
-			flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF);
-		}
-
-		if (flags & SDL_HWSURFACE)
-		{
-			/* We render to the screen's BitMap */
-			current->hwdata->bm = scr->RastPort.BitMap;
-			current->flags |= SDL_HWSURFACE;
-
-			_this->UpdateRects = os4video_UpdateRectsNone;
-		}
-
-		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(scr->RastPort.BitMap, BMA_PIXELFORMAT);
-		scr_depth = os4video_PIXF2Bits(hidden->screenNativeFormat);
-
-		dprintf("Screen depth:%d pixel format:%d\n", scr_depth, hidden->screenNativeFormat);
 	}
 
-	/*
-	 * Set up SDL pixel format for surface
-	 */
+	return flags;
+}
+
+static BOOL
+os4video_IsModeUnsupported(uint32 modeId)
+{
+	// Check if this screen uses a little-endian pixel format (e.g.,
+	// the early Radeon drivers only supported little-endian modes) which
+	// we cannot express to SDL with a simple shift and mask alone.
+	PIX_FMT fmt = os4video_GetPixelFormatFromMode(modeId);
+
+	switch (fmt)
+	{
+		case PIXF_R5G6B5PC:
+		case PIXF_R5G5B5PC:
+		case PIXF_B5G6R5PC:
+		case PIXF_B5G5R5PC:
+			return TRUE;
+
+		default:
+			return FALSE;
+	}
+}
+
+static void
+os4video_SetupSurfacePixelFormat(_THIS, int bpp, int screenDepth, SDL_Surface *current)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
 	os4video_PIXFtoPF(&hidden->screenSdlFormat, hidden->screenNativeFormat);
 
-	if (bpp == scr_depth)
+	if (bpp == screenDepth)
 	{
-		/* Set pixel format of surface to match the screen's format */
+		// Set pixel format of surface to match the screen's format
 		SDL_ReallocFormat (current, bpp,
 						   hidden->screenSdlFormat.Rmask,
 						   hidden->screenSdlFormat.Gmask,
@@ -1209,61 +1158,204 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 	}
 	else
 	{
-		/* Set pixel format of surface to default for this depth */
+		// Set pixel format of surface to default for this depth
 		SDL_ReallocFormat (current, bpp, 0, 0, 0, 0);
 	}
+}
+
+static BOOL
+os4video_SetupDoubleBuffering(_THIS, SDL_Surface *current)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
+	if (os4video_InitDoubleBuffering(&hidden->dbData, hidden->scr))
+	{
+		// Set surface to render to off-screen buffer
+		current->hwdata->bm = hidden->dbData.sb[hidden->dbData.currentSB]->sb_BitMap;
+
+		// Double-buffering requires an update
+		_this->UpdateRects = os4video_UpdateRectsFullscreenDB;
+
+		current->flags |= SDL_DOUBLEBUF;
+
+		return TRUE;
+	}
+
+	SDL_IIntuition->CloseScreen(hidden->scr);
+	hidden->scr = NULL;
+	SDL_OutOfMemory();
+
+	return FALSE;
+}
+
+static void
+os4video_SetSurfaceParameters(_THIS, SDL_Surface *current, int width, int height, int bpp)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
+	current->w = width;
+	current->h = height;
+
+	if (current->flags & SDL_HWSURFACE)
+	{
+		current->pixels = (uint8*)0xdeadbeef;
+		current->pitch  = 0;
+		current->hwdata->type = hwdata_display_hw;
+	}
+	else
+	{
+		current->pixels = hidden->offScreenBuffer.pixels;
+		current->pitch  = hidden->offScreenBuffer.pitch;
+		current->hwdata->type = hwdata_display_sw;
+	}
+
+	current->offset = 0;
+
+	if (bpp <= 8)
+	{
+		current->flags |= SDL_HWPALETTE;
+	}
+
+	current->flags &= ~SDL_HWACCEL; //FIXME
+
+	current->hwdata->lock = 0;
+}
+
+#ifdef SDL_VIDEO_OPENGL
+static BOOL
+os4video_SetupOpenGl(_THIS, SDL_Surface *current, BOOL newOffScreenSurface)
+{
+	if (os4video_GL_Init(_this) != 0)
+	{
+		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, EDestroyContext);
+		return FALSE;
+	}
+
+	current->flags |= SDL_OPENGL;
+
+	_this->UpdateRects = os4video_UpdateRectsNone;
+
+	return TRUE;
+}
+#endif
+
+static BOOL
+os4video_NeedOffScreenSurface(Uint32 flags)
+{
+	BOOL swSurface = !(flags & SDL_HWSURFACE);
+	BOOL window = !(flags & SDL_FULLSCREEN);
+	BOOL noGl = !(flags & SDL_OPENGL);
+
+	return ((swSurface || window) && noGl);
+}
+
+static BOOL
+os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int bpp, Uint32 flags, BOOL newOffScreenSurface)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+	struct Screen *screen;
+	int screenDepth;
+
+	dprintf("Creating a %dx%dx%d %s display\n", width, height, bpp,
+		(flags & SDL_FULLSCREEN) ? "fullscreen" : "windowed");
+
+	// ALWAYS set prealloc
+	current->flags |= SDL_PREALLOC;
+	flags |= SDL_PREALLOC;
+
+	if (flags & SDL_OPENGL)
+	{
+		flags &= ~SDL_DOUBLEBUF; // Handled separately during GL swap
+		flags &= ~SDL_HWSURFACE;
+	}
+
+	// Set up hardware record for this display surface
+	current->hwdata = &hidden->screenHWData;
+	SDL_memset(current->hwdata, 0, sizeof(struct private_hwdata));
+
+	if (!(flags & SDL_FULLSCREEN))
+	{
+		screen = hidden->publicScreen;
+		
+		hidden->scr = NULL;
+		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(screen->RastPort.BitMap, BMA_PIXELFORMAT);
+		
+		screenDepth = os4video_PIXF2Bits(hidden->screenNativeFormat);
+
+		dprintf("Screen depth: %d pixel format: %d\n", screenDepth, hidden->screenNativeFormat);
+
+		flags = os4video_ApplyWindowModeFlags(current, flags, screenDepth);
+	}
+
+	if (flags & SDL_FULLSCREEN)
+	{
+		uint32 modeId = os4video_FindMode(width, height, bpp, flags | SDL_ANYFORMAT);
+
+		if (modeId == INVALID_ID)
+		{
+			dprintf("No mode for this resolution\n");
+			return FALSE;
+		}
+
+		screen = hidden->scr = os4video_OpenScreen(width, height, modeId);
+
+		if (!screen)
+		{
+			return FALSE;
+		}
+
+		current->flags |= SDL_FULLSCREEN;
+
+		if (os4video_IsModeUnsupported(modeId))
+		{
+			dprintf("Unsupported mode, switching to off-screen rendering\n");
+			flags &= ~(SDL_HWSURFACE | SDL_DOUBLEBUF);
+		}
+
+		if (flags & SDL_HWSURFACE)
+		{
+			// We render to the screen's BitMap
+			current->hwdata->bm = screen->RastPort.BitMap;
+			current->flags |= SDL_HWSURFACE;
+
+			_this->UpdateRects = os4video_UpdateRectsNone;
+		}
+
+		hidden->screenNativeFormat = SDL_IGraphics->GetBitMapAttr(screen->RastPort.BitMap, BMA_PIXELFORMAT);
+		screenDepth = os4video_PIXF2Bits(hidden->screenNativeFormat);
+
+		dprintf("Screen depth: %d pixel format: %d\n", screenDepth, hidden->screenNativeFormat);
+	}
+
+	os4video_SetupSurfacePixelFormat(_this, bpp, screenDepth, current);
 
 	BOOL hwSurface = (flags & SDL_HWSURFACE) == SDL_HWSURFACE;
 
-	if (!hwSurface || !(flags & SDL_FULLSCREEN))
+	if (os4video_NeedOffScreenSurface(flags) && newOffScreenSurface)
 	{
-		/*
-		 * Initialize off-screen buffer for this surface
-		 */
-		if (newOffScreenSurface && !initOffScreenBuffer(&hidden->offScreenBuffer, width, height, current->format, hwSurface))
+		if (!os4video_InitOffScreenBuffer(&hidden->offScreenBuffer, width, height, current->format, hwSurface))
 		{
 			dprintf("Failed to allocate off-screen buffer\n");
 			SDL_OutOfMemory();
 			return FALSE;
 		}
 
-		/* We render to this off-screen bitmap */
 		current->hwdata->bm = hidden->offScreenBuffer.bitmap;
 
-		/* Set update function for windowed surface */
-		if (bpp > 8 || scr_depth == 8 || (flags & SDL_FULLSCREEN))
-			_this->UpdateRects = os4video_UpdateRectsOffscreen;
-		else
-			_this->UpdateRects = os4video_UpdateRectsOffscreen_8bit;
-	}
-
-	if (!hwSurface && (flags & SDL_DOUBLEBUF))
-	{
-		dprintf("Double-buffering requires HW surface, removing the flag for SW surface\n");
-		flags &= ~SDL_DOUBLEBUF;
-	}
-
-	/*
-	 * Set up double-buffering if requested
-	 */
-	if (flags & SDL_DOUBLEBUF)
-	{
-		if (initDoubleBuffering(&hidden->dbData, hidden->scr))
+		if (bpp > 8 || screenDepth == 8 || (flags & SDL_FULLSCREEN))
 		{
-			/* Set surface to render to off-screen buffer */
-			current->hwdata->bm = hidden->dbData.sb[hidden->dbData.currentSB]->sb_BitMap;
-
-			/* Double-buffering requires an update */
-			_this->UpdateRects = os4video_UpdateRectsFullscreenDB;
-
-			/* Mark the surface as double buffered */
-			current->flags |= SDL_DOUBLEBUF;
+			_this->UpdateRects = os4video_UpdateRectsOffscreen;
 		}
 		else
 		{
-			SDL_IIntuition->CloseScreen(hidden->scr);
-			hidden->scr = NULL;
-			SDL_OutOfMemory();
+			_this->UpdateRects = os4video_UpdateRectsOffscreen_8bit;
+		}
+	}
+
+	if ((flags & SDL_DOUBLEBUF) && hwSurface)
+	{
+		if (!os4video_SetupDoubleBuffering(_this, current))
+		{
 			return FALSE;
 		}
 	}
@@ -1272,22 +1364,10 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		current->flags &= ~SDL_DOUBLEBUF;
 	}
 
-	current->w 		= width;
-	current->h 		= height;
-	current->pixels = (current->flags & SDL_HWSURFACE) ? (uint8*)0xdeadbeef : hidden->offScreenBuffer.pixels;
-	current->pitch  = (current->flags & SDL_HWSURFACE) ? 0                  : hidden->offScreenBuffer.pitch;
-	current->offset = 0;
-
-	if (bpp <= 8)
-		current->flags |= SDL_HWPALETTE;
-
-	current->flags &= ~SDL_HWACCEL; //FIXME
-
-	current->hwdata->lock = 0;
-	current->hwdata->type = (current->flags & SDL_HWSURFACE) ? hwdata_display_hw : hwdata_display_sw;
+	os4video_SetSurfaceParameters(_this, current, width, height, bpp);
 
 	hidden->pointerState = pointer_dont_know;
-	hidden->win = openSDLwindow(width, height, scr, hidden->userPort, flags, hidden->currentCaption);
+	hidden->win = os4video_OpenWindow(width, height, screen, hidden->userPort, flags, hidden->currentCaption);
 
 	if (!hidden->win)
 	{
@@ -1299,37 +1379,19 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 #if SDL_VIDEO_OPENGL
 	if (flags & SDL_OPENGL)
 	{
-//		dprintf("Checking for OpenGL\n");
-
-		if (os4video_GL_Init(_this) != 0)
+		if (!os4video_SetupOpenGl(_this, current, newOffScreenSurface))
 		{
-//			dprintf("Failed OpenGL init\n");
-			os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, EDestroyContext);
 			return FALSE;
-		}
-		else
-		{
-//			dprintf("OpenGL init successfull\n");
-			current->flags |= SDL_OPENGL;
-
-			/* Hack. We assert HWSURFACE above to simplify
-			 * initialization of GL surfaces, but we cannot pass these flags
-			 * back to SDL.
-			 * Need to re-work surface set-up code so that this nonsense isn't
-			 * necessary
-			 */
-			current->flags &= ~SDL_HWSURFACE;
 		}
 	}
 #endif
-//	dprintf("Done\n");
 
 	return TRUE;
 }
 
 #ifdef DEBUG
 static char *
-get_flags_str(Uint32 flags)
+os4video_GetFlagString(Uint32 flags)
 {
     static char buffer[256];
 
@@ -1361,9 +1423,9 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 							SDL_OPENGL | SDL_OPENGLBLIT | SDL_RESIZABLE | SDL_NOFRAME | SDL_ANYFORMAT;
 
 	dprintf("Requesting new video mode %dx%dx%d\n", width, height, bpp);
-	dprintf("Requested flags: %s\n", get_flags_str(flags));
+	dprintf("Requested flags: %s\n", os4video_GetFlagString(flags));
 	dprintf("Current mode %dx%dx%d\n", current->w, current->h, current->format->BitsPerPixel);
-	dprintf("Current mode flags %s\n", get_flags_str(current->flags));
+	dprintf("Current mode flags %s\n", os4video_GetFlagString(current->flags));
 	dprintf("Current hwdata %p\n", current->hwdata);
 
 	/* If there's an existing primary surface open, check whether it fits the request */
@@ -1372,10 +1434,8 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 		if (current->w != width || current->h != height)
 		{
 			if (!(current->flags & SDL_FULLSCREEN))
-				/* If not full-screen, we can just re-size the window */
 				needResize = TRUE;
 			else
-				/* Otherwise, we need to tear down and open a new screen */
 				needNew = TRUE;
 		}
 
@@ -1387,7 +1447,6 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 	}
 	else
 		needNew = TRUE;
-
 
 	/* Has just the surface size changed? */
 	if (needResize && !needNew)
@@ -1409,8 +1468,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 
 		BOOL hwSurface = (flags & SDL_HWSURFACE) == SDL_HWSURFACE;
 
-		/* We also need to re-size the OffscreenBuffer */
-		success = resizeOffScreenBuffer(&hidden->offScreenBuffer, width, height, hwSurface);
+		success = os4video_ResizeOffScreenBuffer(&hidden->offScreenBuffer, width, height, hwSurface);
 
 		current->w = width;
 		current->h = height;
@@ -1420,10 +1478,9 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 #if SDL_VIDEO_OPENGL
 		if ((current->flags & SDL_OPENGL) == SDL_OPENGL)
 		{
-			/* Dimensions changed reallocate and update bitmaps. */
 			if (!os4video_AllocateOpenGLBuffers(_this, width, height))
 			{
-				return NULL;
+				success = FALSE;
 			}
 		}
 #endif
@@ -1454,18 +1511,16 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 		dprintf("Deleting old display\n");
 		os4video_DeleteCurrentDisplay(_this, current, FALSE, EDestroyContext);
 
-		/* Open the new one */
-		dprintf("Calling CreateDisplay\n");
+		dprintf("Opening new display\n");
 		if (os4video_CreateDisplay(_this, current, width, height, bpp, flags, TRUE))
 		{
 			dprintf("New display created\n");
-			dprintf("Obtained flags: %s\n", get_flags_str(current->flags));
+			dprintf("Obtained flags: %s\n", os4video_GetFlagString(current->flags));
 		}
 		else
 		{
 			success = FALSE;
 
-			/* Didn't open, re-try the old mode if it's a valid mode */
 			if (hidden->win)
 			{
 				dprintf("Retrying old mode\n");
@@ -1485,9 +1540,8 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 	int i;
-	uint32 *current;
 
-	dprintf("Loading colors %d to %d\n", firstcolor, firstcolor+ncolors-1);
+	dprintf("Loading colors %d to %d\n", firstcolor, firstcolor + ncolors - 1);
 
 	if (!hidden->scr)
 	{
@@ -1506,36 +1560,39 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 			case PIXF_B5G6R5PC:
 			case PIXF_B5G5R5PC:
 				dprintf("Little endian screen format\n");
-				for (i = firstcolor; i < firstcolor+ncolors; i++)
+				for (i = firstcolor; i < firstcolor + ncolors; i++)
 				{
 					hidden->offScreenBuffer.palette[i] =
-						swapshort(SDL_MapRGB(&hidden->screenSdlFormat,
-							colors[i-firstcolor].r,
-							colors[i-firstcolor].g,
-							colors[i-firstcolor].b));
-					hidden->currentPalette[i] = colors[i-firstcolor];
+						os4video_SwapShort(SDL_MapRGB(&hidden->screenSdlFormat,
+							colors[i - firstcolor].r,
+							colors[i - firstcolor].g,
+							colors[i - firstcolor].b));
+
+					hidden->currentPalette[i] = colors[i - firstcolor];
 				}
 				break;
 			default:
 				dprintf("Big endian screen format\n");
-				for (i = firstcolor; i < firstcolor+ncolors; i++)
+				for (i = firstcolor; i < firstcolor + ncolors; i++)
 				{
 					hidden->offScreenBuffer.palette[i] =
 						SDL_MapRGB(&hidden->screenSdlFormat,
-							colors[i-firstcolor].r,
-							colors[i-firstcolor].g,
-							colors[i-firstcolor].b);
-					hidden->currentPalette[i] = colors[i-firstcolor];
+							colors[i - firstcolor].r,
+							colors[i - firstcolor].g,
+							colors[i - firstcolor].b);
+
+					hidden->currentPalette[i] = colors[i - firstcolor];
 				}
 				break;
 		}
 		/* Redraw screen so that palette changes take effect */
-		SDL_UpdateRect(SDL_VideoSurface, 0,0,0,0);
+		SDL_UpdateRect(SDL_VideoSurface, 0, 0, 0, 0);
 	}
 	else
 	{
 		/* Fullscreen mode. First, convert to LoadRGB32 format */
-		uint32 colTable[ncolors*3+3];
+		uint32 colTable[ncolors * 3 + 3];
+	    uint32 *current;
 
 		dprintf("Fullscreen\n");
 
@@ -1561,26 +1618,54 @@ os4video_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 	return 1;
 }
 
+static void
+os4video_LockEventThread(void)
+{
+	Uint32 eventThread = SDL_EventThreadID();
+
+	if (eventThread && (SDL_ThreadID() == eventThread)) {
+		eventThread = 0;
+	}
+
+	if (eventThread) {
+		SDL_Lock_EventThread();
+	}
+}
+
+static void
+os4video_UnlockEventThread(void)
+{
+	Uint32 eventThread = SDL_EventThreadID();
+
+	if (eventThread && (SDL_ThreadID() == eventThread)) {
+		eventThread = 0;
+	}
+
+	if (eventThread) {
+		SDL_Unlock_EventThread();
+	}
+}
 
 static int
 os4video_ToggleFullScreen(_THIS, int on)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
 	SDL_Surface *current = SDL_VideoSurface;
-	Uint32 event_thread;
-	uint32 oldFlags = current->flags,
-		newFlags = oldFlags,
-		w = current->w,
-		h = current->h,
-		bpp = current->format->BitsPerPixel;
 	SDL_Rect screenRect;
+
+	Uint32 oldFlags = current->flags;
+	Uint32 newFlags = oldFlags;
+	Uint32 w = current->w;
+	Uint32 h = current->h;
+	Uint32 bpp = current->format->BitsPerPixel;
 
 	// Don't switch if we don't own the window
 	if (!hidden->windowActive)
 		return 0;
 
 	dprintf("Trying to toggle fullscreen (%d)\n", on);
-	dprintf("Current flags: %s\n", get_flags_str(current->flags));
+	dprintf("Current flags: %s\n", os4video_GetFlagString(current->flags));
 
 	if (on)
 	{
@@ -1598,13 +1683,7 @@ os4video_ToggleFullScreen(_THIS, int on)
 
 	/* FIXME: Save and transfer palette */
 	/* Make sure we're the only one */
-	event_thread = SDL_EventThreadID();
-	if ( event_thread && (SDL_ThreadID() == event_thread) ) {
-		event_thread = 0;
-	}
-	if ( event_thread ) {
-		SDL_Lock_EventThread();
-	}
+	os4video_LockEventThread();
 
 	os4video_DeleteCurrentDisplay(_this, current, TRUE, EKeepContext);
 
@@ -1613,17 +1692,14 @@ os4video_ToggleFullScreen(_THIS, int on)
 #if SDL_VIDEO_OPENGL
 		if (oldFlags & SDL_OPENGL)
 		{
-			/* Dimensions changed reallocate and update bitmaps. */
 			if (!os4video_AllocateOpenGLBuffers(_this, w, h))
 			{
+				os4video_UnlockEventThread();
 				return -1;
 			}
 		}
 #endif
-
-		if ( event_thread ) {
-			SDL_Unlock_EventThread();
-		}
+		os4video_UnlockEventThread();
 
 		_this->UpdateRects(_this, 1, &screenRect);
 
@@ -1633,8 +1709,7 @@ os4video_ToggleFullScreen(_THIS, int on)
 		SDL_ResetKeyboard();
 		ResetMouseState(_this);
 
-		dprintf("Success\n");
-		dprintf("Obtained flags: %s\n", get_flags_str(current->flags));
+		dprintf("Success. Obtained flags: %s\n", os4video_GetFlagString(current->flags));
 
 		return 1;
 	}
@@ -1646,15 +1721,16 @@ os4video_ToggleFullScreen(_THIS, int on)
 #if SDL_VIDEO_OPENGL
 		if (oldFlags & SDL_OPENGL)
 		{
-			/* Dimensions changed reallocate and update bitmaps. */
 			if (!os4video_AllocateOpenGLBuffers(_this, w, h))
 			{
+        		os4video_UnlockEventThread();
 				return -1;
 			}
 		}
 #endif
 
-		SDL_Unlock_EventThread();
+		os4video_UnlockEventThread();
+
 		ResetMouseState(_this);
 
 		_this->UpdateRects(_this, 1, &screenRect);
@@ -1662,7 +1738,7 @@ os4video_ToggleFullScreen(_THIS, int on)
 		if (!on && bpp == 8)
 			_this->SetColors(_this, 0, 256, hidden->currentPalette);
 
-		dprintf("No Success\n");
+		dprintf("Failure\n");
 		return 0;
 	}
 
@@ -1682,6 +1758,7 @@ os4video_ToggleFullScreen(_THIS, int on)
 /* These symbols are weak so they replace the MiniGL symbols in case libmgl.a is
  * not linked
  */
+
 
 // Rich - These two declarations conflict with MiniGL 1.1 headers. Does this still
 // even build with static libmgl? We can't do that for license reasons anyway...
