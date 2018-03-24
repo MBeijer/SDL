@@ -146,9 +146,9 @@ os4video_GL_Init(_THIS)
 
 	if (hidden->IGL)
 	{
+		// Happens when toggling fullscreen mode
 		dprintf("Old OpenGL context exists\n");
-		SDL_SetError("OpenGL context already exists");
-		return -1;
+		return 0;
 	}
 
 	if (MiniGLBase)

@@ -39,6 +39,12 @@
 //#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
+typedef enum
+{
+	EKeepContext,
+	EDestroyContext
+} EOpenGlContextPolicy;
+
 extern void SDL_Quit(void);
 
 static int os4video_Available(void);
@@ -91,7 +97,7 @@ int 			os4video_GL_Init(_THIS);
 void 			os4video_GL_Term(_THIS);
 
 extern BOOL os4video_PixelFormatFromModeID(SDL_PixelFormat *vformat, uint32 displayID);
-static void os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, BOOL keepOpenGlContext);
+static void os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, EOpenGlContextPolicy);
 extern void ResetMouseColors(_THIS);
 extern void ResetMouseState(_THIS);
 extern void os4video_ResetCursor(struct SDL_PrivateVideoData *hidden);
@@ -442,7 +448,7 @@ os4video_VideoQuit(_THIS)
 	hidden = _this->hidden;
 
 	dprintf("DeleteCurrentDisplay\n");
-	os4video_DeleteCurrentDisplay(_this, 0, FALSE, FALSE);
+	os4video_DeleteCurrentDisplay(_this, 0, FALSE, EDestroyContext);
 
 	dprintf("Checking pubscreen\n");
 	if (hidden->publicScreen)
@@ -704,7 +710,7 @@ getBestWindowPosition (struct Screen *screen, int width, int height, uint32 *lef
  * Layer backfill hook for the SDL window on high/true-colour screens
  */
 static void
-do_blackBackFill (const struct Hook *hook, struct RastPort *rp, const int *message)
+do_blackBackFill(const struct Hook *hook, struct RastPort *rp, const int *message)
 {
 	struct Rectangle *rect = (struct Rectangle *)(message + 1);  // The area to back-fill
 	struct RastPort backfillRP;
@@ -1011,7 +1017,7 @@ freeDoubleBuffering(struct DoubleBufferData *dbData, struct Screen *screen)
 
 
 static void
-os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, BOOL keepOpenGlContext)
+os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuffer, EOpenGlContextPolicy policy)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
@@ -1022,7 +1028,7 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 	ResetMouseColors(_this);
 
 #if SDL_VIDEO_OPENGL
-	if (hidden->OpenGL && !keepOpenGlContext)
+	if (hidden->OpenGL && (policy == EDestroyContext))
 		os4video_GL_Term(_this);
 #endif
 
@@ -1286,7 +1292,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 	if (!hidden->win)
 	{
 		dprintf("Failed to open window\n");
-		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, FALSE);
+		os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, EDestroyContext);
 		return FALSE;
 	}
 
@@ -1298,7 +1304,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 		if (os4video_GL_Init(_this) != 0)
 		{
 //			dprintf("Failed OpenGL init\n");
-			os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, FALSE);
+			os4video_DeleteCurrentDisplay(_this, current, !newOffScreenSurface, EDestroyContext);
 			return FALSE;
 		}
 		else
@@ -1427,7 +1433,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 		if (!success)
 		{
 			dprintf("Failed to resize window\n");
-			os4video_DeleteCurrentDisplay(_this, current, TRUE, FALSE);
+			os4video_DeleteCurrentDisplay(_this, current, TRUE, EDestroyContext);
 		}
 	}
 
@@ -1446,7 +1452,7 @@ os4video_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bp
 
 		/* Remove the old display (might want to resize window if not fullscreen) */
 		dprintf("Deleting old display\n");
-		os4video_DeleteCurrentDisplay(_this, current, FALSE, FALSE);
+		os4video_DeleteCurrentDisplay(_this, current, FALSE, EDestroyContext);
 
 		/* Open the new one */
 		dprintf("Calling CreateDisplay\n");
@@ -1600,7 +1606,7 @@ os4video_ToggleFullScreen(_THIS, int on)
 		SDL_Lock_EventThread();
 	}
 
-	os4video_DeleteCurrentDisplay(_this, current, TRUE, TRUE);
+	os4video_DeleteCurrentDisplay(_this, current, TRUE, EKeepContext);
 
 	if (os4video_CreateDisplay(_this, current, w, h, bpp, newFlags, FALSE))
 	{
