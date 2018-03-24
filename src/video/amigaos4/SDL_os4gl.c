@@ -279,20 +279,13 @@ int
 os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
-	struct BitMap *bm = hidden->screenHWData.bm;
+
 	SDL_PixelFormat pf;
-	PIX_FMT rgbFormat;
+	PIX_FMT pixelFormat;
 
-	if (!bm)
-	{
-		dprintf("No bitmap\n");
-		SDL_SetError("No bitmap");
-		return -1;
-	}
+	pixelFormat = hidden->screenNativeFormat;
 
-	rgbFormat = SDL_IGraphics->GetBitMapAttr(bm, BMA_PIXELFORMAT);
-
-	if (!os4video_PIXFtoPF(&pf, rgbFormat))
+	if (!os4video_PIXFtoPF(&pf, pixelFormat))
 	{
 		dprintf("Pixel format conversion failed\n");
 		SDL_SetError("Pixel format conversion failed");
@@ -314,8 +307,8 @@ os4video_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value)
 			return 0;
 
 		case SDL_GL_ALPHA_SIZE:
-			if (rgbFormat == PIXF_A8R8G8B8 || rgbFormat == PIXF_A8B8G8R8
-			 || rgbFormat == PIXF_R8G8B8A8 || rgbFormat == PIXF_B8G8R8A8)
+			if (pixelFormat == PIXF_A8R8G8B8 || pixelFormat == PIXF_A8B8G8R8
+			 || pixelFormat == PIXF_R8G8B8A8 || pixelFormat == PIXF_B8G8R8A8)
 				*value = 8;
 			else
 				*value = 0;
