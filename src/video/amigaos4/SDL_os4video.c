@@ -1028,7 +1028,7 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 #endif
 
 	if (hidden->scr) {
-		SDL_IIntuition->ScreenToBack (hidden->scr);
+		SDL_IIntuition->ScreenToBack(hidden->scr);
 
 		/* Wait for next frame to make sure screen has
 		 * gone to back */
@@ -1093,7 +1093,7 @@ os4video_ApplyWindowModeFlags(SDL_Surface *current, Uint32 flags, int screenDept
 		// Mark the surface as windowed
 		if ((flags & SDL_OPENGL) == 0)
 		{
-			flags &= ~(SDL_FULLSCREEN | SDL_DOUBLEBUF);
+			flags &= ~SDL_DOUBLEBUF;
 		}
 
 		current->flags = flags;
@@ -1104,7 +1104,6 @@ os4video_ApplyWindowModeFlags(SDL_Surface *current, Uint32 flags, int screenDept
 		// We can't get exclusive access to the palette and
 		// the results are ugly. Force a screen instead.
 		flags = os4video_ForceFullscreenFlags(flags);
-		dprintf("Forcing full-screenmode\n");
 
 		flags |= SDL_FULLSCREEN;
 
@@ -1331,9 +1330,9 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 
 	BOOL hwSurface = (flags & SDL_HWSURFACE) == SDL_HWSURFACE;
 
-	if (os4video_NeedOffScreenSurface(flags) && newOffScreenSurface)
+	if (os4video_NeedOffScreenSurface(flags))
 	{
-		if (!os4video_InitOffScreenBuffer(&hidden->offScreenBuffer, width, height, current->format, hwSurface))
+		if (newOffScreenSurface && !os4video_InitOffScreenBuffer(&hidden->offScreenBuffer, width, height, current->format, hwSurface))
 		{
 			dprintf("Failed to allocate off-screen buffer\n");
 			SDL_OutOfMemory();
