@@ -187,17 +187,9 @@ main(int argc, char *argv[])
     }
 #endif
 
-    if (sprite) {
-        SDL_DestroyTexture(sprite);
-    }
-
-    if (renderer) {
-        SDL_DestroyRenderer(renderer);
-    }
-
-    if (window) {
-        SDL_DestroyWindow(window);
-    }
+    SDL_DestroyTexture(sprite);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
 
     SDL_VideoQuit();
     SDL_Quit();
