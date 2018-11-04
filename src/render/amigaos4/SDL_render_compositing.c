@@ -449,13 +449,12 @@ OS4_FillVertexData(OS4_Vertex vertices[4], const SDL_Rect * srcrect, const SDL_R
     }
 }
 
-#if 0
 static int
-OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects, int count)
+OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * points, int count, SDL_BlendMode mode,
+    Uint8 a, Uint8 r, Uint8 g, Uint8 b)
 {
     OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
     struct BitMap *bitmap = OS4_ActivateRenderer(renderer);
-    SDL_Rect *final_rects;
     int i, status;
 
     //dprintf("Called for %d rects\n", count);
@@ -465,44 +464,16 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects, int count)
         return -1;
     }
 
-    final_rects = SDL_stack_alloc(SDL_Rect, count);
-    if (!final_rects) {
-        return SDL_OutOfMemory();
-    }
-    if (renderer->viewport.x || renderer->viewport.y) {
-        int x = renderer->viewport.x;
-        int y = renderer->viewport.y;
+    if (mode == SDL_BLENDMODE_NONE) {
 
-        for (i = 0; i < count; ++i) {
-            final_rects[i].x = (int)(x + rects[i].x);
-            final_rects[i].y = (int)(y + rects[i].y);
-            final_rects[i].w = SDL_max((int)rects[i].w, 1);
-            final_rects[i].h = SDL_max((int)rects[i].h, 1);
-        }
-    } else {
-        for (i = 0; i < count; ++i) {
-            final_rects[i].x = (int)rects[i].x;
-            final_rects[i].y = (int)rects[i].y;
-            final_rects[i].w = SDL_max((int)rects[i].w, 1);
-            final_rects[i].h = SDL_max((int)rects[i].h, 1);
-        }
-    }
-
-    if (renderer->blendMode == SDL_BLENDMODE_NONE) {
-
-        Uint32 color =
-            renderer->a << 24 |
-            renderer->r << 16 |
-            renderer->g << 8 |
-            renderer->b;
+        const Uint32 color = a << 24 | r << 16 | g << 8 | b;
 
         for (i = 0; i < count; ++i) {
 
             SDL_Rect clipped;
-            //dprintf("%d, %d - %d, %d\n", final_rects[i].x, final_rects[i].y, final_rects[i].w, final_rects[i].h);
 
             /* Perform clipping - is it possible to use RastPort? */
-            if (!SDL_IntersectRect(&final_rects[i], &data->cliprect, &clipped)) {
+            if (!SDL_IntersectRect(points, &data->cliprect, &clipped)) {
                 continue;
             }
 
@@ -521,38 +492,36 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects, int count)
         Uint32 colormod;
 
         if (!data->solidcolor) {
-            SDL_stack_free(final_rects);
             return -1;
         }
 
-        colormod = renderer->a << 24 | renderer->r << 16 | renderer->g << 8 | renderer->b;
+        colormod = a << 24 | r << 16 | g << 8 | b;
 
         // Color modulation is implemented through fill texture manipulation
         if (!OS4_SetSolidColor(renderer, colormod)) {
-            SDL_stack_free(final_rects);
             return -1;
         }
 
         /* TODO: batch */
         for (i = 0; i < count; ++i) {
 
-            SDL_Rect srcrect = { 0, 0, 1, 1 };
+            const SDL_Rect srcrect = { 0, 0, 1, 1 };
 
             OS4_Vertex vertices[4];
 
             uint32 ret_code;
 
-            OS4_FillVertexData(vertices, &srcrect, &final_rects[i], 0.0, NULL, SDL_FLIP_NONE);
+            OS4_FillVertexData(vertices, &srcrect, points, 0.0, NULL, SDL_FLIP_NONE);
 
             ret_code = data->iGraphics->CompositeTags(
-                OS4_ConvertBlendMode(renderer->blendMode),
+                OS4_ConvertBlendMode(mode),
                 data->solidcolor,
                 bitmap,
                 COMPTAG_DestX,      data->cliprect.x,
                 COMPTAG_DestY,      data->cliprect.y,
                 COMPTAG_DestWidth,  data->cliprect.w,
                 COMPTAG_DestHeight, data->cliprect.h,
-                COMPTAG_Flags,      OS4_GetCompositeFlags(renderer->blendMode),
+                COMPTAG_Flags,      OS4_GetCompositeFlags(mode),
                 COMPTAG_VertexArray, vertices,
                 COMPTAG_VertexFormat, COMPVF_STW0_Present,
                 COMPTAG_NumTriangles, 2,
@@ -570,12 +539,11 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects, int count)
 
         status = 0;
     }
-    SDL_stack_free(final_rects);
+
     //dprintf("Took %d\n", SDL_GetTicks() - s);
 
     return status;
 }
-#endif
 
 static int
 OS4_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
@@ -812,18 +780,69 @@ OS4_QueueSetDrawColor(SDL_Renderer * renderer, SDL_RenderCommand *cmd)
 static int
 OS4_QueueDrawPoints(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FPoint * points, int count)
 {
+    SDL_Point *verts = (SDL_Point *) SDL_AllocateRenderVertices(renderer, count * sizeof(SDL_Point), 0, &cmd->data.draw.first);
+    size_t i;
+
+    if (!verts) {
+        return -1;
+    }
+
+    cmd->data.draw.count = count;
+
+    if (renderer->viewport.x || renderer->viewport.y) {
+        const int x = renderer->viewport.x;
+        const int y = renderer->viewport.y;
+        for (i = 0; i < count; i++, verts++, points++) {
+            verts->x = (int)(x + points->x);
+            verts->y = (int)(y + points->y);
+        }
+    } else {
+        for (i = 0; i < count; i++, verts++, points++) {
+            verts->x = (int)points->x;
+            verts->y = (int)points->y;
+        }
+    }
+
     return 0;
 }
 
 static int
 OS4_QueueDrawLines(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FPoint * points, int count)
 {
-    return 0;
+    return OS4_QueueDrawPoints(renderer, cmd, points, count);
 }
 
 static int
 OS4_QueueFillRects(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FRect * rects, int count)
 {
+    SDL_Rect *verts = (SDL_Rect *) SDL_AllocateRenderVertices(renderer, count * sizeof (SDL_Rect), 0, &cmd->data.draw.first);
+    size_t i;
+
+    if (!verts) {
+        return -1;
+    }
+
+    cmd->data.draw.count = count;
+
+    if (renderer->viewport.x || renderer->viewport.y) {
+        const int x = renderer->viewport.x;
+        const int y = renderer->viewport.y;
+
+        for (i = 0; i < count; i++, verts++, rects++) {
+            verts->x = (int)(x + rects->x);
+            verts->y = (int)(y + rects->y);
+            verts->w = SDL_max((int)rects->w, 1);
+            verts->h = SDL_max((int)rects->h, 1);
+        }
+    } else {
+        for (i = 0; i < count; i++, verts++, rects++) {
+            verts->x = (int)rects->x;
+            verts->y = (int)rects->y;
+            verts->w = SDL_max((int)rects->w, 1);
+            verts->h = SDL_max((int)rects->h, 1);
+        }
+    }
+
     return 0;
 }
 
@@ -947,7 +966,7 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
             }
 
             case SDL_RENDERCMD_CLEAR: {
-                Uint32 color =
+                const Uint32 color =
                     (cmd->data.color.a << 24) |
                     (cmd->data.color.r << 16) |
                     (cmd->data.color.g << 8) |
@@ -963,17 +982,41 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
                 break;
             }
 
-            case SDL_RENDERCMD_DRAW_POINTS:
-                // TODO
+            case SDL_RENDERCMD_DRAW_POINTS: {
+                const Uint8 r = cmd->data.draw.r;
+                const Uint8 g = cmd->data.draw.g;
+                const Uint8 b = cmd->data.draw.b;
+                const Uint8 a = cmd->data.draw.a;
+                const size_t count = cmd->data.draw.count;
+                const SDL_Point *verts = (SDL_Point *)(((Uint8 *) vertices) + cmd->data.draw.first);
+                const SDL_BlendMode blend = cmd->data.draw.blend;
+                OS4_RenderDrawPoints(renderer, verts, count, blend, a, r, g, b);
                 break;
+            }
 
-            case SDL_RENDERCMD_DRAW_LINES:
-                // TODO
+            case SDL_RENDERCMD_DRAW_LINES: {
+                const Uint8 r = cmd->data.draw.r;
+                const Uint8 g = cmd->data.draw.g;
+                const Uint8 b = cmd->data.draw.b;
+                const Uint8 a = cmd->data.draw.a;
+                const size_t count = cmd->data.draw.count;
+                const SDL_Point *verts = (SDL_Point *)(((Uint8 *) vertices) + cmd->data.draw.first);
+                const SDL_BlendMode blend = cmd->data.draw.blend;
+                OS4_RenderDrawLines(renderer, verts, count, blend, a, r, g, b);
                 break;
+            }
 
-            case SDL_RENDERCMD_FILL_RECTS:
-                // TODO
+            case SDL_RENDERCMD_FILL_RECTS: {
+                const Uint8 r = cmd->data.draw.r;
+                const Uint8 g = cmd->data.draw.g;
+                const Uint8 b = cmd->data.draw.b;
+                const Uint8 a = cmd->data.draw.a;
+                const size_t count = cmd->data.draw.count;
+                const SDL_Rect *verts = (SDL_Rect *)(((Uint8 *) vertices) + cmd->data.draw.first);
+                const SDL_BlendMode blend = cmd->data.draw.blend;
+                OS4_RenderFillRects(renderer, verts, count, blend, a, r, g, b);
                 break;
+            }
 
             case SDL_RENDERCMD_COPY: {
                 const SDL_Rect *verts = (SDL_Rect *)(((Uint8 *) vertices) + cmd->data.draw.first);
