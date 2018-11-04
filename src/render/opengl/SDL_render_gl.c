@@ -993,11 +993,15 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
             data->glDisable(GL_BLEND);
         } else {
             data->glEnable(GL_BLEND);
+#ifdef __AMIGAOS4__
+#warning "FIXME"
+#else
             data->glBlendFuncSeparate(GetBlendFunc(SDL_GetBlendModeSrcColorFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeDstColorFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeSrcAlphaFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeDstAlphaFactor(blend)));
             data->glBlendEquation(GetBlendEquation(SDL_GetBlendModeColorOperation(blend)));
+#endif
         }
         data->drawstate.blend = blend;
     }
