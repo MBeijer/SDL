@@ -947,6 +947,27 @@ GL_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * te
     return 0;
 }
 
+#ifdef __AMIGAOS4__
+static void
+MiniGlBlendModeHack(GL_RenderData * data, const SDL_BlendMode mode)
+{
+    if (mode == SDL_BLENDMODE_BLEND) {
+        data->glEnable(GL_BLEND);
+        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        data->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else if (mode == SDL_BLENDMODE_ADD) {
+        data->glEnable(GL_BLEND);
+        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        data->glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    } else if (mode == SDL_BLENDMODE_NONE) {
+        data->glDisable(GL_BLEND);
+        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    } else {
+        // TODO: cannot handle others?
+    }
+}
+#endif
+
 static void
 SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader shader)
 {
@@ -989,20 +1010,20 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
     }
 
     if (blend != data->drawstate.blend) {
+#ifdef __AMIGAOS4__
+        MiniGlBlendModeHack(data, blend);
+#else
         if (blend == SDL_BLENDMODE_NONE) {
             data->glDisable(GL_BLEND);
         } else {
             data->glEnable(GL_BLEND);
-#ifdef __AMIGAOS4__
-#warning "FIXME"
-#else
             data->glBlendFuncSeparate(GetBlendFunc(SDL_GetBlendModeSrcColorFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeDstColorFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeSrcAlphaFactor(blend)),
                                       GetBlendFunc(SDL_GetBlendModeDstAlphaFactor(blend)));
             data->glBlendEquation(GetBlendEquation(SDL_GetBlendModeColorOperation(blend)));
-#endif
         }
+#endif
         data->drawstate.blend = blend;
     }
 
