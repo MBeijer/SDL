@@ -473,7 +473,7 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * points, int count,
             SDL_Rect clipped;
 
             /* Perform clipping - is it possible to use RastPort? */
-            if (!SDL_IntersectRect(points, &data->cliprect, &clipped)) {
+            if (!SDL_IntersectRect(&points[i], &data->cliprect, &clipped)) {
                 continue;
             }
 
@@ -511,7 +511,7 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * points, int count,
 
             uint32 ret_code;
 
-            OS4_FillVertexData(vertices, &srcrect, points, 0.0, NULL, SDL_FLIP_NONE);
+            OS4_FillVertexData(vertices, &srcrect, &points[i], 0.0, NULL, SDL_FLIP_NONE);
 
             ret_code = data->iGraphics->CompositeTags(
                 OS4_ConvertBlendMode(mode),
@@ -815,7 +815,7 @@ OS4_QueueDrawLines(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FP
 static int
 OS4_QueueFillRects(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FRect * rects, int count)
 {
-    SDL_Rect *verts = (SDL_Rect *) SDL_AllocateRenderVertices(renderer, count * sizeof (SDL_Rect), 0, &cmd->data.draw.first);
+    SDL_Rect *verts = (SDL_Rect *) SDL_AllocateRenderVertices(renderer, count * sizeof(SDL_Rect), 0, &cmd->data.draw.first);
     size_t i;
 
     if (!verts) {
