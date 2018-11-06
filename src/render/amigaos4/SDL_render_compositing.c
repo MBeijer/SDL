@@ -93,89 +93,14 @@ struct BitMap *
 OS4_AllocBitMap(SDL_Renderer * renderer, int width, int height, int depth) {
     OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
 
-    struct BitMap *bitmap = data->iGraphics->AllocBitMapTags(
+    return data->iGraphics->AllocBitMapTags(
         width,
         height,
         depth,
         BMATags_Displayable, TRUE,
         BMATags_PixelFormat, PIXF_A8R8G8B8,
         TAG_DONE);
-
-    return bitmap;
 }
-
-static SDL_bool
-OS4_RectChanged(const SDL_Rect * first, const SDL_Rect * second)
-{
-    if (first->x != second->x ||
-        first->y != second->y ||
-        first->w != second->w ||
-        first->h != second->h) {
-
-        return SDL_TRUE;
-    }
-
-    return SDL_FALSE;
-}
-
-static int
-OS4_UpdateViewport(SDL_Renderer * renderer)
-{
-    OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
-    SDL_Rect old;
-
-    if (!data->bitmap) {
-        /* We'll update the viewport after we recreate the surface */
-        return 0;
-    }
-
-    old = data->cliprect;
-
-    if (&renderer->viewport) {
-        data->cliprect = renderer->viewport;
-    } else {
-        data->cliprect.x = 0;
-        data->cliprect.y = 0;
-        data->cliprect.w = renderer->window->w;
-        data->cliprect.h = renderer->window->h;
-    }
-
-    if (OS4_RectChanged(&old, &data->cliprect)) {
-        dprintf("Cliprect: (%d,%d) - %d*%d\n",
-            data->cliprect.x, data->cliprect.y, data->cliprect.w, data->cliprect.h);
-    }
-
-    return 0;
-}
-
-static int
-OS4_UpdateClipRect(SDL_Renderer * renderer)
-{
-    OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
-
-    if (data->bitmap) {
-        const SDL_Rect *rect = &renderer->clip_rect;
-
-        SDL_Rect old = data->cliprect;
-
-        if (rect && !SDL_RectEmpty(rect)) {
-            data->cliprect = *rect;
-        } else {
-            data->cliprect.x = 0;
-            data->cliprect.y = 0;
-            data->cliprect.w = renderer->window->w;
-            data->cliprect.h = renderer->window->h;
-        }
-
-        if (OS4_RectChanged(&old, &data->cliprect)) {
-            dprintf("Cliprect: (%d,%d) - %d*%d\n",
-                data->cliprect.x, data->cliprect.y, data->cliprect.w, data->cliprect.h);
-        }
-    }
-
-    return 0;
-}
-
 
 struct BitMap *
 OS4_ActivateRenderer(SDL_Renderer * renderer)
@@ -196,10 +121,7 @@ OS4_ActivateRenderer(SDL_Renderer * renderer)
 
         data->target = data->bitmap = OS4_AllocBitMap(renderer, width, height, depth);
 
-        if (data->bitmap) {
-            OS4_UpdateViewport(renderer);
-            OS4_UpdateClipRect(renderer);
-        } else {
+        if (!data->bitmap) {
             dprintf("Allocation failed\n");
         }
     }
@@ -744,6 +666,26 @@ OS4_RenderPresent(SDL_Renderer * renderer)
 }
 
 static void
+OS4_RenderClear(SDL_Renderer * renderer, Uint8 a, Uint8 r, Uint8 g, Uint8 b, struct BitMap * bitmap)
+{
+    OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
+    const Uint32 color = (a << 24) | (r << 16) | (g << 8) | b;
+
+    int width = 0;
+    int height = 0;
+
+    OS4_GetBitMapSize(renderer, bitmap, &width, &height);
+
+    data->iGraphics->RectFillColor(
+        &data->rastport,
+        0,
+        0,
+        width - 1,
+        height - 1,
+        color); // graphics.lib v54!
+}
+
+static void
 OS4_DestroyRenderer(SDL_Renderer * renderer)
 {
     OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
@@ -764,15 +706,8 @@ OS4_DestroyRenderer(SDL_Renderer * renderer)
     SDL_free(renderer);
 }
 
-// TODO
 static int
-OS4_QueueSetViewport(SDL_Renderer * renderer, SDL_RenderCommand *cmd)
-{
-    return 0;
-}
-
-static int
-OS4_QueueSetDrawColor(SDL_Renderer * renderer, SDL_RenderCommand *cmd)
+OS4_QueueNop(SDL_Renderer * renderer, SDL_RenderCommand *cmd)
 {
     return 0;
 }
@@ -873,7 +808,7 @@ OS4_QueueCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd, SDL_Texture * te
     verts->w = (int)dstrect->w;
     verts->h = (int)dstrect->h;
 
-    return 0;
+    return OS4_SetTextureColorMod(renderer, texture);
 }
 
 static int
@@ -886,6 +821,10 @@ OS4_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * t
 
     OS4_Vertex *verts = (OS4_Vertex *) SDL_AllocateRenderVertices(renderer,
         4 * sizeof(OS4_Vertex), 0, &cmd->data.draw.first);
+
+    if (!verts) {
+        return -1;
+    }
 
     cmd->data.draw.count = 1;
 
@@ -905,7 +844,7 @@ OS4_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * t
 
     OS4_FillVertexData(verts, srcrect, &final_rect, angle, &final_center, flip);
 
-    return 0;
+    return OS4_SetTextureColorMod(renderer, texture);
 }
 
 static int
@@ -915,20 +854,15 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
 
     struct BitMap *bitmap = OS4_ActivateRenderer(renderer);
 
-    int width = 0;
-    int height = 0;
-
     if (!bitmap) {
         dprintf("NULL bitmap\n");
         return -1;
     }
 
-    OS4_GetBitMapSize(renderer, bitmap, &width, &height);
-
     while (cmd) {
         switch (cmd->command) {
             case SDL_RENDERCMD_SETDRAWCOLOR:
-                // TODO
+                // Nothing to do
                 break;
 
             case SDL_RENDERCMD_SETVIEWPORT: {
@@ -939,6 +873,7 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
                     //dprintf("viewport %d, %d\n", viewport->w, viewport->h);
 
                     if (!data->cliprect_enabled) {
+                        // CompositeTags uses cliprect: with clipping disabled, maximize it
                         SDL_memcpy(&data->cliprect, viewport, sizeof(SDL_Rect));
                     }
                 }
@@ -952,33 +887,26 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
 
                     //dprintf("cliprect enabled %d\n", data->cliprect_enabled);
                 }
-                if (SDL_memcmp(&data->cliprect, rect, sizeof (SDL_Rect)) != 0) {
-                    SDL_memcpy(&data->cliprect, rect, sizeof (SDL_Rect));
+
+                if (SDL_memcmp(&data->cliprect, rect, sizeof(SDL_Rect)) != 0) {
+                    SDL_memcpy(&data->cliprect, rect, sizeof(SDL_Rect));
 
                     //dprintf("cliprect %d, %d\n", data->cliprect.w, data->cliprect.h);
                 }
 
                 if (!data->cliprect_enabled) {
+                    // CompositeTags uses cliprect: with clipping disabled, maximize it
                     SDL_memcpy(&data->cliprect, &data->viewport, sizeof(SDL_Rect));
                 }
-
                 break;
             }
 
             case SDL_RENDERCMD_CLEAR: {
-                const Uint32 color =
-                    (cmd->data.color.a << 24) |
-                    (cmd->data.color.r << 16) |
-                    (cmd->data.color.g << 8) |
-                    (cmd->data.color.b);
-
-                data->iGraphics->RectFillColor(
-                    &data->rastport,
-                    0,
-                    0,
-                    width - 1,
-                    height - 1,
-                    color); // graphics.lib v54!
+                const Uint8 r = cmd->data.color.r;
+                const Uint8 g = cmd->data.color.g;
+                const Uint8 b = cmd->data.color.b;
+                const Uint8 a = cmd->data.color.a;
+                OS4_RenderClear(renderer, a, r, g, b, bitmap);
                 break;
             }
 
@@ -1067,15 +995,12 @@ OS4_CreateRenderer(SDL_Window * window, Uint32 flags)
     renderer->WindowEvent = OS4_WindowEvent;
     renderer->GetOutputSize = OS4_GetOutputSize;
     renderer->CreateTexture = OS4_CreateTexture;
-    //renderer->SetTextureColorMod = OS4_SetTextureColorMod; TODO
-    //renderer->SetTextureAlphaMod = OS4_SetTextureAlphaMod;
-    //renderer->SetTextureBlendMode = OS4_SetTextureBlendMode;
     renderer->UpdateTexture = OS4_UpdateTexture;
     renderer->LockTexture = OS4_LockTexture;
     renderer->UnlockTexture = OS4_UnlockTexture;
     renderer->SetRenderTarget = OS4_SetRenderTarget;
-    renderer->QueueSetViewport = OS4_QueueSetViewport;
-    renderer->QueueSetDrawColor = OS4_QueueSetDrawColor;
+    renderer->QueueSetViewport = OS4_QueueNop;
+    renderer->QueueSetDrawColor = OS4_QueueNop;
     renderer->QueueDrawPoints = OS4_QueueDrawPoints;
     renderer->QueueDrawLines = OS4_QueueDrawLines;
     renderer->QueueFillRects = OS4_QueueFillRects;
@@ -1103,14 +1028,15 @@ OS4_CreateRenderer(SDL_Window * window, Uint32 flags)
 SDL_RenderDriver OS4_RenderDriver = {
     OS4_CreateRenderer,
     {
-     "compositing",
-     SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_PRESENTVSYNC,
-     1,
-     {
-      SDL_PIXELFORMAT_ARGB8888,
-     },
-     0,
-     0}
+        "compositing",
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_PRESENTVSYNC,
+        1,
+        {
+            SDL_PIXELFORMAT_ARGB8888,
+        },
+        0,
+        0
+    }
 };
 
 #endif /* !SDL_RENDER_DISABLED */
