@@ -951,19 +951,23 @@ GL_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * te
 static void
 MiniGlBlendModeHack(GL_RenderData * data, const SDL_BlendMode mode)
 {
-    if (mode == SDL_BLENDMODE_BLEND) {
-        data->glEnable(GL_BLEND);
-        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        data->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else if (mode == SDL_BLENDMODE_ADD) {
-        data->glEnable(GL_BLEND);
-        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        data->glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
-    } else if (mode == SDL_BLENDMODE_NONE) {
-        data->glDisable(GL_BLEND);
-        data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    } else {
-        // TODO: cannot handle others?
+    switch (mode) {
+        case SDL_BLENDMODE_NONE:
+            data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+            data->glDisable(GL_BLEND);
+            break;
+
+        case SDL_BLENDMODE_ADD:
+            data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            data->glEnable(GL_BLEND);
+            data->glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+            break;
+
+        default:
+            data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            data->glEnable(GL_BLEND);
+            data->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
     }
 }
 #endif
