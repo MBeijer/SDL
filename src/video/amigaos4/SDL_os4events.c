@@ -27,13 +27,11 @@
 #include "../SDL_cursor_c.h"
 #include "SDL_os4video.h"
 
-#include <libraries/Picasso96.h>
 #include <intuition/intuition.h>
 #include <devices/inputevent.h>
 #include <workbench/workbench.h>
 
 #include <proto/exec.h>
-#include <proto/Picasso96API.h>
 #include <proto/keymap.h>
 #include <proto/layers.h>
 #include <proto/intuition.h>
@@ -55,6 +53,7 @@ extern void SetMouseColors(SDL_VideoDevice *_this);
 extern void ResetMouseColors(SDL_VideoDevice *_this);
 extern void os4video_UniconifyWindow(_THIS);
 extern void os4video_ResetCursor(struct SDL_PrivateVideoData *hidden);
+extern int os4video_IconifyWindow(_THIS);
 
 struct MyIntuiMessage
 {
@@ -179,7 +178,6 @@ os4video_InitOSKeymap(_THIS)
 }
 
 #undef map
-
 
 static uint32
 os4video_TranslateUnicode(uint16 Code, uint32 Qualifier)
@@ -521,6 +519,14 @@ os4video_EventHandler(SDL_VideoDevice *_this)
 				hidden->pointerGrabTicks--;
 				if (hidden->pointerGrabTicks > POINTER_GRAB_TIMEOUT)
 					os4video_activatePointerGrab (hidden->win, TRUE);
+			}
+			break;
+
+		case IDCMP_GADGETUP:
+			if (msg.Gadget->GadgetID == GID_ICONIFY) {
+				os4video_IconifyWindow(_this);
+			} else {
+				dprintf("Unknown gadget %d\n", msg.Gadget);
 			}
 			break;
 		}

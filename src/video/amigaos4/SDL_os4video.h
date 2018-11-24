@@ -31,6 +31,8 @@
 
 #define _THIS SDL_VideoDevice *_this
 
+#define GID_ICONIFY 123
+
 /*
  * Data associated with the off-screen buffer for
  * software display surfaces
@@ -136,6 +138,9 @@ struct SDL_PrivateVideoData
 	struct GLContextIFace *IGL;
 	struct BitMap *frontBuffer;
 	struct BitMap *backBuffer;
+
+	struct Gadget *iconifyGadget;
+	struct Image *iconifyImage;
 };
 
 #endif

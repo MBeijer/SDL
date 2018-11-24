@@ -36,6 +36,9 @@
 #include <proto/layers.h>
 #include <proto/icon.h>
 
+#include <intuition/imageclass.h>
+#include <intuition/gadgetclass.h>
+
 //#define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
 
@@ -732,11 +735,54 @@ static const struct Hook blackBackFillHook = {
 	0		 						/* h_Data */
 };
 
+static void
+os4video_CreateIconifyGadget(_THIS, struct Window *window) {
+    struct SDL_PrivateVideoData *hidden = _this->hidden;
+
+    dprintf("Called\n");
+
+    struct DrawInfo *di = SDL_IIntuition->GetScreenDrawInfo(hidden->publicScreen);
+
+    if (di) {
+		hidden->iconifyImage = (struct Image *)SDL_IIntuition->NewObject(NULL, SYSICLASS,
+			SYSIA_Which, ICONIFYIMAGE,
+			SYSIA_DrawInfo, di,
+			TAG_DONE);
+
+		if (hidden->iconifyImage) {
+			hidden->iconifyGadget = (struct Gadget *)SDL_IIntuition->NewObject(NULL, BUTTONGCLASS,
+				GA_Image, hidden->iconifyImage,
+				GA_ID, GID_ICONIFY,
+				GA_TopBorder, TRUE,
+				GA_RelRight, TRUE,
+				GA_Titlebar, TRUE,
+				GA_RelVerify, TRUE,
+				TAG_DONE);
+
+			if (hidden->iconifyGadget) {
+				SDL_IIntuition->AddGadget(window, hidden->iconifyGadget, -1);
+			} else {
+				dprintf("Failed to create button class\n");
+			}
+		} else {
+			dprintf("Failed to create image class\n");
+		}
+
+		SDL_IIntuition->FreeScreenDrawInfo(hidden->publicScreen, di);
+
+	} else {
+		dprintf("Failed to get screen draw info\n");
+	}
+}
+
 static struct Window *
-os4video_OpenWindow(int width, int height, struct Screen *screen, struct MsgPort *userport, Uint32 flags, const char *caption)
+os4video_OpenWindow(_THIS, int width, int height, struct Screen *screen, Uint32 flags)
 {
 	struct Window *window;
 	uint32 windowFlags;
+
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
 	uint32 IDCMPFlags = IDCMP_NEWSIZE | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE |
 						IDCMP_DELTAMOVE | IDCMP_RAWKEY | IDCMP_ACTIVEWINDOW |
 						IDCMP_INACTIVEWINDOW | IDCMP_INTUITICKS |
@@ -760,7 +806,7 @@ os4video_OpenWindow(int width, int height, struct Screen *screen, struct MsgPort
 		{
 			windowFlags = WFLG_SMART_REFRESH | WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET
 						| WFLG_NOCAREREFRESH | WFLG_NEWLOOKMENUS;
-			IDCMPFlags |= IDCMP_CLOSEWINDOW;
+			IDCMPFlags |= IDCMP_CLOSEWINDOW | IDCMP_GADGETUP;
 		}
 
 		if (flags & SDL_RESIZABLE)
@@ -791,7 +837,7 @@ os4video_OpenWindow(int width, int height, struct Screen *screen, struct MsgPort
 									WA_InnerHeight,		height,
 									WA_Flags,			windowFlags,
 									WA_PubScreen,		screen,
-									WA_UserPort,		userport,
+									WA_UserPort,		hidden->userPort,
 									WA_IDCMP,			IDCMPFlags,
 									WA_AutoAdjust,		FALSE,
 									WA_BackFill,		backfillHook,
@@ -813,11 +859,19 @@ os4video_OpenWindow(int width, int height, struct Screen *screen, struct MsgPort
 									 -1);
 		}
 
-		SDL_IIntuition->SetWindowTitles(window, caption, caption);
+		SDL_IIntuition->SetWindowTitles(window, hidden->currentCaption, hidden->currentCaption);
 
 		if (flags & SDL_FULLSCREEN)
 		{
 			SDL_IIntuition->ScreenToFront(screen);
+		} else {
+			if (!(flags & SDL_NOFRAME)) {
+				if (width > 99 && height > 99) {
+					os4video_CreateIconifyGadget(_this, window);
+				} else {
+					dprintf("Don't add gadget for too small window %d*%d\n", width, height);
+				}
+			}
 		}
 
 		SDL_IIntuition->ActivateWindow(window);
@@ -1037,6 +1091,19 @@ os4video_DeleteCurrentDisplay(_THIS, SDL_Surface *current, BOOL keepOffScreenBuf
 
 	if (hidden->win)
 	{
+		if (hidden->iconifyGadget) {
+			dprintf("Removing gadget\n");
+			SDL_IIntuition->RemoveGadget(hidden->win, hidden->iconifyGadget);
+			SDL_IIntuition->DisposeObject((Object *)hidden->iconifyGadget);
+			hidden->iconifyGadget = NULL;
+		}
+
+		if (hidden->iconifyImage) {
+			dprintf("Disposing image\n");
+			SDL_IIntuition->DisposeObject((Object *)hidden->iconifyImage);
+			hidden->iconifyImage = NULL;
+		}
+
 		dprintf("Closing window %p\n", hidden->win);
 		SDL_IIntuition->CloseWindow(hidden->win);
 		hidden->win = NULL;
@@ -1366,7 +1433,7 @@ os4video_CreateDisplay(_THIS, SDL_Surface *current, int width, int height, int b
 	os4video_SetSurfaceParameters(_this, current, width, height, bpp);
 
 	hidden->pointerState = pointer_dont_know;
-	hidden->win = os4video_OpenWindow(width, height, screen, hidden->userPort, flags, hidden->currentCaption);
+	hidden->win = os4video_OpenWindow(_this, width, height, screen, flags);
 
 	if (!hidden->win)
 	{
