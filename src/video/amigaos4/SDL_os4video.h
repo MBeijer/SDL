@@ -130,6 +130,7 @@ struct SDL_PrivateVideoData
 	uint32					pointerGrabTicks;
 	char					currentCaption[128];
 	char					currentIconCaption[128];
+	STRPTR                  appName;
 	struct DiskObject *		currentIcon;
 	struct AppIcon *        currentAppIcon; 				/* Only valid when iconified */
 	struct MsgPort *		appPort;

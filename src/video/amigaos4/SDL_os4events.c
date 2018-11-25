@@ -526,7 +526,7 @@ os4video_EventHandler(SDL_VideoDevice *_this)
 			if (msg.Gadget->GadgetID == GID_ICONIFY) {
 				os4video_IconifyWindow(_this);
 			} else {
-				dprintf("Unknown gadget %d\n", msg.Gadget);
+				dprintf("Unknown gadget %d\n", msg.Gadget->GadgetID);
 			}
 			break;
 		}

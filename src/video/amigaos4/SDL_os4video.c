@@ -35,6 +35,7 @@
 #include <proto/keymap.h>
 #include <proto/layers.h>
 #include <proto/icon.h>
+#include <proto/dos.h>
 
 #include <intuition/imageclass.h>
 #include <intuition/gadgetclass.h>
@@ -114,6 +115,7 @@ static struct Library	*intuitionbase;
 static struct Library	*iconbase;
 static struct Library	*workbenchbase;
 static struct Library	*keymapbase;
+static struct Library   *dosbase;
 
 struct GraphicsIFace	*SDL_IGraphics;
 struct LayersIFace		*SDL_ILayers;
@@ -121,6 +123,7 @@ struct IntuitionIFace	*SDL_IIntuition;
 struct IconIFace		*SDL_IIcon;
 struct WorkbenchIFace	*SDL_IWorkbench;
 struct KeymapIFace		*SDL_IKeymap;
+struct DOSIFace         *SDL_IDos;
 
 #define MIN_LIB_VERSION	51
 
@@ -133,8 +136,9 @@ os4video_OpenLibraries(void)
 	iconbase      = IExec->OpenLibrary("icon.library", MIN_LIB_VERSION);
 	workbenchbase = IExec->OpenLibrary("workbench.library", MIN_LIB_VERSION);
 	keymapbase    = IExec->OpenLibrary("keymap.library", MIN_LIB_VERSION);
+	dosbase       = IExec->OpenLibrary("dos.library", MIN_LIB_VERSION);
 
-	if (!gfxbase || !layersbase || !intuitionbase || !iconbase || !workbenchbase || !keymapbase)
+	if (!gfxbase || !layersbase || !intuitionbase || !iconbase || !workbenchbase || !keymapbase || !dosbase)
 		return FALSE;
 
 	SDL_IGraphics  = (struct GraphicsIFace *)  IExec->GetInterface(gfxbase, "main", 1, NULL);
@@ -143,8 +147,9 @@ os4video_OpenLibraries(void)
 	SDL_IIcon      = (struct IconIFace *)      IExec->GetInterface(iconbase, "main", 1, NULL);
 	SDL_IWorkbench = (struct WorkbenchIFace *) IExec->GetInterface(workbenchbase, "main", 1, NULL);
 	SDL_IKeymap    = (struct KeymapIFace *)    IExec->GetInterface(keymapbase, "main", 1, NULL);
+	SDL_IDos       = (struct DOSIFace *)       IExec->GetInterface(dosbase, "main", 1, NULL);
 
-	if (!SDL_IGraphics || !SDL_ILayers || !SDL_IIntuition || !SDL_IIcon || !SDL_IWorkbench || !SDL_IKeymap)
+	if (!SDL_IGraphics || !SDL_ILayers || !SDL_IIntuition || !SDL_IIcon || !SDL_IWorkbench || !SDL_IKeymap || !SDL_IDos)
 		return FALSE;
 
 	return TRUE;
@@ -153,6 +158,10 @@ os4video_OpenLibraries(void)
 static void
 os4video_CloseLibraries(void)
 {
+	if (SDL_IDos) {
+		IExec->DropInterface((struct Interface *) SDL_IDos);
+		SDL_IDos = NULL;
+	}
 	if (SDL_IKeymap) {
 		IExec->DropInterface((struct Interface *) SDL_IKeymap);
 		SDL_IKeymap = NULL;
@@ -178,6 +187,10 @@ os4video_CloseLibraries(void)
 		SDL_IGraphics = NULL;
 	}
 
+	if (dosbase) {
+		IExec->CloseLibrary(dosbase);
+		dosbase = NULL;
+	}
 	if (keymapbase) {
 		IExec->CloseLibrary(keymapbase);
 		keymapbase = NULL;
@@ -250,11 +263,47 @@ os4video_DeleteDevice(_THIS)
 			SDL_IIcon->FreeDiskObject(_this->hidden->currentIcon);
 		}
 
+		if (_this->hidden->appName)
+		{
+			SDL_free(_this->hidden->appName);
+		}
+
 		os4video_CloseLibraries();
 
 		IExec->FreeVec(_this->hidden);
 		IExec->FreeVec(_this);
 	}
+}
+
+static void
+os4video_FindApplicationName(_THIS)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+	size_t size;
+
+	char pathBuffer[MAX_DOS_PATH];
+	char nameBuffer[MAX_DOS_FILENAME];
+
+	if (SDL_IDos->GetCliProgramName(pathBuffer, MAX_DOS_PATH - 1)) {
+		CONST_STRPTR filePart = SDL_IDos->FilePart(pathBuffer);
+
+		snprintf(nameBuffer, MAX_DOS_FILENAME, "%s", filePart);
+	} else {
+		dprintf("Failed to get CLI program name, checking task node\n");
+
+		struct Task* me = IExec->FindTask(NULL);
+		snprintf(nameBuffer, MAX_DOS_FILENAME, "%s", ((struct Node *)me)->ln_Name);
+	}
+
+	size = SDL_strlen(nameBuffer) + 1;
+
+	hidden->appName = SDL_malloc(size);
+
+	if (hidden->appName) {
+		snprintf(hidden->appName, size, nameBuffer);
+	}
+
+	dprintf("Application name: '%s'\n", hidden->appName);
 }
 
 static SDL_VideoDevice *
@@ -313,6 +362,8 @@ os4video_CreateDevice(int devnum)
 
 	SDL_strlcpy(os4video_device->hidden->currentCaption, "SDL_Window", 128);
 	SDL_strlcpy(os4video_device->hidden->currentIconCaption, "SDL Application", 128);
+
+	os4video_FindApplicationName(os4video_device);
 
 	os4video_device->VideoInit = os4video_VideoInit;
 	os4video_device->ListModes = os4video_ListModes;

@@ -439,13 +439,39 @@ void os4video_UpdateMouse(_THIS)
 	SDL_Unlock_EventThread();
 }
 
+static struct DiskObject*
+os4video_GetDiskObject(_THIS)
+{
+	struct SDL_PrivateVideoData *hidden = _this->hidden;
+
+	struct DiskObject *diskObject = NULL;
+
+	dprintf("Called\n");
+
+	if (hidden->appName) {
+		diskObject = SDL_IIcon->GetDiskObject(hidden->appName);
+	}
+
+	if (!diskObject) {
+		CONST_STRPTR fallbackIconName = "ENVARC:Sys/def_window";
+
+		dprintf("Falling back to '%s'\n", fallbackIconName);
+		diskObject = SDL_IIcon->GetDiskObjectNew(fallbackIconName);
+	}
+
+	return diskObject;
+}
+
+
 BOOL CreateAppIcon(_THIS)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
+	dprintf("Called\n");
+
 	if (!hidden->currentIcon)
 	{
-		hidden->currentIcon = SDL_IIcon->GetDefDiskObject(WBTOOL);
+		hidden->currentIcon = os4video_GetDiskObject(_this);
 	}
 
 	hidden->currentAppIcon = SDL_IWorkbench->AddAppIcon(0, (uint32)_this, hidden->currentIconCaption,
@@ -462,7 +488,7 @@ void DeleteAppIcon(_THIS)
 	if (hidden->currentAppIcon)
 	{
 		SDL_IWorkbench->RemoveAppIcon(hidden->currentAppIcon);
-		hidden->currentAppIcon = 0;
+		hidden->currentAppIcon = NULL;
 	}
 }
 
@@ -521,13 +547,15 @@ void os4video_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
 {
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 
+	dprintf("Called\n");
+
 	if (hidden->currentIcon)
 	{
 		/* If no app icon exists, we can just delete the old icon */
-		if (hidden->currentAppIcon)
+		if (!hidden->currentAppIcon)
 		{
 			SDL_IIcon->FreeDiskObject(hidden->currentIcon);
-			hidden->currentIcon = 0;
+			hidden->currentIcon = NULL;
 		}
 		else
 		{
@@ -543,9 +571,9 @@ void os4video_SetIcon(_THIS, SDL_Surface *icon, Uint8 *mask)
 		}
 	}
 
-	hidden->currentIcon = SDL_IIcon->GetDefDiskObject(WBTOOL);
-	//hidden->currentIcon = SDL_IIcon->NewDiskObject(WBTOOL);
-	hidden->currentIcon->do_Type = 0;
+	if (!hidden->currentIcon) {
+		hidden->currentIcon = os4video_GetDiskObject(_this);
+	}
 }
 
 int os4video_GetWMInfo(_THIS, SDL_SysWMinfo *info)
