@@ -281,18 +281,16 @@ os4video_FindApplicationName(_THIS)
 	struct SDL_PrivateVideoData *hidden = _this->hidden;
 	size_t size;
 
-	char pathBuffer[MAX_DOS_PATH];
-	char nameBuffer[MAX_DOS_FILENAME];
+	const size_t maxPathLength = 255;
+	char nameBuffer[maxPathLength];
 
-	if (SDL_IDos->GetCliProgramName(pathBuffer, MAX_DOS_PATH - 1)) {
-		CONST_STRPTR filePart = SDL_IDos->FilePart(pathBuffer);
-
-		snprintf(nameBuffer, MAX_DOS_FILENAME, "%s", filePart);
+	if (SDL_IDos->GetCliProgramName(nameBuffer, maxPathLength - 1)) {
+		dprintf("Current program name '%s'\n", nameBuffer);
 	} else {
 		dprintf("Failed to get CLI program name, checking task node\n");
 
 		struct Task* me = IExec->FindTask(NULL);
-		snprintf(nameBuffer, MAX_DOS_FILENAME, "%s", ((struct Node *)me)->ln_Name);
+		SDL_snprintf(nameBuffer, maxPathLength, "%s", ((struct Node *)me)->ln_Name);
 	}
 
 	size = SDL_strlen(nameBuffer) + 1;
@@ -300,7 +298,7 @@ os4video_FindApplicationName(_THIS)
 	hidden->appName = SDL_malloc(size);
 
 	if (hidden->appName) {
-		snprintf(hidden->appName, size, nameBuffer);
+		SDL_snprintf(hidden->appName, size, nameBuffer);
 	}
 
 	dprintf("Application name: '%s'\n", hidden->appName);
