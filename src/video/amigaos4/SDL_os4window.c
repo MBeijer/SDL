@@ -1086,6 +1086,37 @@ OS4_UniconifyWindow(_THIS, SDL_Window * window)
     }
 }
 
+void
+OS4_SetWindowResizable (_THIS, SDL_Window * window, SDL_bool resizable)
+{
+    if (window->flags & SDL_WINDOW_FOREIGN) {
+        dprintf("Cannot modify native window '%s'\n", window->title);
+        return;
+    }
+
+    SDL_WindowData *data = window->driverdata;
+
+    if (data->syswin) {
+        dprintf("Closing system window '%s' before re-creation\n", window->title);
+        OS4_CloseWindow(_this, window);
+    }
+
+    data->syswin = OS4_CreateSystemWindow(_this, window, NULL);
+
+    if (data->syswin) {
+        OS4_CreateIconifyGadgetForWindow(_this, window);
+
+        // Make sure the new window is active
+        OS4_ShowWindow(_this, window);
+
+        if ((window->flags & SDL_WINDOW_OPENGL) && data->glContext) {
+            OS4_UpdateGlWindowPointer(_this, window);
+        }
+    } else {
+        dprintf("Failed to re-create window '%s'\n", window->title);
+    }
+}
+
 #endif /* SDL_VIDEO_DRIVER_AMIGAOS4 */
 
 /* vi: set ts=4 sw=4 expandtab: */
