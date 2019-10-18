@@ -165,12 +165,12 @@ OS4_GetIDCMPFlags(SDL_Window * window, SDL_bool fullscreen)
 
     if (!fullscreen) {
         if (!(window->flags & SDL_WINDOW_BORDERLESS)) {
-            IDCMPFlags  |= IDCMP_CLOSEWINDOW | IDCMP_GADGETUP;
+            IDCMPFlags  |= IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_CHANGEWINDOW;
         }
 
         if (window->flags & SDL_WINDOW_RESIZABLE) {
             //IDCMPFlags  |= IDCMP_SIZEVERIFY; no handling so far
-            IDCMPFlags |= (IDCMP_NEWSIZE | IDCMP_CHANGEWINDOW);
+            IDCMPFlags |= IDCMP_NEWSIZE;
         }
     }
 
