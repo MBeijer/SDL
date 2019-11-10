@@ -30,7 +30,7 @@ DEBUG_CFLAGS = -DDEBUG
 SOURCES = $(wildcard src/*.c src/audio/*.c src/cdrom/*.c src/cpuinfo/*.c src/events/*.c src/file/*.c src/stdlib/*.c  \
 	src/video/*.c src/joystick/*.c src/video/dummy/*.c src/audio/disk/*.c src/audio/dummy/*.c src/video/amigaos4/*.c src/audio/amigaos4/*.c \
 	src/thread/*.c src/timer/*.c src/thread/amigaos4/*.c src/thread/generic/SDL_syscond.c \
-	src/timer/amigaos4/*.c src/main/amigaos4/SDL_os4timer.c src/joystick/amigaos4/*.c src/cdrom/amigaos4/*.c src/loadso/dummy/*.c)
+	src/timer/amigaos4/*.c src/main/amigaos4/SDL_os4timer.c src/joystick/amigaos4/*.c src/cdrom/amigaos4/*.c src/loadso/amigaos4/*.c)
 
 TESTS_SOURCES = $(wildcard test/*.c)
 
@@ -69,7 +69,7 @@ $(SHARED_OBJDIR)/%.o: %.c
 $(SHARED_OBJDIR)/test/%: $(SHARED_OBJDIR)/test/%.o
 	@echo Link test $@
 	@mkdir -p $(dir $@)
-	$(CC) -o $@ $< -use-dynld -lSDL
+	$(CC) -o $@ $< -use-dynld -lSDL -athread=native
 
 ### Targets ###
 
