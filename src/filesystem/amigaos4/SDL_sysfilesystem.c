@@ -55,7 +55,7 @@ OS4_CloseDosLibrary()
 char *
 SDL_GetBasePath(void)
 {
-    char *buffer = NULL;
+    char* buffer = NULL;
     const char* const basePath = "PROGDIR:";
 
     size_t len = SDL_strlen(basePath) + 1;
@@ -120,8 +120,9 @@ OS4_CreateDirTree(const char* path)
 char *
 SDL_GetPrefPath(const char *org, const char *app)
 {
-    size_t len = 5; // "ENV:" + NUL
-    char *buffer = NULL;
+    const char* const envPath = "ENVARC:";
+    size_t len = SDL_strlen(envPath) + 1;
+    char* buffer = NULL;
 
     if (org) {
         len += SDL_strlen(org) + 1;
@@ -138,7 +139,7 @@ SDL_GetPrefPath(const char *org, const char *app)
     }
 
     SDL_memset(buffer, 0, len);
-    SDL_snprintf(buffer, len, "ENV:");
+    SDL_snprintf(buffer, len, envPath);
 
     if (org) {
         SDL_snprintf(buffer + SDL_strlen(buffer), len - SDL_strlen(buffer), "%s/", org);
