@@ -34,20 +34,6 @@
 
 #define TLS_MAGICID "SDL2TLS"
 
-// Dont know why i need to redefine this...
-#define ForeachNode(l, n) 	\
-for (  \
-	n = (void *)(((struct List *)(l))->lh_Head);  \
-	((struct Node *)(n))->ln_Succ;  \
-	n = (void *)(((struct Node *)(n))->ln_Succ)  \
-)
-#define ForeachNodeSafe(l,n,n2)  \
-for (  \
-	n = (void *)(((struct List *)(l))->lh_Head);  \
-	(n2 = (void *)((struct Node *)(n))->ln_Succ);  \
-	n = (void *)n2  \
-)
-
 struct tlsmagic
 {
 	UBYTE	magicid[sizeof(TLS_MAGICID)];
