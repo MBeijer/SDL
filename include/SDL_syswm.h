@@ -287,7 +287,12 @@ struct SDL_SysWMinfo
             struct Window *window;      /**< The AmigaOS 4 window */
         } os4;
 #endif
-
+#if defined(SDL_VIDEO_DRIVER_AMIGA)
+        struct
+        {
+            struct Window *window;      /**< Intuition window */
+        } intui;
+#endif
 #if defined(SDL_VIDEO_DRIVER_VIVANTE)
         struct
         {
