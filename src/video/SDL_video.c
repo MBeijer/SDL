@@ -109,6 +109,9 @@ static VideoBootStrap *bootstrap[] = {
 #if SDL_VIDEO_DRIVER_AMIGAOS4
     &OS4_bootstrap,
 #endif
+#if SDL_VIDEO_DRIVER_AMIGA
+    &AMIGA_bootstrap,
+#endif
 #if SDL_VIDEO_DRIVER_QNX
     &QNX_bootstrap,
 #endif
@@ -3966,6 +3969,9 @@ SDL_IsScreenKeyboardShown(SDL_Window *window)
 #if SDL_VIDEO_DRIVER_AMIGAOS4
 #include "amigaos4/SDL_os4messagebox.h"
 #endif
+#if SDL_VIDEO_DRIVER_AMIGA
+#include "amiga/SDL_amigamessagebox.h"
+#endif
 #if SDL_VIDEO_DRIVER_HAIKU
 #include "haiku/SDL_bmessagebox.h"
 #endif
@@ -4067,6 +4073,13 @@ SDL_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
     if (retval == -1 &&
         SDL_MessageboxValidForDriver(messageboxdata, SDL_SYSWM_OS4) &&
         OS4_ShowMessageBox(messageboxdata, buttonid) == 0) {
+        retval = 0;
+    }
+#endif
+#if SDL_VIDEO_DRIVER_AMIGA
+    if (retval == -1 &&
+        SDL_MessageboxValidForDriver(messageboxdata, SDL_SYSWM_AMIGA) &&
+        AMIGA_ShowMessageBox(messageboxdata, buttonid) == 0) {
         retval = 0;
     }
 #endif
