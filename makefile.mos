@@ -19,6 +19,7 @@ SOURCES = \
 	./src/atomic/*.c \
 	./src/audio/*.c \
 	./src/audio/morphos/*.c \
+	./src/audio/disk/*.c \
 	./src/audio/dummy/*.c \
 	./src/core/morphos/*.c \
 	./src/cpuinfo/*.c \
