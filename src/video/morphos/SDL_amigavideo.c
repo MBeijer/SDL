@@ -347,8 +347,8 @@ AMIGA_CreateDevice(int devindex)
 			device->SuspendScreenSaver = AMIGA_SuspendScreenSaver;
 			device->PumpEvents = AMIGA_PumpEvents;
 
-			device->CreateWindow = AMIGA_CreateWindow;
-			device->CreateWindowFrom = AMIGA_CreateWindowFrom;
+			device->CreateSDLWindow = AMIGA_CreateWindow;
+			device->CreateSDLWindowFrom = AMIGA_CreateWindowFrom;
 			device->SetWindowTitle = AMIGA_SetWindowTitle;
 			device->SetWindowIcon = AMIGA_SetWindowIcon;
 			device->SetWindowPosition = AMIGA_SetWindowPosition;
@@ -405,7 +405,7 @@ AMIGA_CreateDevice(int devindex)
 	return NULL;
 }
 
-const VideoBootStrap AMIGA_bootstrap = {
+VideoBootStrap AMIGA_bootstrap = {
 	"amiga", "SDL Amiga video driver",
 	AMIGA_Available, AMIGA_CreateDevice
 };
