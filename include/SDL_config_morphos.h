@@ -218,7 +218,7 @@
 #define SDL_TIMER_MORPHOS 1
 
 /* Enable various video drivers */
-#define SDL_VIDEO_DRIVER_VIDEO 1
+#define SDL_VIDEO_DRIVER_AMIGA 1
 
 /* Enable OpenGL support */
 #define SDL_VIDEO_OPENGL 1
