@@ -524,6 +524,8 @@ SDL_GetPlatform()
     return "PlayStation Portable";
 #elif __AMIGAOS4__
     return "AmigaOS 4";
+#elif __MORPHOS__
+    return "MorphOS";
 #else
     return "Unknown (see SDL_platform.h)";
 #endif
