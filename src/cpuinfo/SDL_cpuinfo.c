@@ -63,6 +63,12 @@
 #include <proto/exec.h>
 #include <exec/exectags.h>
 #endif
+#ifdef __MORPHOS__
+#include <stdlib.h>
+#include <exec/execbase.h>
+#include <exec/system.h>
+#include <proto/exec.h>
+#endif
 
 #if defined(__QNXNTO__)
 #include <sys/syspage.h>
@@ -116,7 +122,7 @@
 #define CPU_HAS_AVX512F (1 << 12)
 #define CPU_HAS_ARM_SIMD (1 << 13)
 
-#if SDL_ALTIVEC_BLITTERS && HAVE_SETJMP && !__MACOSX__ && !__OpenBSD__
+#if SDL_ALTIVEC_BLITTERS && HAVE_SETJMP && !__MACOSX__ && !__OpenBSD__ && !__MORPHOS__
 /* This is the brute force way of detecting instruction sets...
    the idea is borrowed from the libmpeg2 library - thanks!
  */
@@ -340,6 +346,17 @@ CPU_haveAltiVec(void)
         IExec->GetCPUInfoTags(GCIT_VectorUnit, &vec_unit, TAG_DONE);
         altivec = (vec_unit == VECTORTYPE_ALTIVEC);
     }
+#elif defined(__MORPHOS__)
+	if (SysBase->LibNode.lib_Version >=51) {
+    	ULONG has_altivec;
+		if (NewGetSystemAttrs(&has_altivec, size_of(has_altivec), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE))
+		{
+			if(has_altivec) 
+			{
+			 altivec = 1;
+			}
+		}
+	}
 #elif SDL_ALTIVEC_BLITTERS && HAVE_SETJMP
     void (*handler) (int sig);
     handler = signal(SIGILL, illegal_instruction);
@@ -591,6 +608,9 @@ SDL_GetCPUCount(void)
         }
 #endif
 #endif
+#ifdef __MORPHOS__
+		NewGetSystemAttrs(&SDL_CPUCount, sizeof(SDL_CPUCount), SYSTEMINFOTYPE_CPUCOUNT, TAG_DONE);
+#endif
         /* There has to be at least 1, right? :) */
         if (SDL_CPUCount <= 0) {
             SDL_CPUCount = 1;
@@ -729,6 +749,9 @@ SDL_GetCPUCacheLineSize(void)
 
         IExec->GetCPUInfoTags(GCIT_CacheLineSize, &size, TAG_DONE);
         return size;
+#eifdef __MORPHOS__
+		extern u_int32_t DataL1LineSize;
+		return DataL1LineSize;
 #else
         /* Just make a guess here... */
         return SDL_CACHELINE_SIZE;
