@@ -35,6 +35,8 @@ typedef signed int int32;
 #define MAX_BUTTONS         16
 #define MAX_HATS            8
 
+
+// Dont know why i need to redefine this...
 #define ForeachNode(l, n) 	\
 for (  \
 	n = (void *)(((struct List *)(l))->lh_Head);  \
