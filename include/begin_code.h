@@ -68,7 +68,7 @@
 #    define DECLSPEC
 #   endif
 # else
-#  if defined(__GNUC__) && __GNUC__ >= 4
+#  if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__MORPHOS__)
 #   define DECLSPEC __attribute__ ((visibility("default")))
 #  else
 #   define DECLSPEC
