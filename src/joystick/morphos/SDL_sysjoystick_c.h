@@ -26,8 +26,8 @@
 #include <exec/lists.h>
 #endif
 
-#define DEBUG
-#include "../../main/morphos/SDL_os4debug.h"
+typedef unsigned int uint32;
+typedef signed int int32;
 
 #define MAX_JOYSTICKS       32
 
