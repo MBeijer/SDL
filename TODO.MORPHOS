@@ -1,10 +1,13 @@
 TODO
 
+1) static library :
 - Initialise all libraries (same as AmigaOS4)
   - timer (GlobalTimeReq)
   - thread (threadpool)
   - etc..
-
+or
+2) shared library :
+- Import Itix 's work
 
 
 01/03/2020 BeWorld
