@@ -110,12 +110,12 @@ SDL_SYS_JoystickInit(void)
 {
 	struct sensordata *s = SDL_malloc(sizeof(*s));
 	int rc = -1;
-	printf("[SDL_SYS_JoystickInit]\n");
+	D("[SDL_SYS_JoystickInit]\n");
 
 	if (s)
 	{
 		s->notifytask = SysBase->ThisTask;
-		printf("[SDL_SYS_JoystickInit] Create sensor events worker thread...\n");
+		D("[SDL_SYS_JoystickInit] Create sensor events worker thread...\n");
 
 		if (QueueWorkItem(threadpool, (THREADFUNC)sensor_events, s) == WORKITEM_INVALID)
 		{
@@ -133,7 +133,7 @@ SDL_SYS_JoystickInit(void)
 			while (s->sensorport == NULL)
 				Wait(SIGF_SINGLE);
 
-			printf("[SDL_SYS_JoystickInit] Obtain sensor list...\n");
+			D("[SDL_SYS_JoystickInit] Obtain sensor list...\n");
 			sensorlist = ObtainSensorsList((struct TagItem *)&sensortags), sensor = NULL;
 
 			while ((sensor = NextSensor(sensor, sensorlist, NULL)))
@@ -164,7 +164,7 @@ SDL_SYS_JoystickInit(void)
 
 			ReleaseSensorsList(sensorlist, NULL);
 
-			printf("[SDL_SYS_JoystickInit] Found %ld joysticks...\n", count);
+			D("[SDL_SYS_JoystickInit] Found %ld joysticks...\n", count);
 
 			s->joystick_count = count;
 			rc = count;
@@ -472,8 +472,44 @@ SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	return hwdata->guid;
 }
+static 
+int
+SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
+{
+    return 0;
+}
 
 SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
 	return joystick->hwdata->guid;
 }
+
+static int
+SDL_SYS_JoystickGetDevicePlayerIndex(int device_index)
+{
+    return device_index;
+}
+
+static void
+SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
+{
+    D("Not implemented\n");
+}
+
+SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
+{
+    SDL_SYS_JoystickInit,
+    SDL_SYS_NumJoysticks,
+    SDL_SYS_JoystickDetect,
+    SDL_SYS_JoystickNameForDeviceIndex,
+    SDL_SYS_JoystickGetDevicePlayerIndex,
+    SDL_SYS_JoystickSetDevicePlayerIndex,
+    SDL_SYS_JoystickGetGUID,
+    SDL_SYS_GetInstanceIdOfDeviceIndex,
+    SDL_SYS_JoystickOpen,
+    SDL_SYS_JoystickRumble,
+    SDL_SYS_JoystickUpdate,
+    SDL_SYS_JoystickClose,
+    SDL_SYS_JoystickQuit,
+};
+
