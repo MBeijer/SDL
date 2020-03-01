@@ -8,7 +8,7 @@ STRIP = ppc-morphos-strip
 
 AMIGADATE = $(shell date +"%-d.%-m.%Y")
 
-CFLAGS  = -O2 -Wall -Wno-pointer-sign -D__SDL_DEBUG -DAROS_ALMOST_COMPATIBLE -DNDEBUG -maltivec -DNO_AMIGADEBUG -mcpu=750 -mtune=7450 -I./include -D__AMIGADATE__=\"$(AMIGADATE)\"
+CFLAGS  = -O2 -Wall -noixemul -Wno-pointer-sign -D__SDL_DEBUG -DAROS_ALMOST_COMPATIBLE -DNDEBUG -maltivec -DNO_AMIGADEBUG -mcpu=750 -mtune=7450 -I./include -D__AMIGADATE__=\"$(AMIGADATE)\"
 
 TARGET_STATIC  = libSDL2.a
 TESTLIB_STATIC = libSDL2_test.a
