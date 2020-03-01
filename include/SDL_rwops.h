@@ -45,7 +45,8 @@ extern "C" {
 #define SDL_RWOPS_JNIFILE   3U  /**< Android asset */
 #define SDL_RWOPS_MEMORY    4U  /**< Memory stream */
 #define SDL_RWOPS_MEMORY_RO 5U  /**< Read-Only memory stream */
-
+#define SDL_RWOPS_AMIGAFILE 6   /* Amiga file */
+  
 /**
  * This is the read/write operation structure -- very basic.
  */
@@ -110,6 +111,18 @@ typedef struct SDL_RWops
                 size_t left;
             } buffer;
         } windowsio;
+#elif defined(AMIGA)
+        struct
+        {
+            Uint8 AppendMode : 1, NoSeek : 1, IsAtEnd : 1, autoclose : 1;
+				Uint8 Writable : 1;
+
+            union
+            {
+                size_t  dos;
+                void   *libc;
+            } fp;
+        } amigaio;
 #endif
 
 #ifdef HAVE_STDIO_H
