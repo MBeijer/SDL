@@ -236,13 +236,16 @@
 //#define SDL_ASSEMBLY_ROUTINES 1
 #define SDL_ALTIVEC_BLITTERS 1
 
-/* Enable ime support */
-/* #undef SDL_USE_IME */
-
-/* Enable dynamic udev support */
-/* #undef SDL_UDEV_DYNAMIC */
-
-/* Enable dynamic libsamplerate support */
-/* #undef SDL_LIBSAMPLERATE_DYNAMIC */
+#if defined(__MORPHOS__)
+	#if defined(__SDL_DEBUG)
+		#include <exec/types.h>
+		extern struct ExecBase *SysBase;
+		#define D(fmt, ...) ({((STRPTR (*)(void *, CONST_STRPTR , APTR (*)(APTR, UBYTE), STRPTR , ...))*(void**)((long)(SysBase) - 922))((void*)(SysBase), fmt, (APTR)1, NULL, ##__VA_ARGS__);})
+	#else
+		#define D(fmt, ...)
+	#endif
+#else
+	#define D(fmt, ...)
+#endif
 
 #endif /* SDL_config_MORPHOS_h_ */
