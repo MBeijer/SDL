@@ -72,6 +72,3 @@ install:
 	cp -f $(TARGET_STATIC) /usr/local/lib
 	cp -f $(TESTLIB_STATIC) /usr/local/lib
 	cp -f include/*.h /usr/local/include/SDL2/
-
-src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
-	ppc-morphos-gcc-5 -I./include -DNDEBUG -DNO_AMIGADEBUG -faltivec -mabi=altivec  -o $@ -c src/video/SDL_blit_N.c
