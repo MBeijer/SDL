@@ -66,12 +66,6 @@
 #define HAVE_REALLOC 1
 #define HAVE_FREE 1
 #define HAVE_ALLOCA 1
-#ifndef __WIN32__ /* Don't use C runtime versions of these on Windows */
-#define HAVE_GETENV 1
-#define HAVE_SETENV 1
-#define HAVE_PUTENV 1
-/* #undef HAVE_UNSETENV */
-#endif
 #define HAVE_QSORT 1
 #define HAVE_ABS 1
 #define HAVE_BCOPY 1
@@ -174,24 +168,7 @@
 /* #undef HAVE_POLL */
 
 
-/*#define HAVE_ALTIVEC_H 1*/
-/* #undef HAVE_DBUS_DBUS_H */
-/* #undef HAVE_FCITX_FRONTEND_H */
-/* #undef HAVE_IBUS_IBUS_H */
-/* #undef HAVE_IMMINTRIN_H */
-/* #undef HAVE_LIBSAMPLERATE_H */
-/* #undef HAVE_LIBUDEV_H */
-
-/* #undef HAVE_DDRAW_H */
-/* #undef HAVE_DINPUT_H */
-/* #undef HAVE_DSOUND_H */
-/* #undef HAVE_DXGI_H */
-/* #undef HAVE_XINPUT_H */
-/* #undef HAVE_ENDPOINTVOLUME_H */
-/* #undef HAVE_MMDEVICEAPI_H */
-/* #undef HAVE_AUDIOCLIENT_H */
-/* #undef HAVE_XINPUT_GAMEPAD_EX */
-/* #undef HAVE_XINPUT_STATE_EX */
+#define HAVE_ALTIVEC_H 1
 
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_MORPHOS 1
