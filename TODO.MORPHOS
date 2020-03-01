@@ -1,0 +1,11 @@
+TODO
+
+- Initialise all libraries (same as AmigaOS4)
+  - timer (GlobalTimeReq)
+  - thread (threadpool)
+  - etc..
+
+- use gcc 9 with altivec for SDL_BLIT_N.C
+
+
+01/03/2020 BeWorld
