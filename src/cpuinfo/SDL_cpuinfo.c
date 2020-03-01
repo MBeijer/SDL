@@ -347,16 +347,16 @@ CPU_haveAltiVec(void)
         altivec = (vec_unit == VECTORTYPE_ALTIVEC);
     }
 #elif defined(__MORPHOS__)
-	if (SysBase->LibNode.lib_Version >=51) {
+	//if (SysBase->LibNode.lib_Version >=51) {
     	ULONG has_altivec;
-		if (NewGetSystemAttrs(&has_altivec, size_of(has_altivec), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE))
+		if (NewGetSystemAttrs(&has_altivec, sizeof(has_altivec), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE))
 		{
 			if(has_altivec) 
 			{
 			 altivec = 1;
 			}
 		}
-	}
+	//}
 #elif SDL_ALTIVEC_BLITTERS && HAVE_SETJMP
     void (*handler) (int sig);
     handler = signal(SIGILL, illegal_instruction);
