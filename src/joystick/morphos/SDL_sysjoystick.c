@@ -30,13 +30,15 @@
 #include <libraries/sensors.h>
 #include <libraries/sensors_hid.h>
 #include <proto/exec.h>
+#define USE_INLINE_STDARG
 #include <proto/sensors.h>
+#undef USE_INLINE_STDARG
 #include <proto/threadpool.h>
 #include <proto/utility.h>
 
 #define BUFFER_OFFSET(buffer, offset)   (((int32 *)buffer)[offset])
 
-static const size_t sensortags[] = { SENSORS_Class, SensorClass_HID, SENSORS_Type, SensorType_HID_Gamepad, TAG_DONE };
+static const size_t sensortags[] = { SENSORS_Class, SensorClass_HID, /*SENSORS_Type, SensorType_HID_Gamepad,*/ TAG_DONE };
 static struct sensordata *sensors;
 
 extern APTR threadpool;
@@ -140,7 +142,7 @@ SDL_SYS_JoystickInit(void)
 			{
 				CONST_STRPTR name = "<unknown>", serial = NULL;
 				size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
-		
+				GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
 				if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0)
 				{
 					size_t namelen = strlen(name) + 1;
@@ -346,7 +348,8 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 		{
 			CONST_STRPTR name = "<unknown>", serial = NULL;
 			size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
-		
+			GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+			
 			if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
 			{
 				SDL_JoystickGUID guid;
