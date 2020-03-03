@@ -48,7 +48,7 @@
 #include <proto/locale.h>
 #include <proto/screennotify.h>
 
-static SDL_Scancode
+/*static SDL_Scancode
 AMIGA_ScanCodeToSDL(UWORD code)
 {
 	switch (code)
@@ -132,7 +132,7 @@ AMIGA_ScanCodeToSDL(UWORD code)
 	}
 
 	return SDL_SCANCODE_UNKNOWN;
-}
+}*/
 
 static void
 AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *data)
@@ -177,9 +177,11 @@ AMIGA_TranslateUnicode(UWORD code, UWORD qualifier)
 static void
 AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 {
-	SDL_Scancode sc;
-	UWORD code = m->Code;
-
+	//SDL_Scancode sc;
+	//UWORD code = m->Code;
+	SDL_Scancode s;
+	UWORD rawkey = m->Code & 0x0F;
+	
 	switch (code)
 	{
 		case RAWKEY_NM_WHEEL_UP:
@@ -207,14 +209,14 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 			break;
 
 		default:
-			sc = AMIGA_ScanCodeToSDL(code & ~(IECODE_UP_PREFIX));
+			/*sc = AMIGA_ScanCodeToSDL(code & ~(IECODE_UP_PREFIX));
 
 			if (sc != SDL_SCANCODE_UNKNOWN)
 			{
 				SDL_SendKeyboardKey(code & IECODE_UP_PREFIX ? SDL_RELEASED : SDL_PRESSED, sc);
 			}
 			else
-			{
+			{*/
 				/*WCHAR keycode;
 				TEXT buffer[8];
 				ULONG length;
@@ -230,10 +232,9 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 					SDL_SendKeyboardText(buffer);
 				}*/
 				
-				UWORD rawkey = m->Code & 0x0F;
 				if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0]) {
 					
-					SDL_Scancode s = amiga_scancode_table[rawkey];
+					s = amiga_scancode_table[rawkey];
 
         				if (imsg->Code <= 127) {
 
@@ -248,7 +249,7 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 		    				SDL_SendKeyboardKey(SDL_RELEASED, s);
         				}
 				}
-			}
+			//}
 			break;
 	}
 }
