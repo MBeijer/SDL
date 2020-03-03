@@ -15,6 +15,7 @@ or
    - Crash when open it :-(
 
 4) check keyboard (all keys a-z doesnt work on SDL2 itix)
+  - begin fix but need optimization. (03/03/2020)
 
 5) check SDL_WINDOW_FULLSCREEN (doesnt work on SDL2 itix)
 
