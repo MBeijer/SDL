@@ -24,6 +24,7 @@
 #include "../SDL_sysvideo.h"
 #include "../../events/SDL_events_c.h"
 #include "../../events/SDL_mouse_c.h"
+#include "../../events/scancodes_amiga.h"
 
 #include "SDL_amigavideo.h"
 #include "SDL_amigawindow.h"
@@ -152,6 +153,27 @@ AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *d
 	SDL_SendMouseButton(data->window, 0, state, i);
 }
 
+static char
+AMIGA_TranslateUnicode(UWORD code, UWORD qualifier)
+{
+    struct InputEvent ie;
+    WORD res;
+    char buffer[10];
+
+    ie.ie_Class = IECLASS_RAWKEY;
+    ie.ie_SubClass = 0;
+    ie.ie_Code  = code & ~(IECODE_UP_PREFIX);
+    ie.ie_Qualifier = qualifier;
+    ie.ie_EventAddress = NULL;
+
+    res = MapRawKey(&ie, buffer, sizeof(buffer), 0);
+
+    if (res != 1)
+        return 0;
+    else
+        return buffer[0];
+}
+
 static void
 AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 {
@@ -193,7 +215,7 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 			}
 			else
 			{
-				WCHAR keycode;
+				/*WCHAR keycode;
 				TEXT buffer[8];
 				ULONG length;
 
@@ -206,6 +228,25 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 				{
 					buffer[length] = '\0';
 					SDL_SendKeyboardText(buffer);
+				}*/
+				
+				UWORD rawkey = m->Code & 0x0F;
+				if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0]) {
+					
+					SDL_Scancode s = amiga_scancode_table[rawkey];
+
+        				if (imsg->Code <= 127) {
+
+            					char text[2];
+
+           					text[0] = AMIGA_TranslateUnicode(_this, imsg->Code, imsg->Qualifier);
+           					text[1] = '\0';
+
+            					SDL_SendKeyboardKey(SDL_PRESSED, s);
+           					SDL_SendKeyboardText(text);
+       					} else {
+		    				SDL_SendKeyboardKey(SDL_RELEASED, s);
+        				}
 				}
 			}
 			break;

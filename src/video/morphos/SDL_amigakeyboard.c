@@ -22,9 +22,64 @@
 
 #include "../../events/SDL_keyboard_c.h"
 
-void
-AMIGA_InitKeyboard(_THIS)
+#include "../../events/scancodes_amiga.h"
+
+#include <proto/keymap.h>
+
+static SDL_Keycode AMIGA_MapRawKey(UWORD code)
 {
+    struct InputEvent ie;
+    WORD res;
+    char buffer[2] = {0, 0};
+
+    ie.ie_Class = IECLASS_RAWKEY;
+    ie.ie_SubClass = 0;
+    ie.ie_Code = code;
+    ie.ie_Qualifier = 0;
+    ie.ie_EventAddress = NULL;
+
+    res = MapRawKey(&ie, buffer, sizeof(buffer), NULL);
+    if (res > 0) {
+        return (buffer[0] + buffer[1] * 256);
+    } else {
+        return 0;
+    }
+}
+
+static void AMIGA_UpdateKeymap()
+{
+    int i;
+    SDL_Scancode scancode;
+    SDL_Keycode keymap[SDL_NUM_SCANCODES];
+
+    SDL_GetDefaultKeymap(keymap);
+
+    for (i = 0; i < SDL_arraysize(amiga_scancode_table); i++) {
+        /* Make sure this scancode is a valid character scancode */
+        scancode = amiga_scancode_table[i];
+        if (scancode == SDL_SCANCODE_UNKNOWN ) {
+            continue;
+        }
+
+        /* If this key is one of the non-mappable keys, ignore it */
+        /* Don't allow the number keys right above the qwerty row to translate or the top left key (grave/backquote) */
+        /* Not mapping numbers fixes the French layout, giving numeric keycodes for the number keys, which is the expected behavior */
+        if ((keymap[scancode] & SDLK_SCANCODE_MASK) ||
+            scancode == SDL_SCANCODE_GRAVE /*||
+            (scancode >= SDL_SCANCODE_1 && scancode <= SDL_SCANCODE_0)*/ ) {
+            continue;
+        }
+
+        keymap[scancode] = AMIGA_MapRawKey(i);
+    }
+
+    SDL_SetKeymap(0, keymap, SDL_NUM_SCANCODES);
+}
+
+void AMIGA_InitKeyboard(_THIS)
+{
+    AMIGA_UpdateKeymap();
+  
     SDL_SetScancodeName(SDL_SCANCODE_APPLICATION, "Menu");
     SDL_SetScancodeName(SDL_SCANCODE_LGUI, "Left Command");
     SDL_SetScancodeName(SDL_SCANCODE_RGUI, "Right Command");
