@@ -10,4 +10,13 @@ or
 - Import Itix 's work
 
 
-01/03/2020 BeWorld
+3) fix and test sensors joystick (my PS4 gamepad doesnt work on SDL2 itix)
+   - Detection = ok (begin fix 02/03/2020)
+   - Crash when open it :-(
+
+4) check keyboard (all keys a-z doesnt work on SDL2 itix)
+
+5) check SDL_WINDOW_FULLSCREEN (doesnt work on SDL2 itix)
+
+
+BeWorld
