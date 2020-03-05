@@ -1,74 +1,118 @@
-# Makefile to build the MorphOS SDL library
+# Makefile to build the SDL 2 library
+#
+# Enable debug with -D__SDL_DEBUG
 
-AR = ppc-morphos-ar
-RANLIB = ppc-morphos-ranlib
-CC = ppc-morphos-gcc-9
-CXX = ppc-morphos-g++-9
-STRIP = ppc-morphos-strip
+CDEFS   = -DAROS_ALMOST_COMPATIBLE -DBUILD_SDL2_LIBRARY -D__SDL_DEBUG
+CC      = ppc-morphos-gcc-9 -noixemul
+INCLUDE = -I./include
+CFLAGS  = -maltivec -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
+AR	= ar
+RANLIB	= ranlib
 
-AMIGADATE = $(shell date +"%-d.%-m.%Y")
+ECHE = echo -e
+BOLD = \033[1m
+NRML = \033[22m
 
-CFLAGS  = -O2 -Wall -noixemul -Wno-pointer-sign -D__SDL_DEBUG -DAROS_ALMOST_COMPATIBLE -DNDEBUG -maltivec -DNO_AMIGADEBUG -mcpu=750 -mtune=7450 -I./include -D__AMIGADATE__=\"$(AMIGADATE)\"
+COMPILING = @$(ECHE) "compiling $(BOLD)$@$(NRML)..."
+LINKING = @$(ECHE) "linking $(BOLD)$@$(NRML)..."
+STRIPPING = @$(ECHE) "stripping $(BOLD)$@$(NRML)..."
+ARCHIVING = @$(ECHE) "archiving $(BOLD)$@$(NRML)..."
+HEADERING = @$(ECHE) "creating headers files $(BOLD)$@$(NRML)..."
 
-TARGET_STATIC  = libSDL2.a
-TESTLIB_STATIC = libSDL2_test.a
+TARGET  = libSDL.a
+LIBRARY = sdl2.library
 
 SOURCES = \
-	./src/*.c \
-	./src/atomic/*.c \
-	./src/audio/*.c \
-	./src/audio/morphos/*.c \
-	./src/audio/disk/*.c \
-	./src/audio/dummy/*.c \
-	./src/core/morphos/*.c \
-	./src/cpuinfo/*.c \
-	./src/events/*.c \
-	./src/file/*.c \
-	./src/filesystem/morphos/*.c \
-	./src/haptic/*.c \
-	./src/haptic/dummy/*.c \
-	./src/joystick/*.c \
-	./src/joystick/morphos/*.c \
-	./src/loadso/dlopen/*.c \
-	./src/render/*.c \
-	./src/power/*.c \
-	./src/power/morphos/*.c \
-	./src/render/software/*.c \
-	./src/sensor/*.c \
-	./src/sensor/dummy/*.c \
-	./src/stdlib/*.c \
-	./src/thread/*.c \
-	./src/thread/morphos/*.c\
-	./src/timer/*.c \
-	./src/timer/morphos/*.c \
-	./src/video/*.c \
-	./src/video/morphos/*.c \
-	./src/video/yuv2rgb/*.c \
+	src/*.c \
+	src/atomic/*.c \
+	src/audio/*.c \
+	src/audio/ahi/*.c \
+	src/audio/disk/*.c \
+	src/audio/dummy/*.c \
+	src/cpuinfo/*.c \
+	src/events/*.c \
+	src/file/*.c \
+	src/filesystem/amiga/*.c \
+	src/haptic/*.c \
+	src/haptic/dummy/*.c \
+	src/joystick/*.c \
+	src/joystick/morphos/*.c \
+	src/loadso/dlopen/*.c \
+	src/power/*.c \
+	src/power/morphos/*.c \
+	src/render/*.c \
+	src/render/software/*.c \
+	src/sensor/*.c \
+	src/sensor/dummy/*.c \
+	src/stdlib/*.c \
+	src/thread/*.c \
+	src/thread/morphos/*.c \
+	src/timer/*.c \
+	src/timer/amiga/*.c \
+	src/video/*.c \
+	src/video/amiga/*.c \
+	src/video/yuv2rgb/*.c \
 
-TESTLIB_SOURCES =./src/test/*.c
+CORESOURCES = src/core/morphos/*.c
+COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')
 
 OBJECTS = $(shell echo $(SOURCES) | sed -e 's,\.c,\.o,g')
-TESTLIB_OBJECTS = $(shell echo $(TESTLIB_SOURCES) | sed -e 's,\.c,\.o,g')
 
-all: $(TARGET_STATIC) $(TESTLIB_STATIC)
+all: $(LIBRARY) headers lib
 
-$(TESTLIB_STATIC): $(TESTLIB_OBJECTS)
-	$(AR) crv $@ $^
+sdk: all
+	mkdir -p /usr/local/bin
+	mkdir -p /usr/local/include/SDL2
+	mkdir -p /usr/local/ppc-morphos/lib
+	mkdir -p /usr/local/ppc-morphos/lib/libb32
+	cp sdl2-config /usr/local/bin
+	cp include/*.h /usr/local/include/SDL2
+	cp src/core/morphos/devenv/lib/libSDL.a /usr/local/lib/libSDL2.a
+	cp src/core/morphos/devenv/lib/libb32/libSDL.a /usr/local/lib/libb32/libSDL2.a
+
+headers:
+	$(HEADERING)
+	@cvinclude.pl --fd=sdk/fd/sdl2_lib.fd --clib=sdk/clib/sdl2_protos.h --proto=sdk/proto/sdl2.h
+	@cvinclude.pl --fd=sdk/fd/sdl2_lib.fd --clib=sdk/clib/sdl2_protos.h --inline=sdk/ppcinline/sdl2.h
+
+lib:
+	@cd src/core/morphos/devenv; if ! $(MAKE) $(MAKECMDGOALS); then exit 1; fi;
+
+install: $(LIBRARY) lib
+	cp $(LIBRARY) Libs:
+	-flushlib $(LIBRARY)
+
+install-iso:
+	@echo "not for the ISO.. skipping"
+
+#install-iso: $(LIBRARY) lib
+#	mkdir -p $(ISOPATH)MorphOS/Libs/
+#	@cp sdl2.library $(ISOPATH)MorphOS/Libs/
+
+#src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
+#	ppc-morphos-gcc-4 $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c src/video/SDL_blit_N.c
+
+src/core/morphos/SDL_cpu.o: src/core/morphos/SDL_cpu.c
+	ppc-morphos-gcc-9 $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c $^
+
+src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/SDL_library.h src/core/morphos/SDL_stubs.h
+	$(COMPILING)
+	@ppc-morphos-gcc-9 -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
+
+$(TARGET): $(OBJECTS)
+	$(ARCHIVING)
+	@$(AR) crv $@ $^
 	$(RANLIB) $@
 
-$(TARGET_STATIC): $(OBJECTS)
-	$(AR) crv $@ $^
-	$(RANLIB) $@
-
-config_copy:
-	cp include/SDL_config_morphos.h include/SDL_config.h
+$(LIBRARY): $(TARGET) $(COREOBJECTS)
+	$(LINKING)
+	@$(CC) -nostartfiles -mresident32 -Wl,-Map=sdl2.map $(COREOBJECTS) -o $@.db -L. -lSDL -lm
+	$(STRIPPING)
+	@ppc-morphos-strip -o $@ --remove-section=.comment $@.db
 
 clean:
-	rm -f $(TARGET_STATIC) $(TESTLIB_STATIC) $(OBJECTS)
+	rm -f $(LIBRARY) $(TARGET) $(OBJECTS) $(COREOBJECTS) *.db *.s
+	@cd src/core/morphos/devenv; if ! $(MAKE) $(MAKECMDGOALS); then exit 1; fi;
 
-install:
-	mkdir -p /usr/local/lib
-	mkdir -p /usr/local/include/SDL2
-	cp -f $(TARGET_STATIC) /usr/local/lib
-	cp -f $(TESTLIB_STATIC) /usr/local/lib
-	cp -f include/*.h /usr/local/include/SDL2/
+dump:
+	objdump --disassemble-all --reloc $(LIBRARY).db >$(LIBRARY).s
