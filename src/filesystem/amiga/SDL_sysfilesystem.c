@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,13 +20,14 @@
 */
 #include "../../SDL_internal.h"
 
-#ifdef SDL_FILESYSTEM_MORPHOS
+#ifdef SDL_FILESYSTEM_AMIGA
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* System dependent filesystem routines                                */
 
 #include "SDL_error.h"
 #include "SDL_filesystem.h"
+
 #include "../../core/morphos/SDL_misc.h"
 
 #include <libraries/charsets.h>
@@ -38,7 +39,7 @@ SDL_GetBasePath(void)
 	BPTR lock = Lock("PROGDIR:", ACCESS_READ);
 	char *path = NULL;
 
-	//D("[%s]\n", __FUNCTION__);
+	D("[%s]\n", __FUNCTION__);
 
 	if (lock)
 	{
@@ -135,6 +136,6 @@ SDL_GetPrefPath(const char *org, const char *app)
 	return path;
 }
 
-#endif /* SDL_FILESYSTEM_AMIGAOS4 */
+#endif /* SDL_FILESYSTEM_AMIGA */
 
 /* vi: set ts=4 sw=4 expandtab: */
