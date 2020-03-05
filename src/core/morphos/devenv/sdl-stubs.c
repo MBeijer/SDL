@@ -3,7 +3,7 @@
 #include <proto/sdl2.h>
 
 /* SDL_string.c */
-/*
+
 int
 SDL_sscanf(const char *text, const char *fmt, ...)
 {
@@ -13,9 +13,9 @@ SDL_sscanf(const char *text, const char *fmt, ...)
     rc = SDL_vsscanf(text, fmt, ap);
     va_end(ap);
     return rc;
-}*/
+}
 
-/*int
+int
 SDL_snprintf(char *text, size_t maxlen, const char *fmt, ...)
 {
     va_list ap;
@@ -26,7 +26,7 @@ SDL_snprintf(char *text, size_t maxlen, const char *fmt, ...)
     va_end(ap);
 
     return retval;
-}*/
+}
 
 /* SDL_error.c */
 
@@ -42,7 +42,7 @@ SDL_SetError(const char *fmt, ...)
 }
 
 /* SDL_log.c */
-/*
+
 void
 SDL_Log(const char *fmt, ...)
 {
@@ -122,4 +122,3 @@ SDL_LogMessage(int category, SDL_LogPriority priority, const char *fmt, ...)
     SDL_LogMessageV(category, priority, fmt, ap);
     va_end(ap);
 }
-*/
