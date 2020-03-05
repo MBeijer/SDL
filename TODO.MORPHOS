@@ -1,23 +1,18 @@
 TODO
 
-1) static library :
-- Initialise all libraries (same as AmigaOS4)
-  - timer (GlobalTimeReq)
-  - thread (threadpool)
-  - etc..
-or
-2) shared library :
-- Import Itix 's work
+1) Merge with last SDL 2
+   - Done
+   - Need more and more tests
 
 
-3) fix and test sensors joystick (my PS4 gamepad doesnt work on SDL2 itix)
+2) fix and test sensors joystick (my PS4 gamepad doesnt work on SDL2 itix)
    - Detection = ok (begin fix 02/03/2020)
    - Crash when open it :-(
 
-4) check keyboard (all keys a-z doesnt work on SDL2 itix)
-  - begin fix but need optimization. (03/03/2020)
+3) check keyboard (all keys a-z doesnt work on SDL2 itix)
+  - begin fix but need code improvement and optimization. (03/03/2020)
 
-5) check SDL_WINDOW_FULLSCREEN (doesnt work on SDL2 itix)
+4) check SDL_WINDOW_FULLSCREEN (doesnt work on SDL2 itix)
 
 
 BeWorld
