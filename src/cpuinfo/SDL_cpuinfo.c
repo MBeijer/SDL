@@ -971,6 +971,9 @@ SDL_GetSystemRAM(void)
             }
         }
 #endif
+#ifdef AMIGA
+        SDL_SystemRAM = AvailMem(MEMF_FAST | MEMF_TOTAL); // Exclude possible chip ram.
+#endif
 #endif
     }
     return SDL_SystemRAM;
