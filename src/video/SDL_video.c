@@ -3970,7 +3970,7 @@ SDL_IsScreenKeyboardShown(SDL_Window *window)
 #include "amigaos4/SDL_os4messagebox.h"
 #endif
 #if SDL_VIDEO_DRIVER_AMIGA
-#include "morphos/SDL_amigamessagebox.h"
+#include "amiga/SDL_amigamessagebox.h"
 #endif
 #if SDL_VIDEO_DRIVER_HAIKU
 #include "haiku/SDL_bmessagebox.h"
