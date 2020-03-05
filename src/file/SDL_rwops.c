@@ -38,11 +38,6 @@
 #define off64_t _off64_t
 #endif
 
-#if defined(AMIGA)
-#include "../core/morphos/SDL_misc.h"
-#include <proto/dos.h>
-#endif
-
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
@@ -69,6 +64,30 @@
 
 #if __NACL__
 #include "nacl_io/nacl_io.h"
+#endif
+
+#if defined(AMIGA)
+#include "../core/morphos/SDL_library.h"
+#include "../core/morphos/SDL_misc.h"
+#include <proto/dos.h>
+
+#if defined(__MORPHOS__)
+#undef SDLCALL
+#define SDLCALL __saveds
+
+/* This function must preserve all registers except r13 */
+asm
+("\n"
+"	.section \".text\"\n"
+"	.align 2\n"
+"	.type __restore_r13, @function\n"
+"__restore_r13:\n"
+"	lwz 13, 24(3)\n"
+"	blr\n"
+"__end__restore_r13:\n"
+"	.size __restore_r13, __end__restore_r13 - __restore_r13\n"
+);
+#endif
 #endif
 
 #ifdef __WIN32__
@@ -854,7 +873,7 @@ SDL_RWFromFile(const char *file, const char *mode)
     return rwops;
 }
 
-#ifdef HAVE_STDIO_H
+#if defined(HAVE_STDIO_H) && !defined(__MORPHOS__)
 SDL_RWops *
 SDL_RWFromFP(FILE * fp, SDL_bool autoclose)
 {
@@ -947,6 +966,11 @@ SDL_AllocRW(void)
     if (area == NULL) {
         SDL_OutOfMemory();
     } else {
+	#if defined(__MORPHOS__)
+        register APTR DataSeg __asm("r13");
+
+        area->r13 = DataSeg;
+        #endif
         area->type = SDL_RWOPS_UNKNOWN;
     }
     return area;
