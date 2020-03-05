@@ -46,7 +46,7 @@ static SDL_Keycode AMIGA_MapRawKey(UWORD code)
     }
 }
 
-static void AMIGA_UpdateKeymap()
+static void AMIGA_UpdateKeymap(_THIS)
 {
     int i;
     SDL_Scancode scancode;
@@ -78,7 +78,7 @@ static void AMIGA_UpdateKeymap()
 
 void AMIGA_InitKeyboard(_THIS)
 {
-    AMIGA_UpdateKeymap();
+    AMIGA_UpdateKeymap(_THIS);
   
     SDL_SetScancodeName(SDL_SCANCODE_APPLICATION, "Menu");
     SDL_SetScancodeName(SDL_SCANCODE_LGUI, "Left Command");
