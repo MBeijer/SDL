@@ -347,16 +347,12 @@ CPU_haveAltiVec(void)
         altivec = (vec_unit == VECTORTYPE_ALTIVEC);
     }
 #elif defined(__MORPHOS__)
-	//if (SysBase->LibNode.lib_Version >=51) {
     	ULONG has_altivec;
-		if (NewGetSystemAttrs(&has_altivec, sizeof(has_altivec), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE))
-		{
-			if(has_altivec) 
-			{
-			 altivec = 1;
-			}
-		}
-	//}
+	if (NewGetSystemAttrs(&has_altivec, sizeof(has_altivec), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE))
+	{
+		if(has_altivec) 
+			altivec = 1;
+	}
 #elif SDL_ALTIVEC_BLITTERS && HAVE_SETJMP
     void (*handler) (int sig);
     handler = signal(SIGILL, illegal_instruction);
@@ -607,9 +603,9 @@ SDL_GetCPUCount(void)
                             &SDL_CPUCount, sizeof(SDL_CPUCount) );
         }
 #endif
-#endif
 #ifdef __MORPHOS__
-		NewGetSystemAttrs(&SDL_CPUCount, sizeof(SDL_CPUCount), SYSTEMINFOTYPE_CPUCOUNT, TAG_DONE);
+	NewGetSystemAttrs(&SDL_CPUCount, sizeof(SDL_CPUCount), SYSTEMINFOTYPE_CPUCOUNT, TAG_DONE);
+#endif
 #endif
         /* There has to be at least 1, right? :) */
         if (SDL_CPUCount <= 0) {
