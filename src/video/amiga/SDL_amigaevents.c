@@ -177,10 +177,9 @@ AMIGA_TranslateUnicode(UWORD code, UWORD qualifier)
 static void
 AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 {
-	//SDL_Scancode sc;
-	//UWORD code = m->Code;
 	SDL_Scancode s;
-	UWORD rawkey = m->Code & 0x0F;
+	UWORD code = m->Code;
+	UWORD rawkey = m->Code & 0x7F;
 	
 	switch (code)
 	{
@@ -209,47 +208,19 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 			break;
 
 		default:
-			/*sc = AMIGA_ScanCodeToSDL(code & ~(IECODE_UP_PREFIX));
-
-			if (sc != SDL_SCANCODE_UNKNOWN)
-			{
-				SDL_SendKeyboardKey(code & IECODE_UP_PREFIX ? SDL_RELEASED : SDL_PRESSED, sc);
-			}
-			else
-			{*/
-				/*WCHAR keycode;
-				TEXT buffer[8];
-				ULONG length;
-
-				GetAttr(IMSGA_UCS4, m, (ULONG *)&keycode);
-				length = UTF8_Encode(keycode, buffer);
-
-				D("[AMIGA_DispatchRawKey] Converted %ld (UCS-4: %ld) to UTF-8...\n", code, keycode);
-
-				if (length > 0)
-				{
-					buffer[length] = '\0';
-					SDL_SendKeyboardText(buffer);
-				}*/
-				
-				if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0]) {
-					
-					s = amiga_scancode_table[rawkey];
-
-        				if (imsg->Code <= 127) {
-
-            					char text[2];
-
-           					text[0] = AMIGA_TranslateUnicode(_this, imsg->Code, imsg->Qualifier);
-           					text[1] = '\0';
-
-            					SDL_SendKeyboardKey(SDL_PRESSED, s);
-           					SDL_SendKeyboardText(text);
-       					} else {
-		    				SDL_SendKeyboardKey(SDL_RELEASED, s);
-        				}
+			if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0])) {
+				s = amiga_scancode_table[rawkey];
+				if (m->Code <= 127) {		
+					char text[2];
+					text[0] = AMIGA_TranslateUnicode(m->Code, m->Qualifier);
+					text[1] = '\0';
+							
+					SDL_SendKeyboardKey(SDL_PRESSED, s);		
+					SDL_SendKeyboardText(text);
+				} else {
+					SDL_SendKeyboardKey(SDL_RELEASED, s);
 				}
-			//}
+			}
 			break;
 	}
 }
