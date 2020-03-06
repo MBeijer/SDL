@@ -1,8 +1,8 @@
-# Makefile to build the AmigaOS4 SDL tests
+# Makefile to build the MorphOS SDL tests
 
-CC		= ppc-morphos-gcc
-CFLAGS	= -noixemul -O2 -Wall -g -I../include -DHAVE_OPENGL
-LIBS	= -L../ -lSDL2 -lSDL2_test -noixemul -lm
+CC	= ppc-morphos-gcc-9
+CFLAGS	= -noixemul -O2 -Wall -g -I../include
+LIBS	= -L../src/core/morphos/devenv/lib/ -lSDL -noixemul -lm
 
 TARGETS = \
 	checkkeys \
