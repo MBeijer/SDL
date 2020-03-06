@@ -182,7 +182,7 @@ AHIAUD_ThreadInit(_THIS)
 }
 
 static int
-AHIAUD_OpenDevice(_THIS, const char *devname, int iscapture)
+AHIAUD_OpenDevice(_THIS, void * handle, const char *devname, int iscapture)
 {
 	struct SDL_PrivateAudioData *hidden;
 	SDL_AudioFormat test_format;
