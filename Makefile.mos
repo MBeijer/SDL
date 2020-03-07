@@ -58,7 +58,7 @@ COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')
 
 OBJECTS = $(shell echo $(SOURCES) | sed -e 's,\.c,\.o,g')
 
-all: $(LIBRARY) headers lib
+all: $(LIBRARY) lib
 
 sdk: all
 	mkdir -p /usr/local/bin
