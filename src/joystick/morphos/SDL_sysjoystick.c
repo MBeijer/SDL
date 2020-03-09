@@ -37,11 +37,28 @@
 #include <proto/utility.h>
 
 #define BUFFER_OFFSET(buffer, offset)   (((int32 *)buffer)[offset])
+#define BUFFER_SIZE (256)
 
-static const size_t sensortags[] = { SENSORS_Class, SensorClass_HID, /*SENSORS_Type, SensorType_HID_Gamepad,*/ TAG_DONE };
+static const size_t sensortags[] = { SENSORS_Class, SensorClass_HID, SENSORS_Type, SensorType_HID_Gamepad, TAG_DONE };
 static struct sensordata *sensors;
 
 extern APTR threadpool;
+
+static char *va(char *fmt, ...) {
+	va_list ap;
+	static char string[2][BUFFER_SIZE];
+	static unsigned int index = 0;
+	char *buf;
+	
+	buf = string[index & 1];
+	index++;
+	
+	va_start(ap, fmt);
+	vsnprintf(buf, BUFFER_SIZE, fmt, ap);
+	va_end(ap);
+	
+	return buf;	
+}
 
 static void sensor_events(struct sensordata *sensors, struct MsgPort *port)
 {
@@ -107,7 +124,7 @@ static void sensor_events(struct sensordata *sensors, struct MsgPort *port)
 /* Function to scan the system for joysticks.
  * It should return 0, or -1 on an unrecoverable fatal error.
  */
-int
+static int
 SDL_SYS_JoystickInit(void)
 {
 	struct sensordata *s = SDL_malloc(sizeof(*s));
@@ -140,10 +157,16 @@ SDL_SYS_JoystickInit(void)
 
 			while ((sensor = NextSensor(sensor, sensorlist, NULL)))
 			{
-				CONST_STRPTR name = "<unknown>", serial = NULL;
-				size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
+				CONST_STRPTR name = "<unknown>", *serial = NULL;
+				ULONG *id;
+				
 				GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-				if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0)
+				
+				GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
+
+				serial = va("#%lu", id);
+				
+				if (id > 0)
 				{
 					size_t namelen = strlen(name) + 1;
 					struct joystick_hwdata *hwdata = SDL_malloc(sizeof(*hwdata) + namelen);
@@ -176,7 +199,7 @@ SDL_SYS_JoystickInit(void)
 	return rc;
 }
 
-int SDL_SYS_NumJoysticks()
+static int SDL_SYS_JoystickGetCount(void)
 {
 	return sensors->joystick_count;
 }
@@ -200,25 +223,21 @@ static struct joystick_hwdata *GetByIndex(int index)
 	return hwdata;
 }
 
-void SDL_SYS_JoystickDetect()
+static void SDL_SYS_JoystickDetect(void)
 {
-}
-
-SDL_bool SDL_SYS_JoystickNeedsPolling()
-{
-	return SDL_FALSE;
 }
 
 /* Function to get the device-dependent name of a joystick */
-const char *
-SDL_SYS_JoystickNameForDeviceIndex(int device_index)
+static const char *
+SDL_SYS_JoystickGetDeviceName(int device_index)
 {
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	return hwdata->name;
 }
 
 /* Function to perform the mapping from device index to the instance id for this index */
-SDL_JoystickID SDL_SYS_GetInstanceIdOfDeviceIndex(int device_index)
+static 
+SDL_JoystickID SDL_SYS_JoystickGetDeviceInstanceID(int device_index)
 {
 	return device_index;
 }
@@ -334,7 +353,7 @@ static void GetJoyData(SDL_Joystick * joystick, struct joystick_hwdata *hwdata, 
    This should fill the nbuttons and naxes fields of the joystick structure.
    It returns 0, or -1 if there is an error.
  */
-int
+static int
 SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
@@ -346,22 +365,27 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 
 		while ((sensor = NextSensor(sensor, sensorlist, NULL)))
 		{
-			CONST_STRPTR name = "<unknown>", serial = NULL;
-			size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
+			CONST_STRPTR name = "<unknown>";
+			ULONG *id;
+			//size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
+			
 			GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
 			
-			if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
+			GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
+			
+			//if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
+			if (id > 0 && strcmp(hwdata->name, name) == 0)
 			{
-				SDL_JoystickGUID guid;
+				/*SDL_JoystickGUID guid;
 
 				strncpy((char *)&guid, serial, sizeof(guid));
 
 				if (memcmp(&hwdata->guid, &guid, sizeof(guid)) == 0)
-				{
+				{*/
 					GetJoyData(joystick, hwdata, sensor);
 					rc = 0;
 					break;
-				}
+				/*}*/
 			}
 		}	
 
@@ -371,23 +395,12 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 	return rc;
 }
 
-/* Function to determine is this joystick is attached to the system right now */
-SDL_bool SDL_SYS_JoystickAttached(SDL_Joystick *joystick)
-{
-	return SDL_TRUE;
-}
-
-/* Function to update the state of a joystick - called as a device poll.
- * This function shouldn't update the joystick structure directly,
- * but instead should call SDL_PrivateJoystick*() to deliver events
- * and update joystick device state.
- */
-void
+static void
 SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 {
 	struct joystick_hwdata *hwdata = joystick->hwdata;
 	struct sensornotify *sn;
-	void                   *buffer;
+	void *buffer;
 	int naxe = 0, nbutton = 0;
 
 	ForeachNode(&hwdata->notifylist, sn)
@@ -427,7 +440,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 					hwdata->axisData[naxe] = sval;
 				}
 
-				// TODO : sn->values[1] ?? for SANSORS_HIDInput_Z_Index
+				// TODO : sn->values[2] ?? for SANSORS_HIDInput_Z_Index
 				
 				naxe++;
 				break;
@@ -456,7 +469,7 @@ SDL_SYS_JoystickClose(SDL_Joystick * joystick)
 }
 
 /* Function to perform any system-specific joystick related cleanup */
-void
+static void
 SDL_SYS_JoystickQuit(void)
 {
 	struct joystick_hwdata *hwdata, *tmp;
@@ -470,19 +483,20 @@ SDL_SYS_JoystickQuit(void)
 	Signal(s->sensorport->mp_SigTask, SIGBREAKF_CTRL_C);
 }
 
-SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
+static SDL_JoystickGUID
+SDL_SYS_JoystickGetDeviceGUID( int device_index )
 {
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	return hwdata->guid;
 }
-static 
-int
+static int
 SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
 {
     return 0;
 }
 
-SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
+static SDL_JoystickGUID
+SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
 	return joystick->hwdata->guid;
 }
@@ -502,13 +516,13 @@ SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
 SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
 {
     SDL_SYS_JoystickInit,
-    SDL_SYS_NumJoysticks,
+    SDL_SYS_JoystickGetCount,
     SDL_SYS_JoystickDetect,
-    SDL_SYS_JoystickNameForDeviceIndex,
+    SDL_SYS_JoystickGetDeviceName,
     SDL_SYS_JoystickGetDevicePlayerIndex,
     SDL_SYS_JoystickSetDevicePlayerIndex,
-    SDL_SYS_JoystickGetGUID,
-    SDL_SYS_GetInstanceIdOfDeviceIndex,
+    SDL_SYS_JoystickGetDeviceGUID,
+    SDL_SYS_JoystickGetDeviceInstanceID,
     SDL_SYS_JoystickOpen,
     SDL_SYS_JoystickRumble,
     SDL_SYS_JoystickUpdate,

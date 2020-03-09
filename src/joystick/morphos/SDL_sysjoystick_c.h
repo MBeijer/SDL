@@ -44,16 +44,6 @@ struct sensordata
 	struct Task    *notifytask;
 };
 
-/*struct joystick_hwdata
-{
-	struct MinNode node;
-	struct MinList notifylist;
-
-	ULONG attached;
-	SDL_JoystickGUID guid;
-	TEXT name[0];
-};*/
-
 struct joystick_hwdata
 {
 	struct MinNode node;
