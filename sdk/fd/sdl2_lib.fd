@@ -5,7 +5,7 @@
 * general
 SDL_InitTGL(glcptr,tglptr)(base,sysv)
 SDL_SetExitPointer(exitfunc)(base,sysv)
-SDL_SetError(fmt,va_list)(sysv,r12base)
+SDL_VSetError(fmt,va_list)(sysv,r12base)
 SDL_GetPlatform()(sysv,r12base)
 SDL_Init(flags)(sysv,r12base)
 SDL_InitSubSystem(flags)(sysv,r12base)

@@ -31,6 +31,15 @@
 		(((SDL_RWops *(*)(void *, int , Sint64 (*)(struct SDL_RWops *), Sint64 (*)(struct SDL_RWops *, Sint64, int), size_t (*)(struct SDL_RWops *, void *, size_t, size_t), size_t (*)(struct SDL_RWops *, const void *, size_t, size_t), int (*)(struct SDL_RWops *)))*(void**)(__base - 1762))(__t__p0, __t__p1, __t__p2, __t__p3, __t__p4, __t__p5, __t__p6));\
 	})
 
+#define SDL_VSetError(__p0, __p1) \
+	({ \
+		const char * __t__p0 = __p0;\
+		va_list  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(const char *, va_list ))*(void**)(__base - 40))(__t__p0, __t__p1));\
+	})
+
 #define SDL_GetPlatform() \
 	({ \
 		long __base = (long)(SDL2_BASE_NAME);\
@@ -501,9 +510,10 @@
 	({ \
 		const char * __t__p0 = __p0;\
 		const char * __t__p1 = __p1;\
+		va_list  __t__p2 = __p2;\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((int (*)(const char *, const char *, va_list ))*(void**)(__base - 358))(__t__p0, __t__p1, __p2));\
+		(((int (*)(const char *, const char *, va_list ))*(void**)(__base - 358))(__t__p0, __t__p1, __t__p2));\
 	})
 
 #define SDL_vsnprintf(__p0, __p1, __p2, __p3) \
@@ -511,9 +521,10 @@
 		char * __t__p0 = __p0;\
 		size_t  __t__p1 = __p1;\
 		const char * __t__p2 = __p2;\
+		va_list  __t__p3 = __p3;\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((int (*)(char *, size_t , const char *, va_list ))*(void**)(__base - 364))(__t__p0, __t__p1, __t__p2, __p3));\
+		(((int (*)(char *, size_t , const char *, va_list ))*(void**)(__base - 364))(__t__p0, __t__p1, __t__p2, __t__p3));\
 	})
 
 #define SDL_acos(__p0) \
@@ -1802,9 +1813,10 @@
 		int  __t__p0 = __p0;\
 		SDL_LogPriority  __t__p1 = __p1;\
 		const char * __t__p2 = __p2;\
+		va_list  __t__p3 = __p3;\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((void (*)(int , SDL_LogPriority , const char *, va_list ))*(void**)(__base - 1294))(__t__p0, __t__p1, __t__p2, __p3));\
+		(((void (*)(int , SDL_LogPriority , const char *, va_list ))*(void**)(__base - 1294))(__t__p0, __t__p1, __t__p2, __t__p3));\
 	})
 
 #define SDL_LogGetOutputFunction(__p0, __p1) \
