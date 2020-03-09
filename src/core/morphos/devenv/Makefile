@@ -1,8 +1,8 @@
 # Makefile to build the SDL 2
 
-CC      = ppc-morphos-gcc-9 -noixemul
+CC      = ppc-morphos-gcc-4 -noixemul
 INCLUDE = -I../../../../include -I../../../../sdk
-CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -Wall -Wno-pointer-sign -fno-strict-aliasing -D_LARGEFILE64_SOURCE
+CFLAGS  = -cstd=c99 -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -Wall -Wno-pointer-sign -fno-strict-aliasing -D_LARGEFILE64_SOURCE
 AR	= ar
 RANLIB	= ranlib
 
