@@ -182,41 +182,50 @@ AMIGA_WarpMouse(SDL_Window * window, int x, int y)
 	struct Window *win;
 	D("[%s]\n", __FUNCTION__);
 
-	if ((win = data->win))
-	{
-		struct MsgPort port;
-		struct IOStdReq req;
-
-		port.mp_Flags = PA_IGNORE;
-		NEWLIST(&port.mp_MsgList);
-
-		req.io_Message.mn_ReplyPort = &port;
-		req.io_Device = NULL;
-		req.io_Unit = NULL;
-
-		if (OpenDevice("input.device", 0, (struct IORequest *)&req, 0) == 0)
+		BOOL warpHostPointer;
+	
+	warpHostPointer = !SDL_GetRelativeMouseMode() && (window == SDL_GetMouseFocus());
+	
+	if (warpHostPointer) {
+	
+		if ((win = data->win))
 		{
-			struct InputEvent ie;
-			struct IEPointerPixel newpos;
+			struct MsgPort port;
+			struct IOStdReq req;
 
-			newpos.iepp_Screen = win->WScreen;
-			newpos.iepp_Position.X = x + win->BorderLeft + win->LeftEdge;
-			newpos.iepp_Position.Y = y + win->BorderTop + win->TopEdge;
+			port.mp_Flags = PA_IGNORE;
+			NEWLIST(&port.mp_MsgList);
 
-			ie.ie_EventAddress = &newpos;
-			ie.ie_NextEvent = NULL;
-			ie.ie_Class = IECLASS_NEWPOINTERPOS;
-			ie.ie_SubClass = IESUBCLASS_PIXEL;
-			ie.ie_Code = IECODE_NOBUTTON;
-			ie.ie_Qualifier = 0;
+			req.io_Message.mn_ReplyPort = &port;
+			req.io_Device = NULL;
+			req.io_Unit = NULL;
 
-			req.io_Data = &ie;
-			req.io_Length = sizeof(ie);
-			req.io_Command = IND_WRITEEVENT;
+			if (OpenDevice("input.device", 0, (struct IORequest *)&req, 0) == 0)
+			{
+				struct InputEvent ie;
+				struct IEPointerPixel newpos;
 
-			DoIO((struct IORequest *)&req);
-			CloseDevice((struct IORequest *)&req);
+				newpos.iepp_Screen = win->WScreen;
+				newpos.iepp_Position.X = x + win->BorderLeft + win->LeftEdge;
+				newpos.iepp_Position.Y = y + win->BorderTop + win->TopEdge;
+
+				ie.ie_EventAddress = &newpos;
+				ie.ie_NextEvent = NULL;
+				ie.ie_Class = IECLASS_NEWPOINTERPOS;
+				ie.ie_SubClass = IESUBCLASS_PIXEL;
+				ie.ie_Code = IECODE_NOBUTTON;
+				ie.ie_Qualifier = 0;
+
+				req.io_Data = &ie;
+				req.io_Length = sizeof(ie);
+				req.io_Command = IND_WRITEEVENT;
+
+				DoIO((struct IORequest *)&req);
+				CloseDevice((struct IORequest *)&req);
+			}
 		}
+	}else{
+		SDL_SendMouseMotion(window,0, SDL_GetRelativeMouseMode(), x, y);
 	}
 }
 
