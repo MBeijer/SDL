@@ -54,8 +54,6 @@ AHIAUD_PlayDevice(_THIS)
 	struct SDL_PrivateAudioData *hidden = this->hidden;
 	struct AHIRequest *req;
 	ULONG current, current2;
-
-		printf("[%s] PlayDevice... !\n", __FUNCTION__);
 	
 	current = hidden->current_buffer;
 	current2 = current ^ 1;
@@ -64,71 +62,23 @@ AHIAUD_PlayDevice(_THIS)
 	req->ahir_Std.io_Data    = hidden->buffers[current];
 	req->ahir_Std.io_Length  = this->spec.size;
 	req->ahir_Std.io_Offset  = 0;
-//	req->ahir_Std.io_Command  = CMD_WRITE;
 	req->ahir_Frequency      = this->spec.freq;
 	req->ahir_Volume         = 0x10000;
 	req->ahir_Type           = hidden->sample_format;
 	req->ahir_Position       = 0x8000;
 	req->ahir_Link           = (hidden->playing ? &hidden->req[current2] : NULL);
 
+	hidden->current_buffer = current2;
+	hidden->playing = 1;
+	
 	switch (hidden->convert)
 	{
-		case AMIAUD_CONVERT_NONE  : 
-			//printf("[%s] AMIAUD_CONVERT_NONE... !\n", __FUNCTION__);	
-		break;
-		case AMIAUD_CONVERT_8: {
-		
-		    ULONG *buf4 = hidden->buffers[current];
-			do {
-				*buf4++ ^= 0x80808080;
-				*buf4++ ^= 0x80808080;
-				this->spec.size -= 8;
-			}
-			while (this->spec.size >=8);
-			break;
-		}
-		case AMIAUD_CONVERT_16:
-		{
-			WORD *buf = hidden->buffers[current];
-
-			do
-			{
-				buf[0] = buf[0] - 32768;
-				buf[1] = buf[1] - 32768;
-				buf[2] = buf[2] - 32768;
-				buf[3] = buf[3] - 32768;
-				buf += 4;
-				this->spec.size  -= 8;
-			}
-			while (this->spec.size  > 8);
-		}
-		break;
-		
-		case AMIAUD_CONVERT_U16LSB:
-		{
-			UWORD *buf = hidden->buffers[current];
-			do
-			{
-				UWORD sample = *buf;
-				*buf++ = ((sample >> 8) | (sample << 8)) - 32768;
-				*buf++ = ((sample >> 8) | (sample << 8)) - 32768;
-				*buf++ = ((sample >> 8) | (sample << 8)) - 32768;
-				*buf++ = ((sample >> 8) | (sample << 8)) - 32768;
-				this->spec.size  -= 8;
-			}
-			while (this->spec.size  > 8);
-		}
-		break;
-		case AMIAUD_CONVERT_SWAP16: 
-		AMIGA_Swap16(hidden->buffers[current], hidden->buffers[current], this->spec.size / 2); break;
-		case AMIAUD_CONVERT_SWAP32: 
-		AMIGA_Swap32(hidden->buffers[current], hidden->buffers[current], this->spec.size / 2); break;
+		case AMIAUD_CONVERT_NONE  : break;
+		case AMIAUD_CONVERT_SWAP16: AMIGA_Swap16(hidden->buffers[current], hidden->buffers[current], this->spec.size / 2); break;
+		case AMIAUD_CONVERT_SWAP32: AMIGA_Swap32(hidden->buffers[current], hidden->buffers[current], this->spec.size / 2); break;
 	}
 
 	SendIO((struct IORequest *)req);
-		hidden->current_buffer = current2;
-	hidden->playing = 1;
-	
 }
 
 static Uint8 *
@@ -182,7 +132,7 @@ AHIAUD_ThreadInit(_THIS)
 }
 
 static int
-AHIAUD_OpenDevice(_THIS, void * handle, const char *devname, int iscapture)
+AHIAUD_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
 {
 	struct SDL_PrivateAudioData *hidden;
 	SDL_AudioFormat test_format;
@@ -191,43 +141,32 @@ AHIAUD_OpenDevice(_THIS, void * handle, const char *devname, int iscapture)
 
 	if (iscapture)
 		return SDL_SetError("Capture not supported.");
+	
+	if ((this->spec.format & 0xff) != 8) {
+		 this->spec.format = AUDIO_S16MSB;
+	}
 
+	
+	
 	test_format = SDL_FirstAudioFormat(this->spec.format);
-
+	
 	while (sample_format < 0 && test_format)
 	{
 		convert = AMIAUD_CONVERT_NONE;
 		switch (test_format)
 		{
-			case AUDIO_U8 : 
-				convert = AMIAUD_CONVERT_8;
-			case AUDIO_S8 : 
-				
-				sample_format = this->spec.channels == 1 ? AHIST_M8S : AHIST_S8S; break; 
-			
+			case AUDIO_U8: 
+			case AUDIO_S8: 			
+				sample_format = this->spec.channels == 1 ? AHIST_M8S : AHIST_S8S; break; 	
 			break;
-			#if BYTEORDER == LITTLE_ENDIAN
-			#error Not implemented
-			#else
-			case AUDIO_S16LSB:
-				convert = AMIAUD_CONVERT_SWAP16;
-			case AUDIO_U16LSB:
-				convert = AMIAUD_CONVERT_U16LSB;
-			case AUDIO_U16MSB:
-				convert =  AMIAUD_CONVERT_16;;
-			case AUDIO_S16MSB: 
-				sample_format = this->spec.channels == 1 ? AHIST_M16S : AHIST_S16S; 
-				break;
+			case AUDIO_S16LSB://	convert = AMIAUD_CONVERT_SWAP16;
+			case AUDIO_S16MSB: sample_format = this->spec.channels == 1 ? AHIST_M16S : AHIST_S16S; break;
 
-			case AUDIO_S32LSB: 
-				convert = AMIAUD_CONVERT_SWAP32;
-			case AUDIO_S32MSB: 
-				sample_format = this->spec.channels == 1 ? AHIST_M32S : AHIST_S32S; 
-				break;
-			#endif
+			case AUDIO_S32LSB://convert = AMIAUD_CONVERT_SWAP32;
+			case AUDIO_S32MSB: sample_format = this->spec.channels == 1 ? AHIST_M32S : AHIST_S32S; break;
 
 			default:
-				printf("[%s] unsupported SDL format 0x%ld\n", __FUNCTION__, test_format);
+				D("[%s] unsupported SDL format 0x%ld\n", __FUNCTION__, test_format);
 				test_format = SDL_NextAudioFormat();
 				break;
 		}
@@ -236,7 +175,7 @@ AHIAUD_OpenDevice(_THIS, void * handle, const char *devname, int iscapture)
 	if (sample_format < 0)
 		return SDL_SetError("Unsupported audio format");
 
-	D("[%s] AHI sample format is %ld - and samples are %ld\n", __FUNCTION__, sample_format,this->spec.samples);
+	D("[%s] AHI sample format is %ld\n", __FUNCTION__, sample_format);
 
 	if (this->spec.channels > 2)
 		this->spec.channels = 2;
@@ -244,7 +183,7 @@ AHIAUD_OpenDevice(_THIS, void * handle, const char *devname, int iscapture)
 	if (this->spec.samples > 1024)
 	{
 		this->spec.samples = MAX(this->spec.freq / 20, 256);
-		this->spec.samples = (this->spec.samples + 0x7) & ~0x7;
+		this->spec.samples = (this->spec.samples + 7) & ~7;
 	}
 
 	/* Update the fragment size as size in bytes */
