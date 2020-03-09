@@ -3,9 +3,10 @@
 # Enable debug with -D__SDL_DEBUG
 
 CDEFS   = -DAROS_ALMOST_COMPATIBLE -DBUILD_SDL2_LIBRARY -D__SDL_DEBUG
-CC      = ppc-morphos-gcc-4 -noixemul
+CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
+#CC      = ppc-morphos-gcc-9 -noixemul
 INCLUDE = -I./include
-CFLAGS  = -cstd=c99 -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
+CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
 AR	= ar
 RANLIB	= ranlib
 
@@ -58,7 +59,7 @@ COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')
 
 OBJECTS = $(shell echo $(SOURCES) | sed -e 's,\.c,\.o,g')
 
-all: $(LIBRARY) lib
+all: $(LIBRARY) headers lib
 
 sdk: all
 	mkdir -p /usr/local/bin
@@ -90,14 +91,14 @@ install-iso:
 #	@cp sdl2.library $(ISOPATH)MorphOS/Libs/
 
 src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
-	ppc-morphos-gcc-4 $(CFLAGS) -fvec -faltivec  -o $@ -c src/video/SDL_blit_N.c
+	$(CC) $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c src/video/SDL_blit_N.c
 
 src/core/morphos/SDL_cpu.o: src/core/morphos/SDL_cpu.c
-	ppc-morphos-gcc-4 $(CFLAGS) -fvec -faltivec  -o $@ -c $^
+	$(CC) $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c $^
 
 src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/SDL_library.h src/core/morphos/SDL_stubs.h
 	$(COMPILING)
-	@ppc-morphos-gcc-4 -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
+	@$(CC) -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
 
 $(TARGET): $(OBJECTS)
 	$(ARCHIVING)
