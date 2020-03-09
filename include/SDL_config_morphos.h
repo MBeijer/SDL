@@ -131,8 +131,6 @@
 #define HAVE_EXP    1
 #define HAVE_EXPF   1
 
-
-#define SDL_DYNAMIC_API 1
 #define HAVE_ALTIVEC_H 1
 #define SDL_ENABLE_ALTIVEC_H 1
 
@@ -171,6 +169,11 @@
 
 #define SDL_VIDEO_RENDER_SW 1
 
+/* Maybe later */
+#ifndef SDL_VIDEO_RENDER_OGL
+//#define SDL_VIDEO_RENDER_OGL    1
+#endif
+
 /* Need or not... */
 #define SDL_HAVE_YUV 1
 
@@ -191,4 +194,4 @@
 	#define D(fmt, ...)
 #endif
 
-#endif /* _SDL_config_amiga_h */
+#endif /* _SDL_config_morphos_h */
