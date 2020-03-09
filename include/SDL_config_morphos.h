@@ -113,16 +113,28 @@
 #define HAVE_ICONV 1
 #define HAVE_STDIO_H 1
 #define HAVE_LIMITS_H 1
-#define HAVE_EXP 1
-#define HAVE_EXPF 1
+#define HAVE_ATANF 1
+#define HAVE_ATAN2F 1
+#define HAVE_ACOSF 1
+#define HAVE_ASINF 1
+#define HAVE_CEILF 1
+#define HAVE_COPYSIGNF 1
+#define HAVE_FABSF 1
+#define HAVE_FLOORF 1
 #define HAVE_FMOD 1
 #define HAVE_FMODF 1
+#define HAVE_LOGF 1
 #define HAVE_LOG10 1
 #define HAVE_LOG10F 1
+#define HAVE_POWF 1
+#define HAVE_SCALBNF 1
+#define HAVE_EXP    1
+#define HAVE_EXPF   1
 
 
 #define SDL_DYNAMIC_API 1
 #define HAVE_ALTIVEC_H 1
+#define SDL_ENABLE_ALTIVEC_H 1
 
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_AHI   1
