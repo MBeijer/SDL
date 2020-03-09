@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -470,8 +470,6 @@ int SDL_GL_SetSwapInterval(int interval);
 int SDL_GL_GetSwapInterval(void);
 void SDL_GL_SwapWindow(SDL_Window * window);
 void SDL_GL_DeleteContext(SDL_GLContext context);
-
-/* 2.0.4 */
 float SDL_sqrtf(float x);
 double SDL_tan(double x);
 float SDL_tanf(float x);
@@ -489,7 +487,6 @@ SDL_Window * SDL_GetGrabbedWindow(void);
 int SDL_WarpMouseGlobal(int x, int y);
 int SDL_CaptureMouse(SDL_bool enabled);
 Uint32 SDL_GetGlobalMouseState(int *x, int *y);
-/* 2.06 */
 void SDL_MemoryBarrierReleaseFunction(void);
 void SDL_MemoryBarrierAcquireFunction(void);
 Uint32 SDL_DequeueAudio(SDL_AudioDeviceID dev, void *data, Uint32 len);
@@ -511,7 +508,6 @@ Uint16 SDL_JoystickGetProduct(SDL_Joystick * joystick);
 Uint16 SDL_JoystickGetProductVersion(SDL_Joystick * joystick);
 SDL_JoystickType SDL_JoystickGetType(SDL_Joystick * joystick);
 SDL_bool SDL_JoystickGetAxisInitialState(SDL_Joystick * joystick,int axis, Sint16 *state);
-
 int SDL_GetDisplayUsableBounds(int displayIndex, SDL_Rect * rect);
 int SDL_GetWindowBordersSize(SDL_Window * window, int *top, int *left, int *bottom, int *right);
 void SDL_SetWindowResizable(SDL_Window * window, SDL_bool resizable);
@@ -519,50 +515,66 @@ int SDL_SetWindowOpacity(SDL_Window * window, float opacity);
 int SDL_GetWindowOpacity(SDL_Window * window, float * out_opacity);
 int SDL_SetWindowModalFor(SDL_Window * modal_window, SDL_Window * parent_window);
 int SDL_SetWindowInputFocus(SDL_Window * window);
-
 SDL_Surface * SDL_CreateRGBSurfaceWithFormat(Uint32 flags, int width, int height, int depth, Uint32 format);
 SDL_Surface * SDL_CreateRGBSurfaceWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, Uint32 format);
 SDL_Surface * SDL_DuplicateSurface(SDL_Surface * surface);
-
 int SDL_wcscmp(const wchar_t *str1, const wchar_t *str2);
 size_t SDL_utf8strlen(const char *str);
-
 void * SDL_LoadFile_RW(SDL_RWops * src, size_t *datasize, int freesrc);
-
 int SDL_RenderSetIntegerScale(SDL_Renderer * renderer, SDL_bool enable);
 SDL_bool SDL_RenderGetIntegerScale(SDL_Renderer * renderer);
-
-/* 2.0.6 to 2.0.11 */
-SDL_AudioStream * SDL_NewAudioStream(const SDL_AudioFormat src_format, const Uint8 src_channels, const int src_rate, const SDL_AudioFormat dst_format, const Uint8 dst_channels, const int dst_rate);
+void SDL_LockJoysticks(void);
+void SDL_UnlockJoysticks(void);
+SDL_AudioStream * SDL_NewAudioStream(const SDL_AudioFormat src_format, const Uint8 src_channels, const SDL_AudioFormat dst_format, const Uint8 dst_channels, const int dst_rate);
 int SDL_AudioStreamPut(SDL_AudioStream *stream, const void *buf, int len);
 int SDL_AudioStreamGet(SDL_AudioStream *stream, void *buf, int len);
 int SDL_AudioStreamAvailable(SDL_AudioStream *stream);
 int SDL_AudioStreamFlush(SDL_AudioStream *stream);
 void SDL_AudioStreamClear(SDL_AudioStream *stream);
 void SDL_FreeAudioStream(SDL_AudioStream *stream);
+void SDL_GetMemoryFunctions(SDL_malloc_func *malloc_func, SDL_calloc_func *calloc_func, SDL_realloc_func *realloc_func, SDL_free_func *free_func);
+int SDL_SetMemoryFunctions(SDL_malloc_func malloc_func, SDL_calloc_func calloc_func, SDL_realloc_func realloc_func, SDL_free_func free_func);
+int SDL_GetNumAllocations(void);
+/* 2.0.8 */
+void *SDL_RenderGetMetalLayer(SDL_Renderer * renderer);
+void *SDL_RenderGetMetalCommandEncoder(SDL_Renderer * renderer);
+float SDL_acosf(float x);
+float SDL_asinf(float x);
+float SDL_atanf(float x);
+float SDL_atan2f(float x, float y);
+float SDL_ceilf(float x);
+float SDL_copysignf(float x, float y);
+float SDL_fabsf(float x);
+float SDL_floorf(float x);
+double SDL_fmod(double x, double y);
+float SDL_fmodf(float x, float y);
+float SDL_logf(float x);
+double SDL_log10(double x);
+float SDL_log10f(float x);
+float SDL_powf(float x, float y);
+float SDL_scalbnf(float x, int n);	
+void SDL_SetYUVConversionMode(SDL_YUV_CONVERSION_MODE mode);
+SDL_YUV_CONVERSION_MODE SDL_GetYUVConversionMode(void);
+SDL_YUV_CONVERSION_MODE SDL_GetYUVConversionModeForResolution(int width, int height);
+/* 2.0.9 */
 SDL_bool SDL_HasAVX512F(void);
-SDL_bool SDL_HasARMSIMD(void);
+char *SDL_GameControllerMappingForDeviceIndex(int joystick_index);
+int SDL_GameControllerGetPlayerIndex(SDL_GameController *gamecontroller);
+int SDL_GameControllerRumble(SDL_GameController *gamecontroller, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
+int SDL_JoystickGetDevicePlayerIndex(int device_index);
+int SDL_JoystickGetPlayerIndex(SDL_Joystick * joystick);
+int SDL_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
+wchar_t *SDL_wcsdup(const wchar_t *wstr);
+double SDL_exp(double x);
+float SDL_expf(float x);
+SDL_bool SDL_HasColorKey(SDL_Surface * surface);
+SDL_bool SDL_IsTablet(void);
+SDL_Thread *SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data);
+SDL_DisplayOrientation SDL_GetDisplayOrientation(int displayIndex); 
+/* 2.0.10 */
 size_t SDL_SIMDGetAlignment(void);
 void * SDL_SIMDAlloc(const size_t len);
 void SDL_SIMDFree(void *ptr);
-SDL_GameControllerType SDL_GameControllerTypeForIndex(int joystick_index);
-char *SDL_GameControllerMappingForDeviceIndex(int joystick_index);
-SDL_GameController *SDL_GameControllerFromPlayerIndex(int player_index);
-SDL_GameControllerType SDL_GameControllerGetType(SDL_GameController *gamecontroller);
-int SDL_GameControllerGetPlayerIndex(SDL_GameController *gamecontroller);
-void SDL_GameControllerSetPlayerIndex(SDL_GameController *gamecontroller, int player_index);
-int SDL_GameControllerRumble(SDL_GameController *gamecontroller, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
-void SDL_LockJoysticks(void);
-void SDL_UnlockJoysticks(void);
-int SDL_JoystickGetDevicePlayerIndex(int device_index);
-SDL_Joystick *SDL_JoystickFromPlayerIndex(int player_index);
-int SDL_JoystickGetPlayerIndex(SDL_Joystick * joystick);
-void SDL_JoystickSetPlayerIndex(SDL_Joystick * joystick, int player_index);
-int SDL_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
-
-int SDL_SetTextureScaleMode(SDL_Texture * texture, SDL_ScaleMode scaleMode);
-int SDL_GetTextureScaleMode(SDL_Texture * texture, SDL_ScaleMode *scaleMode);	
-int SDL_LockTextureToSurface(SDL_Texture *texture, const SDL_Rect *rect, SDL_Surface **surface);
 int SDL_RenderDrawPointF(SDL_Renderer * renderer, float x, float y);
 int SDL_RenderDrawPointsF(SDL_Renderer * renderer, const SDL_FPoint * points, int count);
 int SDL_RenderDrawLineF(SDL_Renderer * renderer, float x1, float y1, float x2, float y2);
@@ -574,48 +586,25 @@ int SDL_RenderFillRectsF(SDL_Renderer * renderer, const SDL_FRect * rects, int c
 int SDL_RenderCopyF(SDL_Renderer * renderer, SDL_Texture * texture, const SDL_Rect * srcrect, const SDL_FRect * dstrect);
 int SDL_RenderCopyExF(SDL_Renderer * renderer, SDL_Texture * texture, const SDL_Rect * srcrect, const SDL_FRect * dstrect, const double angle, const SDL_FPoint *center, const SDL_RendererFlip flip);
 int SDL_RenderFlush(SDL_Renderer * renderer);
-void *SDL_RenderGetMetalLayer(SDL_Renderer * renderer);
-void *SDL_RenderGetMetalCommandEncoder(SDL_Renderer * renderer);
-	
-void *SDL_LoadFile(const char *file, size_t *datasize);
-int SDL_RWclose(SDL_RWops *context);
-size_t SDL_RWwrite(SDL_RWops *context, const void *ptr, size_t size, size_t num);
-size_t SDL_RWread(SDL_RWops *context,void *ptr, size_t size, size_t maxnum);
-Sint64 SDL_RWtell(SDL_RWops *context);
+Sint64 SDL_RWsize(SDL_RWops *context);	
 Sint64 SDL_RWseek(SDL_RWops *context, Sint64 offset, int whence);
-Sint64 SDL_RWsize(SDL_RWops *context);
-
-void SDL_GetMemoryFunctions(SDL_malloc_func *malloc_func,SDL_calloc_func *calloc_func,SDL_realloc_func *realloc_func,SDL_free_func *free_func);
-int SDL_SetMemoryFunctions(SDL_malloc_func malloc_func,SDL_calloc_func calloc_func,SDL_realloc_func realloc_func,SDL_free_func free_func);
-int SDL_GetNumAllocations(void);
-char *SDL_strtokr(char *s1, const char *s2, char **saveptr);
-wchar_t *SDL_wcsdup(const wchar_t *wstr);
+Sint64 SDL_RWtell(SDL_RWops *context);
+size_t SDL_RWread(SDL_RWops *context, void *ptr, size_t size, size_t maxnum);
+size_t SDL_RWwrite(SDL_RWops *context, const void *ptr, size_t size, size_t num);
+int SDL_RWclose(SDL_RWops *context);
+void *SDL_LoadFile(const char *file, size_t *datasize);
+SDL_TouchDeviceType SDL_GetTouchDeviceType(SDL_TouchID touchID);
+/* 2.0.11 */
+SDL_bool SDL_HasARMSIMD(void);
+SDL_GameControllerType SDL_GameControllerTypeForIndex(int joystick_index);
+SDL_GameController *SDL_GameControllerFromPlayerIndex(int player_index);
+SDL_GameControllerType SDL_GameControllerGetType(SDL_GameController *gamecontroller);
+void SDL_GameControllerSetPlayerIndex(SDL_GameController *gamecontroller, int player_index);
+SDL_Joystick *SDL_JoystickFromPlayerIndex(int player_index);
+SDL_Joystick *SDL_JoystickSetPlayerIndex(SDL_Joystick * joystick, int player_index);
+int SDL_SetTextureScaleMode(SDL_Texture * texture, SDL_ScaleMode scaleMode);
+int SDL_GetTextureScaleMode(SDL_Texture * texture, SDL_ScaleMode *scaleMode);
+int SDL_LockTextureToSurface(SDL_Texture *texture, const SDL_Rect *rect, SDL_Surface **surface);
 wchar_t *SDL_wcsstr(const wchar_t *haystack, const wchar_t *needle);
 int SDL_wcsncmp(const wchar_t *str1, const wchar_t *str2, size_t maxlen);
-
-float SDL_acosf(float x);
-float SDL_asinf(float x);
-float SDL_atanf(float x);
-float SDL_atan2f(float x, float y);
-float SDL_ceilf(float x);
-float SDL_copysignf(float x, float y);
-double SDL_exp(double x);
-float SDL_expf(float x);
-float SDL_fabsf(float x);
-float SDL_floorf(float x);
-double SDL_fmod(double x, double y);
-float SDL_fmodf(float x, float y);
-float SDL_logf(float x);
-double SDL_log10(double x);
-float SDL_log10f(float x);
-float SDL_powf(float x, float y);
-float SDL_scalbnf(float x, int n);
-
-SDL_bool SDL_HasColorKey(SDL_Surface * surface);
-void SDL_SetYUVConversionMode(SDL_YUV_CONVERSION_MODE mode);
-SDL_YUV_CONVERSION_MODE SDL_GetYUVConversionMode(void);
-SDL_YUV_CONVERSION_MODE SDL_GetYUVConversionModeForResolution(int width, int height);
-SDL_bool SDL_IsTablet(void)
-SDL_Thread *SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data);
-SDL_TouchDeviceType SDL_GetTouchDeviceType(SDL_TouchID touchID);
-SDL_DisplayOrientation SDL_GetDisplayOrientation(int displayIndex);
+char *SDL_strtokr(char *s1, const char *s2, char **saveptr);
