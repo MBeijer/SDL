@@ -434,4 +434,18 @@ AMIGA_SetDisplayMode(_THIS, SDL_VideoDisplay *display, SDL_DisplayMode *mode)
 	return 0;
 }
 
+int
+AMIGA_GetDisplayBounds(_THIS, SDL_VideoDisplay * display, SDL_Rect * rect)
+{
+    /*SDL_DisplayModeData *data = (SDL_DisplayModeData *) display->current_mode.driverdata;
+
+    rect->x = data->x;
+    rect->y = data->y;
+    rect->w = display->current_mode.w;
+    rect->h = display->current_mode.h;*/
+
+    //dprintf("x=%d, y=%d, w=%d, h=%d\n", rect->x, rect->y, rect->w, rect->h);
+
+    return 0;
+}
 /* vi: set ts=4 sw=4 expandtab: */

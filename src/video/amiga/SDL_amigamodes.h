@@ -38,6 +38,7 @@ extern int AMIGA_InitModes(_THIS);
 extern void AMIGA_GetDisplayModes(_THIS, SDL_VideoDisplay * sdl_display);
 extern int AMIGA_SetDisplayMode(_THIS, SDL_VideoDisplay *display, SDL_DisplayMode *mode);
 extern int AMIGA_GetScreen(_THIS, BYTE FullScreen);
+extern int AMIGA_GetDisplayBounds(_THIS, SDL_VideoDisplay * display, SDL_Rect * rect);
 
 #endif /* _SDL_amigamodes_h */
 
