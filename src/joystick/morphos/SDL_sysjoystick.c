@@ -513,7 +513,7 @@ SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
     D("Not implemented\n");
 }
 
-SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
+SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
 {
     SDL_SYS_JoystickInit,
     SDL_SYS_JoystickGetCount,
