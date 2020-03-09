@@ -48,92 +48,6 @@
 #include <proto/locale.h>
 #include <proto/screennotify.h>
 
-/*static SDL_Scancode
-AMIGA_ScanCodeToSDL(UWORD code)
-{
-	switch (code)
-	{
-		case RAWKEY_KP_0: return SDL_SCANCODE_KP_0;
-		case RAWKEY_KP_1: return SDL_SCANCODE_KP_1;
-		case RAWKEY_KP_2: return SDL_SCANCODE_KP_2;
-		case RAWKEY_KP_3: return SDL_SCANCODE_KP_3;
-		case RAWKEY_KP_4       : return SDL_SCANCODE_KP_4;
-		case RAWKEY_KP_5       : return SDL_SCANCODE_KP_5;
-		case RAWKEY_KP_6       : return SDL_SCANCODE_KP_6;
-		case RAWKEY_KP_7       : return SDL_SCANCODE_KP_7;
-		case RAWKEY_KP_8       : return SDL_SCANCODE_KP_8;
-		case RAWKEY_KP_9       : return SDL_SCANCODE_KP_9;
-		case RAWKEY_KP_DECIMAL : return SDL_SCANCODE_KP_PERIOD;
-		case RAWKEY_KP_ENTER   : return SDL_SCANCODE_KP_ENTER;
-		case RAWKEY_KP_MINUS   : return SDL_SCANCODE_KP_MINUS;
-		case RAWKEY_KP_DIVIDE  : return SDL_SCANCODE_KP_DIVIDE;
-		case RAWKEY_KP_MULTIPLY: return SDL_SCANCODE_KP_MULTIPLY;
-		case RAWKEY_KP_PLUS    : return SDL_SCANCODE_KP_PLUS;
-
-		case RAWKEY_BACKSPACE  : return SDL_SCANCODE_BACKSPACE;
-		case RAWKEY_TAB        : return SDL_SCANCODE_TAB;
-		case RAWKEY_RETURN     : return SDL_SCANCODE_RETURN;
-		case RAWKEY_ESCAPE     : return SDL_SCANCODE_ESCAPE;
-		case RAWKEY_DELETE     : return SDL_SCANCODE_DELETE;
-		case RAWKEY_INSERT     : return SDL_SCANCODE_INSERT;
-		case RAWKEY_PAGEUP     : return SDL_SCANCODE_PAGEUP;
-		case RAWKEY_PAGEDOWN   : return SDL_SCANCODE_PAGEDOWN;
-		case RAWKEY_HOME       : return SDL_SCANCODE_HOME;
-		case RAWKEY_END        : return SDL_SCANCODE_END;
-		case RAWKEY_UP         : return SDL_SCANCODE_UP;
-		case RAWKEY_DOWN       : return SDL_SCANCODE_DOWN;
-		case RAWKEY_LEFT       : return SDL_SCANCODE_LEFT;
-		case RAWKEY_RIGHT      : return SDL_SCANCODE_RIGHT;
-
-		case RAWKEY_F1         : return SDL_SCANCODE_F1;
-		case RAWKEY_F2         : return SDL_SCANCODE_F2;
-		case RAWKEY_F3         : return SDL_SCANCODE_F3;
-		case RAWKEY_F4         : return SDL_SCANCODE_F4;
-		case RAWKEY_F5         : return SDL_SCANCODE_F5;
-		case RAWKEY_F6         : return SDL_SCANCODE_F6;
-		case RAWKEY_F7         : return SDL_SCANCODE_F7;
-		case RAWKEY_F8         : return SDL_SCANCODE_F8;
-		case RAWKEY_F9         : return SDL_SCANCODE_F9;
-		case RAWKEY_F10        : return SDL_SCANCODE_F10;
-		case RAWKEY_F11        : return SDL_SCANCODE_F11;
-		case RAWKEY_F12        : return SDL_SCANCODE_F12;
-
-		case RAWKEY_HELP       : return SDL_SCANCODE_HELP;
-
-		case RAWKEY_LSHIFT     : return SDL_SCANCODE_LSHIFT;
-		case RAWKEY_RSHIFT     : return SDL_SCANCODE_RSHIFT;
-		case RAWKEY_LALT       : return SDL_SCANCODE_LALT;
-		case RAWKEY_RALT       : return SDL_SCANCODE_RALT;
-		case RAWKEY_LAMIGA     : return SDL_SCANCODE_LGUI;
-		case RAWKEY_RAMIGA     : return SDL_SCANCODE_RGUI;
-		case RAWKEY_CONTROL    : return SDL_SCANCODE_LCTRL;
-		case RAWKEY_CAPSLOCK   : return SDL_SCANCODE_CAPSLOCK;
-
-		case RAWKEY_SCRLOCK    : return SDL_SCANCODE_SCROLLLOCK;
-		case RAWKEY_PRTSCREEN  : return SDL_SCANCODE_PRINTSCREEN;
-		case RAWKEY_NUMLOCK    : return SDL_SCANCODE_NUMLOCKCLEAR;
-		case RAWKEY_PAUSE      : return SDL_SCANCODE_PAUSE;
-
-#if 0
-		case RAWKEY_MEDIA1     : return SDL_SCANCODE_VOLUMEUP;
-		case RAWKEY_MEDIA2     : return SDL_SCANCODE_VOLUMEDOWN;
-		case RAWKEY_MEDIA3     : return SDL_SCANCODE_WWW;
-		case RAWKEY_MEDIA4     : return SDL_SCANCODE_MAIL;
-		case RAWKEY_MEDIA5     : return SDL_SCANCODE_CALCULATOR;
-		case RAWKEY_MEDIA6     : return SDL_SCANCODE_COMPUTER;
-#else
-		case RAWKEY_CDTV_STOP  : return SDL_SCANCODE_AUDIOSTOP;
-		case RAWKEY_CDTV_PLAY  : return SDL_SCANCODE_AUDIOPLAY;
-		case RAWKEY_CDTV_PREV  : return SDL_SCANCODE_AUDIOPREV;
-		case RAWKEY_CDTV_NEXT  : return SDL_SCANCODE_AUDIONEXT;
-		case RAWKEY_CDTV_REW   : return SDL_SCANCODE_AC_BACK;
-		case RAWKEY_CDTV_FF    : return SDL_SCANCODE_AC_FORWARD;
-#endif
-	}
-
-	return SDL_SCANCODE_UNKNOWN;
-}*/
-
 static void
 AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *data)
 {
@@ -153,25 +67,29 @@ AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *d
 	SDL_SendMouseButton(data->window, 0, state, i);
 }
 
-static char
-AMIGA_TranslateUnicode(UWORD code, UWORD qualifier)
+static int
+AMIGA_TranslateUnicode(struct IntuiMessage *m, char *buffer)
 {
-    struct InputEvent ie;
-    WORD res;
-    char buffer[10];
+	int length;
 
-    ie.ie_Class = IECLASS_RAWKEY;
-    ie.ie_SubClass = 0;
-    ie.ie_Code  = code & ~(IECODE_UP_PREFIX);
-    ie.ie_Qualifier = qualifier;
-    ie.ie_EventAddress = NULL;
+#ifdef __MORPHOS__
+	WCHAR keycode;
 
-    res = MapRawKey(&ie, buffer, sizeof(buffer), 0);
+	GetAttr(IMSGA_UCS4, m, (ULONG *)&keycode);
+	length = UTF8_Encode(keycode, buffer); 
+#else
+	struct InputEvent ie;
 
-    if (res != 1)
-        return 0;
-    else
-        return buffer[0];
+	ie.ie_Class = IECLASS_RAWKEY;
+	ie.ie_SubClass = 0;
+	ie.ie_Code  = m->Code & ~(IECODE_UP_PREFIX);
+	ie.ie_Qualifier = m->Qualifier;
+	ie.ie_EventAddress = NULL;
+
+	length = MapRawKey(&ie, buffer, sizeof(buffer), 0);
+#endif
+
+	return length;
 }
 
 static void
@@ -211,12 +129,13 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 			if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0])) {
 				s = amiga_scancode_table[rawkey];
 				if (m->Code <= 127) {		
-					char text[2];
-					text[0] = AMIGA_TranslateUnicode(m->Code, m->Qualifier);
-					text[1] = '\0';
-							
-					SDL_SendKeyboardKey(SDL_PRESSED, s);		
-					SDL_SendKeyboardText(text);
+					char text[10];
+					int length = AMIGA_TranslateUnicode(m, text);
+					if (length > 0) {
+						text[length] = '\0'; 
+						SDL_SendKeyboardText(text);
+					}
+					SDL_SendKeyboardKey(SDL_PRESSED, s);
 				} else {
 					SDL_SendKeyboardKey(SDL_RELEASED, s);
 				}
