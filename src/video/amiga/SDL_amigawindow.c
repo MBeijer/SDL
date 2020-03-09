@@ -98,7 +98,18 @@ AMIGA_CloseWindows(_THIS)
 }
 
 void
-AMIGA_OpenWindows(_THIS)
+AMIGA_CloseWindow(_THIS, SDL_WindowData *wd)
+{
+	struct Window *win = wd->win;
+
+	if (win)
+	{
+		wd->win = NULL;
+		CloseWindowSafely(wd->window, win);
+	}
+}
+
+void AMIGA_OpenWindows(_THIS)
 {
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	SDL_WindowData *wd;
@@ -692,5 +703,83 @@ AMIGA_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo * info)
 		return SDL_FALSE;
 	}
 }
+void
+AMIGA_SetWindowResizable (_THIS, SDL_Window * window, SDL_bool resizable)
+{
+    if (window->flags & SDL_WINDOW_FOREIGN) {
+        D("Cannot modify native window '%s'\n", window->title);
+        return;
+    }
 
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+
+    if (data->win) {
+        D("Closing system window '%s' before re-creation\n", window->title);
+        AMIGA_CloseWindow(_this, window);
+    }
+
+    data->win = AMIGA_CreateWindow(_this, window);
+
+    if (data->win) {
+        //OS4_CreateIconifyGadgetForWindow(_this, window);
+
+        // Make sure the new window is active
+        AMIGA_ShowWindow(_this, window);
+
+        //if ((window->flags & SDL_WINDOW_OPENGL) && data->glContext) {
+        //    OS4_UpdateGlWindowPointer(_this, window);
+        //}
+    } else {
+        D("Failed to re-create window '%s'\n", window->title);
+    }
+}
+
+int
+AMIGA_SetWindowOpacity(_THIS, SDL_Window * window, float opacity)
+{
+    struct Window *syswin = ((SDL_WindowData *) window->driverdata)->win;
+    LONG ret;
+
+    UBYTE value = opacity * 255;
+
+    D("Not supported yet - Setting window '%s' opaqueness to %d\n", window->title, value);
+
+	// Maybe with TransparencyControl
+
+    /*ret = SetWindowAttrs(
+        syswin,
+        WA_Opaqueness, value,
+        TAG_DONE);
+
+    if (ret) {
+        D("Failed to set window opaqueness to %d\n", value);
+        return -1;
+    }
+*/
+    return 0;
+}
+
+int
+AMIGA_GetWindowBordersSize(_THIS, SDL_Window * window, int * top, int * left, int * bottom, int * right)
+{
+    struct Window *syswin = ((SDL_WindowData *) window->driverdata)->win;
+
+    if (top) {
+        *top = syswin->BorderTop;
+    }
+
+    if (left) {
+        *left = syswin->BorderLeft;
+    }
+
+    if (bottom) {
+        *bottom = syswin->BorderBottom;
+    }
+
+    if (right) {
+        *right = syswin->BorderRight;
+    }
+
+    return 0;
+}
 /* vi: set ts=4 sw=4 expandtab: */
