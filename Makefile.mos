@@ -3,9 +3,9 @@
 # Enable debug with -D__SDL_DEBUG
 
 CDEFS   = -DAROS_ALMOST_COMPATIBLE -DBUILD_SDL2_LIBRARY -D__SDL_DEBUG
-CC      = ppc-morphos-gcc-9 -noixemul
+CC      = ppc-morphos-gcc-4 -noixemul
 INCLUDE = -I./include
-CFLAGS  = -maltivec -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
+CFLAGS  = -cstd=c99 -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
 AR	= ar
 RANLIB	= ranlib
 
@@ -89,15 +89,15 @@ install-iso:
 #	mkdir -p $(ISOPATH)MorphOS/Libs/
 #	@cp sdl2.library $(ISOPATH)MorphOS/Libs/
 
-#src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
-#	ppc-morphos-gcc-4 $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c src/video/SDL_blit_N.c
+src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
+	ppc-morphos-gcc-4 $(CFLAGS) -fvec -faltivec  -o $@ -c src/video/SDL_blit_N.c
 
 src/core/morphos/SDL_cpu.o: src/core/morphos/SDL_cpu.c
-	ppc-morphos-gcc-9 $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c $^
+	ppc-morphos-gcc-4 $(CFLAGS) -fvec -faltivec  -o $@ -c $^
 
 src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/SDL_library.h src/core/morphos/SDL_stubs.h
 	$(COMPILING)
-	@ppc-morphos-gcc-9 -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
+	@ppc-morphos-gcc-4 -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
 
 $(TARGET): $(OBJECTS)
 	$(ARCHIVING)
