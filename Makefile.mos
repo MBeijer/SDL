@@ -20,7 +20,7 @@ STRIPPING = @$(ECHE) "stripping $(BOLD)$@$(NRML)..."
 ARCHIVING = @$(ECHE) "archiving $(BOLD)$@$(NRML)..."
 HEADERING = @$(ECHE) "creating headers files $(BOLD)$@$(NRML)..."
 
-TARGET  = libSDL.a
+TARGET  = libSDL2.a
 LIBRARY = sdl2.library
 
 SOURCES = \
@@ -68,13 +68,13 @@ sdk: all
 	mkdir -p /usr/local/ppc-morphos/lib/libb32
 	cp sdl2-config /usr/local/bin
 	cp include/*.h /usr/local/include/SDL2
-	cp src/core/morphos/devenv/lib/libSDL.a /usr/local/lib/libSDL2.a
-	cp src/core/morphos/devenv/lib/libb32/libSDL.a /usr/local/lib/libb32/libSDL2.a
+	cp src/core/morphos/devenv/lib/libSDL2.a /usr/local/lib/libSDL2.a
+	cp src/core/morphos/devenv/lib/libb32/libSDL2.a /usr/local/lib/libb32/libSDL2.a
 
 headers:
 	$(HEADERING)
-	@cvinclude.pl --fd=sdk/fd/sdl2_lib.fd --clib=sdk/clib/sdl2_protos.h --proto=sdk/proto/sdl2.h
-	@cvinclude.pl --fd=sdk/fd/sdl2_lib.fd --clib=sdk/clib/sdl2_protos.h --inline=sdk/ppcinline/sdl2.h
+	@cvinclude.pl --fd=src/core/morphos/sdk/fd/sdl2_lib.fd --clib=src/core/morphos/sdk/clib/sdl2_protos.h --proto=src/core/morphos/sdk/proto/sdl2.h
+	@cvinclude.pl --fd=src/core/morphos/sdk/fd/sdl2_lib.fd --clib=src/core/morphos/sdk/clib/sdl2_protos.h --inline=src/core/morphos/sdk/ppcinline/sdl2.h
 
 lib:
 	@cd src/core/morphos/devenv; if ! $(MAKE) $(MAKECMDGOALS); then exit 1; fi;
@@ -82,13 +82,6 @@ lib:
 install: $(LIBRARY) lib
 	cp $(LIBRARY) Libs:
 	-flushlib $(LIBRARY)
-
-install-iso:
-	@echo "not for the ISO.. skipping"
-
-#install-iso: $(LIBRARY) lib
-#	mkdir -p $(ISOPATH)MorphOS/Libs/
-#	@cp sdl2.library $(ISOPATH)MorphOS/Libs/
 
 src/video/SDL_blit_N.o: src/video/SDL_blit_N.c
 	$(CC) $(CFLAGS) -fvec -maltivec -faltivec -mabi=altivec -o $@ -c src/video/SDL_blit_N.c
@@ -107,7 +100,7 @@ $(TARGET): $(OBJECTS)
 
 $(LIBRARY): $(TARGET) $(COREOBJECTS)
 	$(LINKING)
-	@$(CC) -nostartfiles -mresident32 -Wl,-Map=sdl2.map $(COREOBJECTS) -o $@.db -L. -lSDL -lm
+	@$(CC) -nostartfiles -mresident32 -Wl,-Map=sdl2.map $(COREOBJECTS) -o $@.db -L. -lSDL2 -lm
 	$(STRIPPING)
 	@ppc-morphos-strip -o $@ --remove-section=.comment $@.db
 
