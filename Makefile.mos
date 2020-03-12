@@ -37,6 +37,7 @@ SOURCES = \
 	src/haptic/*.c \
 	src/haptic/dummy/*.c \
 	src/joystick/*.c \
+	src/joystick/amiga/*.c \
 	src/joystick/morphos/*.c \
 	src/loadso/dlopen/*.c \
 	src/power/*.c \
@@ -59,13 +60,13 @@ COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')
 
 OBJECTS = $(shell echo $(SOURCES) | sed -e 's,\.c,\.o,g')
 
-all: $(LIBRARY) headers lib
+all: $(LIBRARY) lib
 
 sdk: all
 	mkdir -p /usr/local/bin
 	mkdir -p /usr/local/include/SDL2
-	mkdir -p /usr/local/ppc-morphos/lib
-	mkdir -p /usr/local/ppc-morphos/lib/libb32
+	mkdir -p /usr/local/lib
+	mkdir -p /usr/local/lib/libb32
 	cp sdl2-config /usr/local/bin
 	cp include/*.h /usr/local/include/SDL2
 	cp src/core/morphos/devenv/lib/libSDL2.a /usr/local/lib/libSDL2.a

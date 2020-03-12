@@ -19,14 +19,13 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifdef SDL_JOYSTICK_MORPHOS
+#include "SDL_sysjoystick_c.h"
 
-#include "../../SDL_internal.h"
+#ifdef SDL_JOYSTICK_MORPHOS
 
 #include "SDL_joystick.h"
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
-#include "SDL_sysjoystick_c.h"
 
 #include <dos/dos.h>
 #include <exec/execbase.h>

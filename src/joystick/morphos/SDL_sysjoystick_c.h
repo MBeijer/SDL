@@ -19,9 +19,9 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
+#include "../../SDL_internal.h"
+
 #ifdef SDL_JOYSTICK_MORPHOS
-#ifndef SDL_SYSJOYSTICK_C_H
-#define SDL_SYSJOYSTICK_C_H
 
 #ifndef EXEC_LISTS_H
 #include <exec/lists.h>
@@ -77,5 +77,4 @@ struct sensornotify
 	DOUBLE values[0];
 };
 
-#endif
 #endif

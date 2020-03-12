@@ -19,9 +19,9 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifdef SDL_JOYSTICK_AMIGA
-
 #include "../../SDL_internal.h"
+
+#ifdef SDL_JOYSTICK_AMIGA
 
 #include "SDL_joystick.h"
 #include "../SDL_sysjoystick.h"
