@@ -2798,10 +2798,12 @@ SDL_OnWindowFocusLost(SDL_Window * window)
     }
 
     SDL_UpdateWindowGrab(window);
-
+#ifndef __MORPHOS__
+/* FIX BUG WITH SWITCHING WINDOW/FULLSCREEN_MASK */
     if (ShouldMinimizeOnFocusLoss(window)) {
         SDL_MinimizeWindow(window);
     }
+#endif
 }
 
 /* !!! FIXME: is this different than SDL_GetKeyboardFocus()?
