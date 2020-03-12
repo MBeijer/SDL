@@ -160,6 +160,7 @@ extern SDL_JoystickDriver SDL_VIRTUAL_JoystickDriver;
 extern SDL_JoystickDriver SDL_WGI_JoystickDriver;
 extern SDL_JoystickDriver SDL_WINDOWS_JoystickDriver;
 extern SDL_JoystickDriver SDL_MORPHOS_JoystickDriver;
+extern SDL_JoystickDriver SDL_AMIGA_JoystickDriver;
 
 #endif /* SDL_sysjoystick_h_ */
 

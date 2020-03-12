@@ -94,6 +94,9 @@ static SDL_JoystickDriver *SDL_joystick_drivers[] = {
 #ifdef SDL_JOYSTICK_MORPHOS
     &SDL_MORPHOS_JoystickDriver,
 #endif
+#ifdef SDL_JOYSTICK_AMIGA
+    &SDL_AMIGA_JoystickDriver,
+#endif
 #if defined(SDL_JOYSTICK_DUMMY) || defined(SDL_JOYSTICK_DISABLED)
     &SDL_DUMMY_JoystickDriver
 #endif

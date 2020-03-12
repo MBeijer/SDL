@@ -18,6 +18,9 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+
+#ifdef SDL_JOYSTICK_MORPHOS
+
 #include "../../SDL_internal.h"
 
 #include "SDL_joystick.h"
@@ -530,3 +533,4 @@ SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
     SDL_SYS_JoystickQuit,
 };
 
+#endif

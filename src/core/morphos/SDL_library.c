@@ -58,6 +58,9 @@ struct Library       *IConvBase = NULL;
 struct Library       *ThreadPoolBase = NULL;
 struct Library       *DynLoadBase = NULL;
 
+//SDL_JOYSTICK_AMIGA
+struct Library		*LowLevelBase = NULL;
+
 struct timerequest   GlobalTimeReq;
 
 u_int32_t DataL1LineSize = 0;

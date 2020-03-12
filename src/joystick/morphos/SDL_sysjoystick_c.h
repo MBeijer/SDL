@@ -19,6 +19,7 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
+#ifdef SDL_JOYSTICK_MORPHOS
 #ifndef SDL_SYSJOYSTICK_C_H
 #define SDL_SYSJOYSTICK_C_H
 
@@ -76,4 +77,5 @@ struct sensornotify
 	DOUBLE values[0];
 };
 
+#endif
 #endif
