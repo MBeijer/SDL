@@ -260,8 +260,12 @@ static int SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 	}
 	else if((temp & JP_TYPE_MASK) == JP_TYPE_NOTAVAIL)
 	{
-		joystick->nbuttons = 3; // ??
-		joystick->nhats = 1; //  ??
+		joystick->nbuttons = 0; 
+		joystick->nhats = 0; 
+	} else {
+		// Default, same as 
+		joystick->nbuttons = 3; 
+		joystick->nhats = 1; 
 	}
 		
 	joystick->nballs = 0;
