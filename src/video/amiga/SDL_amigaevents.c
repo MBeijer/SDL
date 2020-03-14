@@ -131,9 +131,9 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 				if (m->Code <= 127) {		
 					char text[10];
 					int length = AMIGA_TranslateUnicode(m, text);
+					SDL_SendKeyboardKey(SDL_PRESSED, s);
 					if (length > 0) {
 						text[length] = '\0'; 
-						SDL_SendKeyboardKey(SDL_PRESSED, s);
 						SDL_SendKeyboardText(text);
 					}
 				} else {
