@@ -133,9 +133,9 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 					int length = AMIGA_TranslateUnicode(m, text);
 					if (length > 0) {
 						text[length] = '\0'; 
+						SDL_SendKeyboardKey(SDL_PRESSED, s);
 						SDL_SendKeyboardText(text);
 					}
-					SDL_SendKeyboardKey(SDL_PRESSED, s);
 				} else {
 					SDL_SendKeyboardKey(SDL_RELEASED, s);
 				}
@@ -149,10 +149,13 @@ AMIGA_MouseMove(const struct IntuiMessage *m, SDL_WindowData *data)
 {
 	SDL_Mouse *mouse = SDL_GetMouse();
 
-	if (!mouse->relative_mode || mouse->relative_mode_warp)
+	if (!SDL_GetRelativeMouseMode()) 
 	{
 		struct Screen *s = data->win->WScreen;
-		SDL_SendMouseMotion(data->window, 0, 0, s->MouseX, s->MouseY);
+		int x =(s->MouseX - data->win->LeftEdge - data->win->BorderLeft);
+		int y =(s->MouseY - data->win->TopEdge - data->win->BorderTop);
+		SDL_SendMouseMotion(data->window, 0, 0, x, y);
+
 	}
 	else
 	{
@@ -199,6 +202,34 @@ static void AMIGA_GadgetEvent(_THIS, const struct IntuiMessage *m)
 }
 
 static void
+AMIGA_HandleActivation(_THIS, struct IntuiMessage *m, SDL_bool activated)
+{
+	SDL_WindowData *data = (SDL_WindowData *)m->IDCMPWindow->UserData;
+	//D("[%s]\n", __FUNCTION__);
+	if(data->window) {
+		if (activated) {
+			SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
+			//OS4_SyncKeyModifiers(_this);
+			if (SDL_GetKeyboardFocus() != data->window) {
+				SDL_SetKeyboardFocus(data->window);
+			}			
+			SDL_SetMouseFocus(data->window);
+		} else {
+
+			if (SDL_GetKeyboardFocus() == data->window) {
+				SDL_SetKeyboardFocus(NULL);
+			}	
+			if (SDL_GetMouseFocus() == data->window)
+			{
+				SDL_SetMouseFocus(NULL);
+			}
+		}		
+		
+	}
+	
+}
+
+static void
 AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 {
 	SDL_WindowData *data = (SDL_WindowData *)m->IDCMPWindow->UserData;
@@ -228,20 +259,11 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 			break;
 
 		case IDCMP_ACTIVEWINDOW:
-			SDL_SetKeyboardFocus(data->window);
-			SDL_SetMouseFocus(data->window);
+			AMIGA_HandleActivation(_this, m, SDL_TRUE);
 			break;
 
 		case IDCMP_INACTIVEWINDOW:
-			if (SDL_GetKeyboardFocus() == data->window)
-			{
-				SDL_SetKeyboardFocus(NULL);
-			}
-
-			if (SDL_GetMouseFocus() == data->window)
-			{
-				SDL_SetMouseFocus(NULL);
-			}
+			AMIGA_HandleActivation(_this, m, SDL_FALSE);
 			break;
 
 		case IDCMP_CHANGEWINDOW:

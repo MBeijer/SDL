@@ -24,6 +24,7 @@
 #include "SDL_mouse.h"
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
+#include "SDL_hints.h"
 
 #include "SDL_amigaclipboard.h"
 #include "SDL_amigaevents.h"
@@ -136,16 +137,19 @@ AMIGA_Available(void)
 static int
 AMIGA_VideoInit(_THIS)
 {
-	int rc = -1;
 	D("[%s]\n", __FUNCTION__);
 
-	if ((rc = AMIGA_InitModes(_this)) == 0)
+	if (AMIGA_InitModes(_this) < 0)
 	{
-		AMIGA_InitKeyboard(_this);
-		AMIGA_InitMouse(_this);
+		return SDL_SetError("Failed to initialize modes");
 	}
 
-	return rc;
+	AMIGA_InitKeyboard(_this);
+	AMIGA_InitMouse(_this);
+
+	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+		
+	return 0;
 }
 
 static void
@@ -342,7 +346,7 @@ AMIGA_CreateDevice(int devindex)
 			device->VideoInit = AMIGA_VideoInit;
 			device->VideoQuit = AMIGA_VideoQuit;
 			device->GetDisplayModes = AMIGA_GetDisplayModes;
-			//device->GetDisplayBounds = X11_GetDisplayBounds;
+			//device->GetDisplayBounds = AMIGA_GetDisplayBounds;;
 			device->SetDisplayMode = AMIGA_SetDisplayMode;
 			device->SuspendScreenSaver = AMIGA_SuspendScreenSaver;
 			device->PumpEvents = AMIGA_PumpEvents;
