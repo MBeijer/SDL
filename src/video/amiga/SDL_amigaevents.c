@@ -185,7 +185,7 @@ AMIGA_ChangeWindow(const struct IntuiMessage *m, SDL_WindowData *data)
 	{
 		data->curr_w = w->Width;
 		data->curr_h = w->Height;
-		SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESIZED, data->curr_w, data->curr_h);
+		SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESIZED, (data->curr_w - w->BorderLeft - w->BorderRight), (data->curr_h - w->BorderTop - w->BorderBottom));
 	}
 }
 
