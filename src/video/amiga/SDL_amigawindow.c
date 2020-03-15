@@ -636,7 +636,7 @@ AMIGA_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
 
 		data->grabbed = grabbed ? 1 : 0;
 
-		if (grabbed)
+		if (grabbed && (data->win->Flags & WFLG_WINDOWACTIVE) == 0)
 			AMIGA_WindowToFront(data->win);
 
 		DoMethod((Object *)data->win, grabbed ? WM_ObtainEvents : WM_ReleaseEvents);
