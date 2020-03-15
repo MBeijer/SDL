@@ -9,12 +9,13 @@ TODO
  - add joystick support with lowlevel.library (take in powersdl)
  - fix keymap/keybord problem
  - fix MouseWrap (pointer escape the window when SDL_SetRelativeMouseMode(SDL_TRUE)), bug see in ZGloom (Window mode)
+ - fix window rezizable, bug with top border (bug see in ScummVM)
 
 3) List of fix/add need
 
 - add GCC9 support
 - fix sensors joystick 
-- fix window rezizable, bug with top border (bug see in ScummVM)
-- add OpenGL support
+- add OpenGL/TinyGL support
+- hardware accelerated blitting and scaling with CGX functions
 
 BeWorld
