@@ -441,7 +441,9 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 		else
 			flags |= WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET;
 
-		if (window->flags & SDL_WINDOW_RESIZABLE && !fullscreen)
+		SDL_bool win_resizable = (window->flags & SDL_WINDOW_RESIZABLE && !fullscreen);
+		
+		if (win_resizable)
 			flags |= WFLG_SIZEGADGET | WFLG_SIZEBBOTTOM;
 
 		if (data->window_title == NULL)
@@ -453,10 +455,10 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 			WA_Left, left, WA_Top, top,
 			WA_InnerWidth, w,
 			WA_InnerHeight, h,
-			WA_MinWidth, min_w,
-			WA_MinHeight, min_h,
-			WA_MaxWidth, max_w,
-			WA_MaxHeight, max_h,
+			WA_MinWidth, win_resizable ? 32 : min_w,
+			WA_MinHeight, win_resizable ? 32 : min_h,
+			WA_MaxWidth, win_resizable ? -1 : max_w,
+			WA_MaxHeight, win_resizable ? -1 : max_h,
 			WA_Flags, flags,
 			vd->CustomScreen ? WA_CustomScreen : TAG_IGNORE, vd->CustomScreen,
 			vd->CustomScreen ? TAG_IGNORE : WA_PubScreen, vd->WScreen,
