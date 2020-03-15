@@ -441,8 +441,8 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 		else
 			flags |= WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET;
 
-		//if (window->flags & SDL_WINDOW_RESIZABLE && !fullscreen)
-		//	flags |= WFLG_SIZEGADGET | WFLG_SIZEBBOTTOM;
+		if (window->flags & SDL_WINDOW_RESIZABLE && !fullscreen)
+			flags |= WFLG_SIZEGADGET | WFLG_SIZEBBOTTOM;
 
 		if (data->window_title == NULL)
 			data->window_title = AMIGA_ConvertText(window->title, MIBENUM_UTF_8, MIBENUM_SYSTEM);
