@@ -2413,7 +2413,7 @@ static void AmiglUnlockArraysEXT( void ) {
 
 #ifdef __MORPHOS__
 #define glMultiTexCoord2dvARB(a, v)      GLMultiTexCoord2dvARB(__tglContext, a, v)
-#define glMultiTexCoord3dvARB(a, v)      GLMultiTexCoord3dvARB(__tglContext, a, v)
+//#define glMultiTexCoord3dvARB(a, v)      GLMultiTexCoord3dvARB(__tglContext, a, v)
 #endif
 
 static void AmiglActiveTextureARB(GLenum unit) {
@@ -2449,7 +2449,7 @@ static void AmiglMultiTexCoord2dvARB(GLenum unit, const GLdouble *v) {
 }
 
 static void AmiglMultiTexCoord3dvARB(GLenum unit, const GLdouble *v) {
-	glMultiTexCoord3dvARB(unit, v);
+	//glMultiTexCoord3dvARB(unit, v);
 }
 
 static void AmiglClientActiveTextureARB(GLenum unit) {
