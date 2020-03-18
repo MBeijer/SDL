@@ -367,7 +367,7 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 		D("[%s] initial sizes %ld/%ld and %ld/%ld\n", __FUNCTION__, w, h, max_w, max_h);
 
 		if (vd->WScreen == NULL)
-			AMIGA_GetScreen(vd->VideoDevice, vd->FullScreen);
+			AMIGA_GetScreen(vd->VideoDevice, vd->FullScreen, (window->flags & SDL_WINDOW_OPENGL) != 0);
 
 		scr = vd->WScreen;
 

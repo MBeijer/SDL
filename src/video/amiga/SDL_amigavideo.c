@@ -36,6 +36,7 @@
 #include "SDL_amigavideo.h"
 #include "SDL_amigawindow.h"
 #include "SDL_amigamessagebox.h"
+#include "SDL_amigaopengl.h"
 
 #include <exec/execbase.h>
 #include <intuition/pointerclass.h>
@@ -379,17 +380,16 @@ AMIGA_CreateDevice(int devindex)
 			device->shape_driver.SetWindowShape = AMIGA_SetWindowShape;
 			device->shape_driver.ResizeWindowShape = AMIGA_ResizeWindowShape;
 
-#if SDL_VIDEO_OPENGL_GLX
-    device->GL_LoadLibrary = X11_GL_LoadLibrary;
-    device->GL_GetProcAddress = X11_GL_GetProcAddress;
-    device->GL_UnloadLibrary = X11_GL_UnloadLibrary;
-    device->GL_CreateContext = X11_GL_CreateContext;
-    device->GL_MakeCurrent = X11_GL_MakeCurrent;
-    device->GL_SetSwapInterval = X11_GL_SetSwapInterval;
-    device->GL_GetSwapInterval = X11_GL_GetSwapInterval;
-    device->GL_SwapWindow = X11_GL_SwapWindow;
-    device->GL_DeleteContext = X11_GL_DeleteContext;
-#endif
+			device->GL_LoadLibrary = AMIGA_GL_LoadLibrary;
+			device->GL_GetProcAddress = AMIGA_GL_GetProcAddress;
+			device->GL_UnloadLibrary = AMIGA_GL_UnloadLibrary;
+			device->GL_CreateContext = AMIGA_GL_CreateContext;
+			device->GL_MakeCurrent = AMIGA_GL_MakeCurrent;
+			device->GL_GetDrawableSize = AMIGA_GL_GetDrawableSize;
+			device->GL_SetSwapInterval = AMIGA_GL_SetSwapInterval;
+			device->GL_GetSwapInterval = AMIGA_GL_GetSwapInterval;
+			device->GL_SwapWindow = AMIGA_GL_SwapWindow;
+			device->GL_DeleteContext = AMIGA_GL_DeleteContext;
 
 			device->SetClipboardText = AMIGA_SetClipboardText;
 			device->GetClipboardText = AMIGA_GetClipboardText;

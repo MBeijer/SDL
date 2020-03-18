@@ -328,7 +328,7 @@ AMIGA_GetDisplayModes(_THIS, SDL_VideoDisplay * sdl_display)
 }
 
 int
-AMIGA_GetScreen(_THIS, BYTE fullscreen)
+AMIGA_GetScreen(_THIS, BYTE fullscreen, SDL_bool support3d)
 {
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	struct Screen *screen;
@@ -344,11 +344,15 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen)
 	}
 	else
 	{
-		static const size_t screentags[] =
+		struct TagItem screentags[] =
 		{
-			SA_Quiet, TRUE, SA_ShowTitle, FALSE, SA_AutoScroll, TRUE, SA_Title, (size_t)"SDL",
-			SA_AdaptSize, TRUE,
-			TAG_DONE
+			{SA_Quiet, TRUE},
+			{SA_ShowTitle, FALSE},
+			{SA_AutoScroll, TRUE},
+			{SA_Title, (IPTR)"SDL"},
+			{SA_AdaptSize, TRUE},
+			{support3d ? SA_3DSupport : TAG_IGNORE, TRUE},
+			{TAG_DONE}
 		};
 
 		D("[%s] Open screen %ldx%ldx%ld\n", __FUNCTION__, data->ScrWidth, data->ScrHeight, data->ScrDepth);
@@ -360,7 +364,7 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen)
 				SA_Width, data->ScrWidth,
 				SA_Height, data->ScrHeight,
 				SA_Depth, data->ScrDepth,
-				TAG_MORE, screentags);
+				TAG_MORE, (IPTR)screentags);
 		}
 		else
 		{
@@ -369,7 +373,7 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen)
 				SA_Height, data->ScrHeight,
 				SA_Depth, data->ScrDepth,
 				SA_MonitorName, data->ScrMonName,
-				TAG_MORE, screentags);
+				TAG_MORE, (IPTR)screentags);
 		}
 
 		data->CustomScreen = screen;

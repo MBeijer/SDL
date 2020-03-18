@@ -28,6 +28,7 @@
 
 #include "SDL_amigavideo.h"
 #include "SDL_amigawindow.h"
+#include "SDL_amigaopengl.h"
 
 #include "SDL_timer.h"
 #include "SDL_syswm.h"
@@ -170,7 +171,7 @@ AMIGA_MouseMove(const struct IntuiMessage *m, SDL_WindowData *data)
 }
 
 static void
-AMIGA_ChangeWindow(const struct IntuiMessage *m, SDL_WindowData *data)
+AMIGA_ChangeWindow(_THIS, const struct IntuiMessage *m, SDL_WindowData *data)
 {
 	struct Window *w = data->win;
 
@@ -186,6 +187,9 @@ AMIGA_ChangeWindow(const struct IntuiMessage *m, SDL_WindowData *data)
 		data->curr_w = w->Width;
 		data->curr_h = w->Height;
 		SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESIZED, (data->curr_w - w->BorderLeft - w->BorderRight), (data->curr_h - w->BorderTop - w->BorderBottom));
+		/*if (data->glContext)*/ {
+			AMIGA_GL_ResizeContext(_this, data);
+		}
 	}
 }
 
@@ -267,7 +271,7 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 			break;
 
 		case IDCMP_CHANGEWINDOW:
-			AMIGA_ChangeWindow(m, data);
+			AMIGA_ChangeWindow(_this, m, data);
 			break;
 
 		case IDCMP_GADGETUP:
