@@ -27,7 +27,9 @@
 #include "SDL_library.h"
 
 /*********************************************************************/
-
+struct SDL_Library *SDL2Base;
+struct Library *TinyGLBase;
+	
 int ThisRequiresConstructorHandling = 0;
 
 /* This function must preserve all registers except r13 */
@@ -54,6 +56,8 @@ int SAVEDS AMIGA_Startup(struct SDL_Library *LibBase)
 {
 	struct CTDT *ctdt = LibBase->ctdtlist, *last_ctdt = LibBase->last_ctdt;
 
+	SDL2Base = (struct SDL_Library*)&LibBase->Library;
+	
 	threadpool = CreateThreadPoolTags(32768, THREADPOOL_Name, (size_t)"SDL2", THREADPOOL_DataSegment, (size_t)LibBase->DataSeg, TAG_DONE);
 
 	if (threadpool == NULL)
