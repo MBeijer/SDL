@@ -2,7 +2,7 @@
 
 CC	= ppc-morphos-gcc-9
 CFLAGS	= -noixemul -O2 -Wall -g -I../include
-LIBS	= -L../src/core/morphos/devenv/lib/ -lSDL -noixemul -lm
+LIBS	= -L../src/core/morphos/devenv/lib/ -lSDL2 -noixemul -lm
 
 TARGETS = \
 	checkkeys \
