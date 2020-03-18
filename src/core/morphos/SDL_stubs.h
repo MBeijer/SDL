@@ -673,8 +673,7 @@
 	STUB(SDL_wcsstr)
 	STUB(SDL_wcsncmp)
 	STUB(SDL_strtokr)
-	
-#if 0
+
 	STUB(SDL_GL_LoadLibrary)
 	STUB(SDL_GL_GetProcAddress)
 	STUB(SDL_GL_UnloadLibrary)
@@ -691,7 +690,6 @@
 	STUB(SDL_GL_GetSwapInterval)
 	STUB(SDL_GL_SwapWindow)
 	STUB(SDL_GL_DeleteContext)
-#endif
 
 #if 0
 	/* Haptic */
