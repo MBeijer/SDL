@@ -44,6 +44,7 @@ SOURCES = \
 	src/power/morphos/*.c \
 	src/render/*.c \
 	src/render/software/*.c \
+	src/render/opengl/*.c \
 	src/sensor/*.c \
 	src/sensor/dummy/*.c \
 	src/stdlib/*.c \

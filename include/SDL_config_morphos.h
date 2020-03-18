@@ -168,15 +168,10 @@
 /* Enable assembly routines */
 #define SDL_ALTIVEC_BLITTERS    1
 
-#define SDL_VIDEO_RENDER_SW 1
-
 /* Maybe later */
 #ifndef SDL_VIDEO_RENDER_OGL
-//#define SDL_VIDEO_RENDER_OGL    1
+#define SDL_VIDEO_RENDER_OGL    1
 #endif
-
-/* Need or not... */
-#define SDL_HAVE_YUV 1
 
 /* Enable OpenGL support */
 #ifndef SDL_VIDEO_OPENGL
