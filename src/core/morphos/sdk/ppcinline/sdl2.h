@@ -4161,6 +4161,134 @@
 		(((float (*)(float ))*(void**)(__base - 2932))(__t__p0));\
 	})
 
+#define SDL_GL_LoadLibrary(__p0) \
+	({ \
+		const char * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(const char *))*(void**)(__base - 3652))(__t__p0));\
+	})
+
+#define SDL_GL_GetProcAddress(__p0) \
+	({ \
+		const char * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void *(*)(const char *))*(void**)(__base - 3658))(__t__p0));\
+	})
+
+#define SDL_GL_UnloadLibrary() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(void))*(void**)(__base - 3664))());\
+	})
+
+#define SDL_GL_ExtensionSupported(__p0) \
+	({ \
+		const char * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(const char *))*(void**)(__base - 3670))(__t__p0));\
+	})
+
+#define SDL_GL_ResetAttributes() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(void))*(void**)(__base - 3676))());\
+	})
+
+#define SDL_GL_SetAttribute(__p0, __p1) \
+	({ \
+		SDL_GLattr  __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GLattr , int ))*(void**)(__base - 3682))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GL_GetAttribute(__p0, __p1) \
+	({ \
+		SDL_GLattr  __t__p0 = __p0;\
+		int * __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GLattr , int *))*(void**)(__base - 3688))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GL_CreateContext(__p0) \
+	({ \
+		SDL_Window * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_GLContext (*)(SDL_Window *))*(void**)(__base - 3694))(__t__p0));\
+	})
+
+#define SDL_GL_MakeCurrent(__p0, __p1) \
+	({ \
+		SDL_Window * __t__p0 = __p0;\
+		SDL_GLContext  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Window *, SDL_GLContext ))*(void**)(__base - 3700))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GL_GetCurrentWindow() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Window *(*)(void))*(void**)(__base - 3706))());\
+	})
+
+#define SDL_GL_GetCurrentContext() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_GLContext (*)(void))*(void**)(__base - 3712))());\
+	})
+
+#define SDL_GL_GetDrawableSize(__p0, __p1, __p2) \
+	({ \
+		SDL_Window * __t__p0 = __p0;\
+		int * __t__p1 = __p1;\
+		int * __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(SDL_Window *, int *, int *))*(void**)(__base - 3718))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_GL_SetSwapInterval(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(int ))*(void**)(__base - 3724))(__t__p0));\
+	})
+
+#define SDL_GL_GetSwapInterval() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(void))*(void**)(__base - 3730))());\
+	})
+
+#define SDL_GL_SwapWindow(__p0) \
+	({ \
+		SDL_Window * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(SDL_Window *))*(void**)(__base - 3736))(__t__p0));\
+	})
+
+#define SDL_GL_DeleteContext(__p0) \
+	({ \
+		SDL_GLContext  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(SDL_GLContext ))*(void**)(__base - 3742))(__t__p0));\
+	})
+
 #define SDL_tan(__p0) \
 	({ \
 		double  __t__p0 = __p0;\
