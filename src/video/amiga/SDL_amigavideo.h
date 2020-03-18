@@ -61,6 +61,7 @@ typedef struct SDL_VideoData
 	ULONG sdlpixfmt;
 
 	ULONG coltab[256];
+	UBYTE gammatable[3][256];
 
 	LONG ScreenSaverSuspendCount;
 

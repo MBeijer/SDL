@@ -620,9 +620,23 @@ AMIGA_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * _displa
 int
 AMIGA_SetWindowGammaRamp(_THIS, SDL_Window * window, const Uint16 * ramp)
 {
-	//SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+	SDL_VideoData *vd = data->videodata;
+	int i;
 
-	#warning implement me
+	for (i = 0; i < 256; i++) {
+		vd->gammatable[0][i] = ramp[0*256 + i] >> 8;
+		vd->gammatable[1][i] = ramp[1*256 + i] >> 8;
+		vd->gammatable[2][i] = ramp[2*256 + i] >> 8;
+	}
+
+	if (vd->CustomScreen) {
+		SetAttrs(vd->CustomScreen,
+			SA_GammaRed,   (IPTR)vd->gammatable[0],
+			SA_GammaGreen, (IPTR)vd->gammatable[1],
+			SA_GammaBlue,  (IPTR)vd->gammatable[2],
+			TAG_DONE);
+	}
 
 	return 0;
 }
