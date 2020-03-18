@@ -64,7 +64,7 @@
 #include <tgl/gl.h>
 #include <tgl/glu.h>
 
-extern GLContext *__tglContext;
+GLContext *__tglContext;
 extern void *AmiGetGLProc(const char *proc);
 //struct Screen *DefaultScreen;
 
