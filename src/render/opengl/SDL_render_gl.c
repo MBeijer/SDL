@@ -239,7 +239,7 @@ GL_LoadFunctions(GL_RenderData * data)
 #define SDL_PROC(ret,func,params) data->func=func;
 #else
     int retval = 0;
-#ifdef __AMIGAOS4__
+#if defined(__AMIGAOS4__) || defined(__MORPHOS__)
 #define SDL_PROC(ret,func,params) \
     do { \
         data->func = SDL_GL_GetProcAddress(#func); \
