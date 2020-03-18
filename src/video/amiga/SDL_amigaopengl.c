@@ -73,7 +73,7 @@ extern struct SDL_Library *SDL2Base;
 
 int AMIGA_GL_LoadLibrary(_THIS, const char *path)
 {
-	D("[SDL] AMIGA_GL_LoadLibrary()\n");
+	D("[%s]\n", __FUNCTION__);
 
 	if (SDL2Base->MyTinyGLBase) {
 		if (!TinyGLBase)
@@ -94,16 +94,16 @@ void *AMIGA_GL_GetProcAddress(_THIS, const char *proc)
 {
 	void *func = NULL;
 
-	D("[SDL] AMIGA_GL_GetProcAddress()\n");
-
 	func = AmiGetGLProc(proc);
+
+	D("[%s] proc %s func 0x%08lx\n", __FUNCTION__, proc, func);
 
 	return func;
 }
 
 void AMIGA_GL_UnloadLibrary(_THIS)
 {
-	D("[SDL] AMIGA_GL_UnloadLibrary()\n");
+	D("[%s]\n", __FUNCTION__);
 
 	if (SDL2Base->MyTinyGLBase && *SDL2Base->MyTinyGLBase && TinyGLBase) {
 		CloseLibrary(TinyGLBase);
@@ -118,6 +118,8 @@ SDL_GLContext AMIGA_GL_CreateContext(_THIS, SDL_Window * window)
 	BYTE fullscreen = data->winflags & SDL_AMIGA_WINDOW_FULLSCREEN;
 
 	GLContext *glcont = GLInit();
+
+	D("[%s] context 0x%08lx\n", __FUNCTION__, glcont);
 
 	if (glcont) {
 		int success;
@@ -138,6 +140,8 @@ SDL_GLContext AMIGA_GL_CreateContext(_THIS, SDL_Window * window)
 
 		success = GLAInitializeContext(glcont, tgltags);
 
+		D("[%s] success %d\n", __FUNCTION__, success);
+
 		if (success) {
 			*SDL2Base->MyGLContext = __tglContext = glcont;
 			return glcont;
@@ -154,6 +158,8 @@ SDL_GLContext AMIGA_GL_CreateContext(_THIS, SDL_Window * window)
 int
 AMIGA_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 {
+	D("[%s] context 0x%08lx\n", __FUNCTION__, context);
+
 	if (window && context) {
 		*SDL2Base->MyGLContext = __tglContext = context;
 		return 0;
@@ -164,21 +170,27 @@ AMIGA_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 
 void AMIGA_GL_GetDrawableSize(_THIS, SDL_Window * window, int *w, int *h)
 {
+	D("[%s]\n", __FUNCTION__);
+
 	if (window) {
 		SDL_WindowData * data = window->driverdata;
 
 		if (w) {
 			*w = data->win->Width - data->win->BorderLeft - data->win->BorderRight;
+			D("[%s] w %d\n", __FUNCTION__, *w);
 		}
 
 		if (h) {
 			*h = data->win->Height - data->win->BorderTop - data->win->BorderBottom;
+			D("[%s] h %d\n", __FUNCTION__, *h);
 		}
 	}
 }
 
 int AMIGA_GL_SetSwapInterval(_THIS, int interval)
 {
+	D("[%s]\n", __FUNCTION__);
+
 	return 0; // pretend to succeed
 }
 
@@ -186,13 +198,15 @@ int AMIGA_GL_GetSwapInterval(_THIS)
 {
 	SDL_VideoData *data = _this->driverdata;
 
+	D("[%s]\n", __FUNCTION__);
+
 	// full screen double buffering is always vsynced
 	return data->CustomScreen != NULL ? 1 : 0;
 }
 
 int AMIGA_GL_SwapWindow(_THIS, SDL_Window * window)
 {
-	D("[SDL] AMIGA_GL_SwapWindow()\n");
+	//D("[%s]\n", __FUNCTION__);
 
 	// TODO check the window context
 	GLASwapBuffers(__tglContext);
@@ -202,6 +216,8 @@ int AMIGA_GL_SwapWindow(_THIS, SDL_Window * window)
 void
 AMIGA_GL_DeleteContext(_THIS, SDL_GLContext context)
 {
+	D("[%s] context 0x%08lx\n", __FUNCTION__, context);
+
 	if (context) {
 		GLADestroyContext((GLContext *)context);
 	}
@@ -211,6 +227,9 @@ int AMIGA_GL_ResizeContext(_THIS, SDL_WindowData *data)
 {
 	//SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	SDL_VideoData *vd = data->videodata;
+	int success;
+
+	D("[%s]\n", __FUNCTION__);
 
 	if (vd->CustomScreen) {
 		// only for window contexts
@@ -218,7 +237,9 @@ int AMIGA_GL_ResizeContext(_THIS, SDL_WindowData *data)
 	}
 
 	// TODO check the window context
-	int success = GLAReinitializeContextWindowed(__tglContext, data->win);
+	success = GLAReinitializeContextWindowed(__tglContext, data->win);
+	D("[%s] success %d\n", __FUNCTION__, success);
+
 	return success ? 0 : -1;
 }
 
