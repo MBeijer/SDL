@@ -563,7 +563,6 @@ void SDL_GL_ResetAttributes(void);
 int SDL_GL_SetAttribute(SDL_GLattr attr, int value);
 int SDL_GL_GetAttribute(SDL_GLattr attr, int *value);
 SDL_GLContext SDL_GL_CreateContext(SDL_Window *window);
-SDL_GLContext SDL_GL_CreateContext(SDL_Window *
 int SDL_GL_MakeCurrent(SDL_Window * window, SDL_GLContext context);
 SDL_Window* SDL_GL_GetCurrentWindow(void);
 SDL_GLContext SDL_GL_GetCurrentContext(void);
