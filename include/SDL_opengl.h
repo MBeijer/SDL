@@ -44,6 +44,12 @@
 
 #include "SDL_opengl_glext.h"
 
+#elif defined(__MORPHOS__)
+
+#include <proto/tinygl.h>
+#include <tgl/gl.h>
+#include <tgl/glu.h>
+
 #else
 
 #ifndef __IPHONEOS__  /* No OpenGL on iOS. */
