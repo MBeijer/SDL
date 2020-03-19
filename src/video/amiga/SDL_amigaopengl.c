@@ -231,8 +231,8 @@ int AMIGA_GL_ResizeContext(_THIS, SDL_WindowData *data)
 
 	D("[%s]\n", __FUNCTION__);
 
-	if (vd->CustomScreen) {
-		// only for window contexts
+	if (__tglContext == NULL || vd->CustomScreen) {
+		// only for window contexts and __tglContext exist
 		return -1;
 	}
 
