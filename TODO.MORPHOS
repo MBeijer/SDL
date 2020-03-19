@@ -10,12 +10,15 @@ TODO
  - fix keymap/keybord problem
  - fix MouseWrap (pointer escape the window when SDL_SetRelativeMouseMode(SDL_TRUE)), bug see in ZGloom (Window mode)
  - fix window rezizable, bug with top border (bug see in ScummVM)
-
+ - add OpenGL/TinyGL support : ok for opengl Window context
+ 
 3) List of fix/add need
 
 - add GCC9 support
 - fix sensors joystick 
-- add OpenGL/TinyGL support
 - hardware accelerated blitting and scaling with CGX functions
+- hardware accelerated opengl renderer = OGL support / need GL_BGRA format for the glTexImage2D input and glReadPixels output
+   https://morph.zone/modules/newbb_plus/viewtopic.php?topic_id=12836&forum=12
+- make a SDL2_mixer.library : same here all is ready but library need expert's help
 
 BeWorld
