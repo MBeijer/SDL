@@ -49,6 +49,7 @@
 #include <proto/tinygl.h>
 #include <tgl/gl.h>
 #include <tgl/glu.h>
+#include "SDL_opengl_glext.h"
 
 #else
 
