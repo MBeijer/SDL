@@ -23,7 +23,7 @@ extern struct Library *SDL2Base;
 #else
 void _INIT_4_SDL2Base(void) __attribute__((alias("__CSTP_init_SDL2Base")));
 void _EXIT_4_SDL2Base(void) __attribute__((alias("__DSTP_cleanup_SDL2Base")));
-void _INIT_4_TinyGLBase(void) __attribute__((alias("__CSTP_init_TinyGLBase")));
+//void _INIT_4_TinyGLBase(void) __attribute__((alias("__CSTP_init_TinyGLBase")));
 //void _EXIT_4_TinyGLBase(void) __attribute__((alias("__DSTP_cleanup_TinyGLBase")));
 
 struct Library *SDL2Base;
@@ -45,7 +45,7 @@ void __SDL2_OpenLibError(ULONG version, const char *name)
 static const char libname[] = "sdl2.library";
 static BPTR OldLock, NewLock;
 
-static CONSTRUCTOR_P(init_TinyGLBase, 101)
+/*static CONSTRUCTOR_P(init_TinyGLBase, 101)
 {
 	CONST_STRPTR tglname = "tinygl.library";
 
@@ -57,7 +57,7 @@ static CONSTRUCTOR_P(init_TinyGLBase, 101)
 		__SDL2_OpenLibError(50, tglname);
 
 	return (TinyGLBase == NULL);
-}
+}*/
 
 static CONSTRUCTOR_P(init_SDL2Base, 100)
 {
@@ -70,6 +70,7 @@ static CONSTRUCTOR_P(init_SDL2Base, 100)
 		if(NewLock)
 		{
 			SDL2Base = base;
+			SDL_InitTGL((void **) &__tglContext, (struct Library **) &TinyGLBase);
 			OldLock = CurrentDir(NewLock);
 		}
 		else
