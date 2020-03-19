@@ -51,6 +51,6 @@ extern int AMIGA_GL_SwapWindow(_THIS, SDL_Window * window);
 extern void AMIGA_GL_DeleteContext(_THIS, SDL_GLContext context);
 
 /* Non-SDL functions */
-extern int AMIGA_GL_ResizeContext(_THIS, SDL_WindowData *data);
+extern int AMIGA_GL_ResizeContext(_THIS, SDL_Window *window);
 
 #endif /* _SDL_amigaopengl_h */

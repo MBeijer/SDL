@@ -614,6 +614,7 @@ AMIGA_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * _displa
 
 	AMIGA_OpenWindows(_this);
 	//AMIGA_UpdateWindowState(_this, window);
+	AMIGA_GL_ResizeContext(_this, window);
 }
 
 

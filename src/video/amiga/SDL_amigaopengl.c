@@ -223,21 +223,32 @@ AMIGA_GL_DeleteContext(_THIS, SDL_GLContext context)
 	}
 }
 
-int AMIGA_GL_ResizeContext(_THIS, SDL_WindowData *data)
+int AMIGA_GL_ResizeContext(_THIS, SDL_Window *window)
 {
-	//SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	SDL_VideoData *vd = data->videodata;
 	int success;
 
 	D("[%s]\n", __FUNCTION__);
 
-	if (__tglContext == NULL || vd->CustomScreen) {
-		// only for window contexts and __tglContext exist
+	if (__tglContext == NULL) {
+		// only if __tglContext exists
+		D("[%s] no OpenGL context\n", __FUNCTION__);
 		return -1;
 	}
 
-	// TODO check the window context
-	success = GLAReinitializeContextWindowed(__tglContext, data->win);
+	if (vd->CustomScreen) {
+		struct TagItem tgltags[] =
+		{
+			{TGL_CONTEXT_SCREEN, (IPTR)vd->CustomScreen},
+			{TGL_CONTEXT_STENCIL, TRUE}, // TODO check if stencil and depth are needed
+			{TAG_DONE}
+		};
+		GLADestroyContext(__tglContext);
+		success = GLAInitializeContext(__tglContext, tgltags);
+	} else {
+		success = GLAReinitializeContextWindowed(__tglContext, data->win);
+	}
 	D("[%s] success %d\n", __FUNCTION__, success);
 
 	return success ? 0 : -1;
