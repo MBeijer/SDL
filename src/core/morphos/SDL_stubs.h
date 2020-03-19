@@ -691,7 +691,6 @@
 	STUB(SDL_GL_SwapWindow)
 	STUB(SDL_GL_DeleteContext)
 
-#if 0
 	/* Haptic */
 	STUB(SDL_NumHaptics)
 	STUB(SDL_HapticName)
@@ -723,4 +722,3 @@
 	STUB(SDL_HapticRumbleInit)
 	STUB(SDL_HapticRumblePlay)
 	STUB(SDL_HapticRumbleStop)
-#endif

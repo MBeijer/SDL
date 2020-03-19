@@ -1700,6 +1700,256 @@
 		(((void (*)(SDL_GameController *))*(void**)(__base - 1210))(__t__p0));\
 	})
 
+#define SDL_NumHaptics() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(void))*(void**)(__base - 3748))());\
+	})
+
+#define SDL_HapticName(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((const char *(*)(int ))*(void**)(__base - 3754))(__t__p0));\
+	})
+
+#define SDL_HapticOpen(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Haptic *(*)(int ))*(void**)(__base - 3760))(__t__p0));\
+	})
+
+#define SDL_HapticOpened(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(int ))*(void**)(__base - 3766))(__t__p0));\
+	})
+
+#define SDL_HapticIndex(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3772))(__t__p0));\
+	})
+
+#define SDL_MouseIsHaptic() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(void))*(void**)(__base - 3778))());\
+	})
+
+#define SDL_HapticOpenFromMouse() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Haptic *(*)(void))*(void**)(__base - 3784))());\
+	})
+
+#define SDL_JoystickIsHaptic(__p0) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *))*(void**)(__base - 3790))(__t__p0));\
+	})
+
+#define SDL_HapticOpenFromJoystick(__p0) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Haptic *(*)(SDL_Joystick *))*(void**)(__base - 3796))(__t__p0));\
+	})
+
+#define SDL_HapticClose(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(SDL_Haptic *))*(void**)(__base - 3802))(__t__p0));\
+	})
+
+#define SDL_HapticNumEffects(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3808))(__t__p0));\
+	})
+
+#define SDL_HapticNumEffectsPlaying(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3814))(__t__p0));\
+	})
+
+#define SDL_HapticQuery(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((unsigned int (*)(SDL_Haptic *))*(void**)(__base - 3820))(__t__p0));\
+	})
+
+#define SDL_HapticNumAxes(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3826))(__t__p0));\
+	})
+
+#define SDL_HapticEffectSupported(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		SDL_HapticEffect * __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, SDL_HapticEffect *))*(void**)(__base - 3832))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticNewEffect(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		SDL_HapticEffect * __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, SDL_HapticEffect *))*(void**)(__base - 3838))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticUpdateEffect(__p0, __p1, __p2) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		SDL_HapticEffect * __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int , SDL_HapticEffect *))*(void**)(__base - 3844))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_HapticRunEffect(__p0, __p1, __p2) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		Uint32  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int , Uint32 ))*(void**)(__base - 3850))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_HapticStopEffect(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int ))*(void**)(__base - 3856))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticDestroyEffect(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(SDL_Haptic *, int ))*(void**)(__base - 3862))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticGetEffectStatus(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int ))*(void**)(__base - 3868))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticSetGain(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int ))*(void**)(__base - 3874))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticSetAutocenter(__p0, __p1) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, int ))*(void**)(__base - 3880))(__t__p0, __t__p1));\
+	})
+
+#define SDL_HapticPause(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3886))(__t__p0));\
+	})
+
+#define SDL_HapticUnpause(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3892))(__t__p0));\
+	})
+
+#define SDL_HapticStopAll(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3898))(__t__p0));\
+	})
+
+#define SDL_HapticRumbleSupported(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3904))(__t__p0));\
+	})
+
+#define SDL_HapticRumbleInit(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3910))(__t__p0));\
+	})
+
+#define SDL_HapticRumblePlay(__p0, __p1, __p2) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		float  __t__p1 = __p1;\
+		Uint32  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *, float , Uint32 ))*(void**)(__base - 3916))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_HapticRumbleStop(__p0) \
+	({ \
+		SDL_Haptic * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Haptic *))*(void**)(__base - 3922))(__t__p0));\
+	})
+
 #define SDL_SetHintWithPriority(__p0, __p1, __p2) \
 	({ \
 		const char * __t__p0 = __p0;\
