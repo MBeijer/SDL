@@ -33,37 +33,7 @@
 
 #if SDL_VIDEO_DRIVER_AMIGA
 
-void glBegin(void) __attribute__((alias("AmiglBegin")));
-void glBindTexture(void) __attribute__((alias("AmiglBindTexture")));
-void glBlendFunc(void) __attribute__((alias("AmiglBlendFunc")));
-void glColor4f(void) __attribute__((alias("AmiglColor4f")));
-void glDisable(void) __attribute__((alias("AmiglDisable")));
-void glEnable(void) __attribute__((alias("AmiglEnable")));
-void glEnd(void) __attribute__((alias("AmiglEnd")));
-void glFlush(void) __attribute__((alias("AmiglFlush")));
-void glGenTextures(void) __attribute__((alias("AmiglGenTextures")));
-void glGetString(void) __attribute__((alias("AmiglGetString")));
-void glLoadIdentity(void) __attribute__((alias("AmiglLoadIdentity")));
-void glMatrixMode(void) __attribute__((alias("AmiglMatrixMode")));
-void glOrtho(void) __attribute__((alias("AmiglOrtho")));
-void glPixelStorei(void) __attribute__((alias("AmiglPixelStorei")));
-void glPopAttrib(void) __attribute__((alias("AmiglPopAttrib")));
-void glPopClientAttrib(void) __attribute__((alias("AmiglPopClientAttrib")));
-void glPopMatrix(void) __attribute__((alias("AmiglPopMatrix")));
-void glPushAttrib(void) __attribute__((alias("AmiglPushAttrib")));
-void glPushClientAttrib(void) __attribute__((alias("AmiglPushClientAttrib")));
-void glPushMatrix(void) __attribute__((alias("AmiglPushMatrix")));
-void glTexCoord2f(void) __attribute__((alias("AmiglTexCoord2f")));
-void glTexEnvf(void) __attribute__((alias("AmiglTexEnvf")));
-void glTexImage2D(void) __attribute__((alias("AmiglTexImage2D")));
-void glTexParameteri(void) __attribute__((alias("AmiglTexParameteri")));
-void glTexSubImage2D(void) __attribute__((alias("AmiglTexSubImage2D")));
-void glVertex2i(void) __attribute__((alias("AmiglVertex2i")));
-void glViewport(void) __attribute__((alias("AmiglViewport")));
-
 #include <proto/tinygl.h>
-#define TGL_ADDON_FUNCTIONS 1
-#define TGL_DUMMY_FUNCTIONS 1
 #include <tgl/gl.h>
 #include <tgl/glu.h>
 #include <tgl/glut.h>
@@ -111,15 +81,15 @@ static void AmiglIndexMask( GLuint mask ) {
 #endif
  }
 
-void AmiglColorMask( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha ) {
+static void AmiglColorMask( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha ) {
     glColorMask(red, green, blue, alpha);
 }
 
- void AmiglAlphaFunc( GLenum func, GLclampf ref ) {
+static void AmiglAlphaFunc( GLenum func, GLclampf ref ) {
     glAlphaFunc(func, ref);
  }
 
- void AmiglBlendFunc( GLenum sfactor, GLenum dfactor ) {
+static void AmiglBlendFunc( GLenum sfactor, GLenum dfactor ) {
     glBlendFunc(sfactor, dfactor);
  }
 
@@ -127,36 +97,38 @@ static void AmiglLogicOp( GLenum opcode ) {
     glLogicOp(opcode);
 }
 
- void AmiglCullFace( GLenum mode ) {
+static void AmiglCullFace( GLenum mode ) {
     glCullFace(mode);
  }
 
- void AmiglFrontFace( GLenum mode ) {
+static void AmiglFrontFace( GLenum mode ) {
     glFrontFace(mode);
  }
 
- void AmiglPointSize( GLfloat size ) {
+static void AmiglPointSize( GLfloat size ) {
     glPointSize(size);
  }
 
- void AmiglLineWidth( GLfloat width ) {
+static void AmiglLineWidth( GLfloat width ) {
     glLineWidth(width);
  }
 
-void AmiglLineStipple( GLint factor, GLushort pattern ) {
+static void AmiglLineStipple( GLint factor, GLushort pattern ) {
    glLineStipple(factor, pattern);
 }
 
- void AmiglPolygonMode( GLenum face, GLenum mode ) {
+static void AmiglPolygonMode( GLenum face, GLenum mode ) {
     glPolygonMode(face, mode);
  }
 
- void AmiglPolygonOffset( GLfloat factor, GLfloat units ) {
+static void AmiglPolygonOffset( GLfloat factor, GLfloat units ) {
     glPolygonOffset(factor, units);
  }
 
 static void AmiglPolygonStipple( const GLubyte *mask ) {
+#ifndef __MORPHOS__
     glPolygonStipple(mask);
+#endif
  }
 
 static void AmiglGetPolygonStipple( GLubyte *mask ) {
@@ -172,14 +144,16 @@ static void AmiglEdgeFlag( GLboolean flag ) {
 static void AmiglEdgeFlagv( const GLboolean *flag ) {
 #ifndef __MORPHOS__
     glEdgeFlagv(flag);
+#else
+	glEdgeFlag(*flag);
 #endif
  }
 
- void AmiglScissor( GLint x, GLint y, GLsizei width, GLsizei height) {
+static void AmiglScissor( GLint x, GLint y, GLsizei width, GLsizei height) {
     glScissor(x, y, width, height);
  }
 
-void AmiglClipPlane( GLenum plane, const GLdouble *equation ) {
+static void AmiglClipPlane( GLenum plane, const GLdouble *equation ) {
     glClipPlane(plane, (GLdouble *)equation);
 }
 
@@ -187,31 +161,31 @@ static void AmiglGetClipPlane( GLenum plane, GLdouble *equation ) {
     glGetClipPlane(plane, equation);
  }
 
- void AmiglDrawBuffer( GLenum mode ) {
+static void AmiglDrawBuffer( GLenum mode ) {
     glDrawBuffer(mode);
  }
 
- void AmiglReadBuffer( GLenum mode ) {
+static void AmiglReadBuffer( GLenum mode ) {
     glReadBuffer(mode);
  }
 
- void AmiglEnable( GLenum cap ) {
+static void AmiglEnable( GLenum cap ) {
     glEnable(cap);
  }
 
- void AmiglDisable( GLenum cap ) {
+static void AmiglDisable( GLenum cap ) {
     glDisable(cap);
  }
 
- GLboolean AmiglIsEnabled( GLenum cap ) {
+static GLboolean AmiglIsEnabled( GLenum cap ) {
     return glIsEnabled(cap);
  }
 
- void AmiglEnableClientState( GLenum cap ) {  /* 1.1 */
+static void AmiglEnableClientState( GLenum cap ) {  /* 1.1 */
     glEnableClientState(cap);
  }
 
- void AmiglDisableClientState( GLenum cap ) {  /* 1.1 */
+static void AmiglDisableClientState( GLenum cap ) {  /* 1.1 */
     glDisableClientState(cap);
  }
 
@@ -221,31 +195,31 @@ static void AmiglGetBooleanv( GLenum pname, GLboolean *params ) {
 #endif
  }
 
- void AmiglGetDoublev( GLenum pname, GLdouble *params ) {
+static void AmiglGetDoublev( GLenum pname, GLdouble *params ) {
     glGetDoublev(pname, params);
  }
 
- void AmiglGetFloatv( GLenum pname, GLfloat *params ) {
+static void AmiglGetFloatv( GLenum pname, GLfloat *params ) {
     glGetFloatv(pname, params);
  }
 
- void AmiglGetIntegerv( GLenum pname, GLint *params ) {
+static void AmiglGetIntegerv( GLenum pname, GLint *params ) {
     glGetIntegerv(pname, params);
  }
 
- void AmiglPushAttrib( GLbitfield mask ) {
+static void AmiglPushAttrib( GLbitfield mask ) {
     glPushAttrib(mask);
  }
 
- void AmiglPopAttrib( void ) {
+static void AmiglPopAttrib( void ) {
     glPopAttrib();
  }
 
- void AmiglPushClientAttrib( GLbitfield mask ) {  /* 1.1 */
+static void AmiglPushClientAttrib( GLbitfield mask ) {  /* 1.1 */
     glPushClientAttrib(mask);
  }
 
- void AmiglPopClientAttrib( void ) {  /* 1.1 */
+static void AmiglPopClientAttrib( void ) {  /* 1.1 */
     glPopClientAttrib();
  }
 
@@ -265,7 +239,7 @@ static void AmiglFinish( void ) {
     glFinish();
  }
 
-void AmiglFlush( void ) {
+static void AmiglFlush( void ) {
 	glFlush();
 }
 
@@ -277,19 +251,19 @@ static void AmiglHint( GLenum target, GLenum mode ) {
  * Depth Buffer
  */
 
- void AmiglClearDepth( GLclampd depth ) {
+static void AmiglClearDepth( GLclampd depth ) {
     glClearDepth(depth);
  }
 
- void AmiglDepthFunc( GLenum func ) {
+static void AmiglDepthFunc( GLenum func ) {
     glDepthFunc(func);
  }
 
- void AmiglDepthMask( GLboolean flag ) {
+static void AmiglDepthMask( GLboolean flag ) {
     glDepthMask(flag);
  }
 
- void AmiglDepthRange( GLclampd near_val, GLclampd far_val ) {
+static void AmiglDepthRange( GLclampd near_val, GLclampd far_val ) {
     glDepthRange(near_val, far_val);
  }
 
@@ -297,47 +271,47 @@ static void AmiglHint( GLenum target, GLenum mode ) {
  * Transformation
  */
 
- void AmiglMatrixMode( GLenum mode ) {
+static void AmiglMatrixMode( GLenum mode ) {
     glMatrixMode(mode);
  }
 
- void AmiglOrtho( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near_val, GLdouble far_val ) {
+static void AmiglOrtho( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near_val, GLdouble far_val ) {
     glOrtho(left, right, bottom, top, near_val, far_val);
  }
 
- void AmiglFrustum( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near_val, GLdouble far_val ) {
+static void AmiglFrustum( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near_val, GLdouble far_val ) {
     glFrustum(left, right, bottom, top, near_val, far_val);
  }
 
- void AmiglViewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
+static void AmiglViewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
     glViewport(x, y, width, height);
  }
 
- void AmiglPushMatrix( void ) {
+static void AmiglPushMatrix( void ) {
     glPushMatrix();
  }
 
- void AmiglPopMatrix( void ) {
+static void AmiglPopMatrix( void ) {
     glPopMatrix();
  }
 
- void AmiglLoadIdentity( void ) {
+static void AmiglLoadIdentity( void ) {
     glLoadIdentity();
  }
 
- void AmiglLoadMatrixd( const GLdouble *m ) {
+static void AmiglLoadMatrixd( const GLdouble *m ) {
     glLoadMatrixd(m);
  }
 
- void AmiglLoadMatrixf( const GLfloat *m ) {
+static void AmiglLoadMatrixf( const GLfloat *m ) {
     glLoadMatrixf(m);
  }
 
- void AmiglMultMatrixd( const GLdouble *m ) {
+static void AmiglMultMatrixd( const GLdouble *m ) {
     glMultMatrixd(m);
  }
 
- void AmiglMultMatrixf( const GLfloat *m ) {
+static void AmiglMultMatrixf( const GLfloat *m ) {
     glMultMatrixf(m);
  }
 
@@ -345,15 +319,15 @@ static void AmiglRotated( GLdouble angle, GLdouble x, GLdouble y, GLdouble z ) {
     glRotated(angle, x, y, z);
  }
 
- void AmiglRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
+static void AmiglRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
     glRotatef(angle, x, y, z);
  }
 
- void AmiglScaled( GLdouble x, GLdouble y, GLdouble z ) {
+static void AmiglScaled( GLdouble x, GLdouble y, GLdouble z ) {
     glScaled(x, y, z);
  }
 
- void AmiglScalef( GLfloat x, GLfloat y, GLfloat z ) {
+static void AmiglScalef( GLfloat x, GLfloat y, GLfloat z ) {
     glScalef(x, y, z);
  }
 
@@ -369,35 +343,35 @@ static void AmiglTranslatef( GLfloat x, GLfloat y, GLfloat z ) {
  * Display Lists
  */
 
- GLboolean AmiglIsList( GLuint list ) {
+static GLboolean AmiglIsList( GLuint list ) {
     return glIsList(list);
  }
 
- void AmiglDeleteLists( GLuint list, GLsizei range ) {
+static void AmiglDeleteLists( GLuint list, GLsizei range ) {
     glDeleteLists(list, range);
  }
 
- GLuint AmiglGenLists( GLsizei range ) {
+static GLuint AmiglGenLists( GLsizei range ) {
     return glGenLists(range);
  }
 
- void AmiglNewList( GLuint list, GLenum mode ) {
+static void AmiglNewList( GLuint list, GLenum mode ) {
     glNewList(list, mode);
  }
 
- void AmiglEndList( void ) {
+static void AmiglEndList( void ) {
     glEndList();
  }
 
- void AmiglCallList( GLuint list ) {
+static void AmiglCallList( GLuint list ) {
     glCallList(list);
  }
 
- void AmiglCallLists( GLsizei n, GLenum type, GLvoid *lists ) {
+static void AmiglCallLists( GLsizei n, GLenum type, GLvoid *lists ) {
     glCallLists(n, type, lists);
  }
 
- void AmiglListBase( GLuint base ) {
+static void AmiglListBase( GLuint base ) {
     glListBase(base);
  }
 
@@ -405,11 +379,11 @@ static void AmiglTranslatef( GLfloat x, GLfloat y, GLfloat z ) {
  * Drawing Functions
  */
 
- void AmiglBegin( GLenum mode ) {
+static void AmiglBegin( GLenum mode ) {
     glBegin(mode);
  }
 
- void AmiglEnd( void ) {
+static void AmiglEnd( void ) {
     glEnd();
  }
 
@@ -421,9 +395,9 @@ static void AmiglVertex2s( GLshort x, GLshort y )
    glVertex2s(x, y);
  }
 
- void AmiglVertex3d( GLdouble x, GLdouble y, GLdouble z )   { glVertex3d(x, y, z); }
- void AmiglVertex3f( GLfloat x, GLfloat y, GLfloat z )      { glVertex3f(x, y, z); }
- void AmiglVertex3i( GLint x, GLint y, GLint z )
+static void AmiglVertex3d( GLdouble x, GLdouble y, GLdouble z )   { glVertex3d(x, y, z); }
+static void AmiglVertex3f( GLfloat x, GLfloat y, GLfloat z )      { glVertex3f(x, y, z); }
+static void AmiglVertex3i( GLint x, GLint y, GLint z )
  {
    glVertex3i(x, y, z);
  }
@@ -438,13 +412,13 @@ static void AmiglVertex4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
    glVertex4d(x, y, z, w);
  }
 
- void AmiglVertex4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )       { glVertex4f(x, y, z, w); }
- void AmiglVertex4i( GLint x, GLint y, GLint z, GLint w )
+static void AmiglVertex4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )       { glVertex4f(x, y, z, w); }
+static void AmiglVertex4i( GLint x, GLint y, GLint z, GLint w )
  {
    glVertex4i(x, y, z, w);
  }
 
- void AmiglVertex4s( GLshort x, GLshort y, GLshort z, GLshort w )
+static void AmiglVertex4s( GLshort x, GLshort y, GLshort z, GLshort w )
  {
    glVertex4s(x, y, z, w);
  }
@@ -463,14 +437,14 @@ static void AmiglVertex2iv( const GLint *v )
 
 static void AmiglVertex2sv( const GLshort *v )    { glVertex2sv(v); }
 
- void AmiglVertex3dv( GLdouble *v )
+static void AmiglVertex3dv( GLdouble *v )
  {
    glVertex3dv(v);
  }
 
- void AmiglVertex3fv( GLfloat *v )    { glVertex3fv(v); }
+static void AmiglVertex3fv( GLfloat *v )    { glVertex3fv(v); }
 
- void AmiglVertex3iv( const GLint *v )
+static void AmiglVertex3iv( const GLint *v )
  {
    glVertex3iv(v);
  }
@@ -479,19 +453,23 @@ static void AmiglVertex3sv( const GLshort *v )
 {
 #ifndef __MORPHOS__
    glVertex3sv(v);
+#else
+	glVertex3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
 }
 
- void AmiglVertex4dv( GLdouble *v )
+static void AmiglVertex4dv( GLdouble *v )
  {
    glVertex4dv(v);
  }
 
- void AmiglVertex4fv( GLfloat *v )    { glVertex4fv(v); }
+static void AmiglVertex4fv( GLfloat *v )    { glVertex4fv(v); }
 static void AmiglVertex4iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glVertex4iv(v);
+#else
+	glVertex4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -499,6 +477,8 @@ static void AmiglVertex4sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glVertex4sv(v);
+#else
+	glVertex4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -506,24 +486,28 @@ static void AmiglNormal3b( GLbyte nx, GLbyte ny, GLbyte nz )
 {
 #ifndef __MORPHOS__
    glNormal3b(nx, ny, nz);
+#else
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
 #endif
 }
 
-void AmiglNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
+static void AmiglNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
 {
    glNormal3d(nx, ny, nz);
 }
 
- void AmiglNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )   { glNormal3f(nx, ny, nz); }
+static void AmiglNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )   { glNormal3f(nx, ny, nz); }
 
 static void AmiglNormal3i( GLint nx, GLint ny, GLint nz )
 {
 #ifndef __MORPHOS__
    glNormal3i(nx, ny, nz);
+#else
+	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
 #endif
 }
 
-void AmiglNormal3s( GLshort nx, GLshort ny, GLshort nz )
+static void AmiglNormal3s( GLshort nx, GLshort ny, GLshort nz )
 {
    glNormal3s(nx, ny, nz);
 }
@@ -532,24 +516,28 @@ static void AmiglNormal3bv( const GLbyte *v )
  {
 #ifndef __MORPHOS__
    glNormal3bv(v);
+#else
+   glNormal3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
-void AmiglNormal3dv( const GLdouble *v )
+static void AmiglNormal3dv( const GLdouble *v )
 {
    glNormal3dv(v);
 }
 
- void AmiglNormal3fv( GLfloat *v )    { glNormal3fv(v); }
+static void AmiglNormal3fv( GLfloat *v )    { glNormal3fv(v); }
 
 static void AmiglNormal3iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glNormal3iv(v);
+#else
+	glNormal3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
- void AmiglNormal3sv( const GLshort *v )
+static void AmiglNormal3sv( const GLshort *v )
  {
    glNormal3sv(v);
  }
@@ -568,9 +556,11 @@ static void AmiglIndexf( GLfloat c )
 #endif
  }
 
- void AmiglIndexi( GLint c )
+static void AmiglIndexi( GLint c )
  {
+#ifndef __MORPHOS__
    glIndexi(c);
+#endif
  }
 
 static void AmiglIndexs( GLshort c )
@@ -626,20 +616,24 @@ static void AmiglColor3b( GLbyte red, GLbyte green, GLbyte blue )
  {
 #ifndef __MORPHOS__
    glColor3b(red, green, blue);
+#else
+	glColor3ub((GLubyte)red, (GLubyte)green, (GLubyte)blue);
 #endif
  }
 
-void AmiglColor3d( GLdouble red, GLdouble green, GLdouble blue )
+static void AmiglColor3d( GLdouble red, GLdouble green, GLdouble blue )
 {
    glColor3d(red, green, blue);
 }
 
- void AmiglColor3f( GLfloat red, GLfloat green, GLfloat blue )      { glColor3f(red, green, blue); }
+static void AmiglColor3f( GLfloat red, GLfloat green, GLfloat blue )      { glColor3f(red, green, blue); }
 
 static void AmiglColor3i( GLint red, GLint green, GLint blue )
  {
 #ifndef __MORPHOS__
    glColor3i(red, green, blue);
+#else
+	glColor3f((GLfloat)red/429496795.0f, (GLfloat)green/429496795.0f, (GLfloat)blue/429496795.f);
 #endif
  }
 
@@ -647,14 +641,18 @@ static void AmiglColor3s( GLshort red, GLshort green, GLshort blue )
  {
 #ifndef __MORPHOS__
    glColor3s(red, green, blue);
+#else
+	glColor3f((GLfloat)red/65535.0f, (GLfloat)green/65535.0f, (GLfloat)blue/65535.f);
 #endif
  }
 
- void AmiglColor3ub( GLubyte red, GLubyte green, GLubyte blue ) { glColor3ub(red, green, blue); }
+static void AmiglColor3ub( GLubyte red, GLubyte green, GLubyte blue ) { glColor3ub(red, green, blue); }
 static void AmiglColor3ui( GLuint red, GLuint green, GLuint blue )
  {
 #ifndef __MORPHOS__
    glColor3ui(red, green, blue);
+#else
+	glColor3f((GLfloat)red/429496795.0f, (GLfloat)green/429496795.0f, (GLfloat)blue/429496795.f);
 #endif
  }
 
@@ -662,25 +660,29 @@ static void AmiglColor3us( GLushort red, GLushort green, GLushort blue )
  {
 #ifndef __MORPHOS__
    glColor3us(red, green, blue);
+#else
+	glColor3f((GLfloat)red/65535.0f, (GLfloat)green/65535.0f, (GLfloat)blue/65535.f);
 #endif
  }
 
- void AmiglColor4b( GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha )
+static void AmiglColor4b( GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha )
  {
    glColor4b(red, green, blue, alpha);
  }
 
- void AmiglColor4d( GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha )
+static void AmiglColor4d( GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha )
  {
    glColor4d(red, green, blue, alpha);
  }
 
- void AmiglColor4f( GLfloat red, GLfloat green,GLfloat blue, GLfloat alpha )    { glColor4f(red, green, blue, alpha); }
+static void AmiglColor4f( GLfloat red, GLfloat green,GLfloat blue, GLfloat alpha )    { glColor4f(red, green, blue, alpha); }
 
 static void AmiglColor4i( GLint red, GLint green, GLint blue, GLint alpha )
  {
 #ifndef __MORPHOS__
    glColor4i(red, green, blue, alpha);
+#else
+	glColor4f((GLfloat)red/429496795.0f, (GLfloat)green/429496795.0f, (GLfloat)blue/429496795.0f, (GLfloat)alpha/429496795.0f);
 #endif
  }
 
@@ -688,16 +690,20 @@ static void AmiglColor4s( GLshort red, GLshort green, GLshort blue, GLshort alph
  {
 #ifndef __MORPHOS__
    glColor4s(red, green, blue, alpha);
+#else
+	glColor4f((GLfloat)red/65535.0f, (GLfloat)green/65535.0f, (GLfloat)blue/65535.f, (GLfloat)alpha/65535.0f);
 #endif
  }
 
- void AmiglColor4ub( GLubyte red, GLubyte green,
+static void AmiglColor4ub( GLubyte red, GLubyte green,
                     GLubyte blue, GLubyte alpha )   { glColor4ub(red, green, blue, alpha); }
 
 static void AmiglColor4ui( GLuint red, GLuint green, GLuint blue, GLuint alpha )
  {
 #ifndef __MORPHOS__
    glColor4ui(red, green, blue, alpha);
+#else
+	glColor4f((GLfloat)red/429496795.0f, (GLfloat)green/429496795.0f, (GLfloat)blue/429496795.0f, (GLfloat)alpha/429496795.0f);
 #endif
  }
 
@@ -705,6 +711,8 @@ static void AmiglColor4us( GLushort red, GLushort green, GLushort blue, GLushort
  {
 #ifndef __MORPHOS__
    glColor4us(red, green, blue, alpha);
+#else
+	glColor4f((GLfloat)red/65535.0f, (GLfloat)green/65535.0f, (GLfloat)blue/65535.f, (GLfloat)alpha/65535.0f);
 #endif
  }
 
@@ -712,20 +720,24 @@ static void AmiglColor3bv( const GLbyte *v )
  {
 #ifndef __MORPHOS__
    glColor3bv(v);
+#else
+	glColor3ubv((const GLubyte *)v);
 #endif
  }
 
- void AmiglColor3dv( const GLdouble *v )
+static void AmiglColor3dv( const GLdouble *v )
  {
    glColor3dv(v);
  }
 
- void AmiglColor3fv( GLfloat *v ) { glColor3fv(v); }
+static void AmiglColor3fv( GLfloat *v ) { glColor3fv(v); }
 
 static void AmiglColor3iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glColor3iv(v);
+#else
+	glColor3f((GLfloat)v[0]/429496795.0f, (GLfloat)v[1]/429496795.0f, (GLfloat)v[2]/429496795.f);
 #endif
  }
 
@@ -733,15 +745,19 @@ static void AmiglColor3sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glColor3sv(v);
+#else
+	glColor3f((GLfloat)v[0]/65535.0f, (GLfloat)v[1]/65535.0f, (GLfloat)v[2]/65535.f);
 #endif
  }
 
- void AmiglColor3ubv( GLubyte *v )    { glColor3ubv(v); }
+static void AmiglColor3ubv( GLubyte *v )    { glColor3ubv(v); }
 
 static void AmiglColor3uiv( const GLuint *v )
  {
 #ifndef __MORPHOS__
    glColor3uiv(v);
+#else
+	glColor3f((GLfloat)v[0]/429496795.0f, (GLfloat)v[1]/429496795.0f, (GLfloat)v[2]/429496795.f);
 #endif
  }
 
@@ -749,6 +765,8 @@ static void AmiglColor3usv( const GLushort *v )
  {
 #ifndef __MORPHOS__
    glColor3usv(v);
+#else
+	glColor3f((GLfloat)v[0]/65535.0f, (GLfloat)v[1]/65535.0f, (GLfloat)v[2]/65535.f);
 #endif
  }
 
@@ -756,20 +774,24 @@ static void AmiglColor4bv( const GLbyte *v )
  {
 #ifndef __MORPHOS__
    glColor4bv(v);
+#else
+	glColor4ubv((const GLubyte *)v);
 #endif
  }
 
- void AmiglColor4dv( const GLdouble *v )
+static void AmiglColor4dv( const GLdouble *v )
  {
    glColor4dv(v);
  }
 
- void AmiglColor4fv( GLfloat *v ) { glColor4fv(v); }
+static void AmiglColor4fv( GLfloat *v ) { glColor4fv(v); }
 
 static void AmiglColor4iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glColor4iv(v);
+#else
+	glColor4f((GLfloat)v[0]/429496795.0f, (GLfloat)v[1]/429496795.0f, (GLfloat)v[2]/429496795.0f, (GLfloat)v[3]/429496795.0f);
 #endif
  }
 
@@ -777,15 +799,19 @@ static void AmiglColor4sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glColor4sv(v);
+#else
+	glColor4f((GLfloat)v[0]/65535.0f, (GLfloat)v[1]/65535.0f, (GLfloat)v[2]/65535.f, (GLfloat)v[3]/65535.0f);
 #endif
  }
 
- void AmiglColor4ubv( GLubyte *v )    { glColor4ubv(v); }
+static void AmiglColor4ubv( GLubyte *v )    { glColor4ubv(v); }
 
 static void AmiglColor4uiv( const GLuint *v )
  {
 #ifndef __MORPHOS__
    glColor4uiv(v);
+#else
+	glColor4f((GLfloat)v[0]/429496795.0f, (GLfloat)v[1]/429496795.0f, (GLfloat)v[2]/429496795.0f, (GLfloat)v[3]/429496795.0f);
 #endif
  }
 
@@ -793,15 +819,17 @@ static void AmiglColor4usv( const GLushort *v )
  {
 #ifndef __MORPHOS__
    glColor4usv(v);
+#else
+	glColor4f((GLfloat)v[0]/65535.0f, (GLfloat)v[1]/65535.0f, (GLfloat)v[2]/65535.f, (GLfloat)v[3]/65535.0f);
 #endif
  }
 
- void AmiglTexCoord1d( GLdouble s )
+static void AmiglTexCoord1d( GLdouble s )
  {
    glTexCoord1d(s);
  }
 
- void AmiglTexCoord1f( GLfloat s )
+static void AmiglTexCoord1f( GLfloat s )
  {
    glTexCoord1f(s);
  }
@@ -810,6 +838,8 @@ static void AmiglTexCoord1i( GLint s )
  {
 #ifndef __MORPHOS__
    glTexCoord1i(s);
+#else
+	glTexCoord2f((GLfloat)s, 0.0f);
 #endif
  }
 
@@ -817,22 +847,26 @@ static void AmiglTexCoord1s( GLshort s )
  {
 #ifndef __MORPHOS__
    glTexCoord1s(s);
+#else
+	glTexCoord2f((GLfloat)s, 0.0f);
 #endif
  }
 
- void AmiglTexCoord2d( GLdouble s, GLdouble t )
+static void AmiglTexCoord2d( GLdouble s, GLdouble t )
  {
    glTexCoord2d(s, t);
  }
 
- void AmiglTexCoord2f( GLfloat s, GLfloat t )   { glTexCoord2f(s, t); }
+static void AmiglTexCoord2f( GLfloat s, GLfloat t )   { glTexCoord2f(s, t); }
 
- void AmiglTexCoord2i( GLint s, GLint t )           { glTexCoord2i(s, t); }
+static void AmiglTexCoord2i( GLint s, GLint t )           { glTexCoord2i(s, t); }
 
 static void AmiglTexCoord2s( GLshort s, GLshort t )
  {
 #ifndef __MORPHOS__
    glTexCoord2s(s, t);
+#else
+	glTexCoord2f((GLfloat)s, (GLfloat)t);
 #endif
  }
 
@@ -840,10 +874,12 @@ static void AmiglTexCoord3d( GLdouble s, GLdouble t, GLdouble r )
  {
 #ifndef __MORPHOS__
    glTexCoord3d(s, t, r);
+#else
+	glTexCoord3f((GLfloat)s, (GLfloat)t, (GLfloat)r);
 #endif
  }
 
- void AmiglTexCoord3f( GLfloat s, GLfloat t, GLfloat r )
+static void AmiglTexCoord3f( GLfloat s, GLfloat t, GLfloat r )
  {
    glTexCoord3f(s, t, r);
  }
@@ -852,6 +888,8 @@ static void AmiglTexCoord3i( GLint s, GLint t, GLint r )
  {
 #ifndef __MORPHOS__
    glTexCoord3i(s, t, r);
+#else
+	glTexCoord3f((GLfloat)s, (GLfloat)t, (GLfloat)r);
 #endif
  }
 
@@ -859,14 +897,18 @@ static void AmiglTexCoord3s( GLshort s, GLshort t, GLshort r )
  {
 #ifndef __MORPHOS__
    glTexCoord3s(s, t, r);
+#else
+	glTexCoord3f((GLfloat)s, (GLfloat)t, (GLfloat)r);
 #endif
  }
 
 static void AmiglTexCoord4d( GLdouble s, GLdouble t, GLdouble r, GLdouble q )
  {
- #ifndef __MORPHOS__
+#ifndef __MORPHOS__
    glTexCoord4d(s, t, r, q);
- #endif
+#else
+   glTexCoord4f((GLfloat)s, (GLfloat)t, (GLfloat)r, (GLfloat)q);
+#endif
  }
 
 static void AmiglTexCoord4f( GLfloat s, GLfloat t, GLfloat r, GLfloat q )
@@ -876,16 +918,20 @@ static void AmiglTexCoord4f( GLfloat s, GLfloat t, GLfloat r, GLfloat q )
 
 static void AmiglTexCoord4i( GLint s, GLint t, GLint r, GLint q )
  {
- #ifndef __MORPHOS__
+#ifndef __MORPHOS__
    glTexCoord4i(s, t, r, q);
- #endif
+#else
+   glTexCoord4f((GLfloat)s, (GLfloat)t, (GLfloat)r, (GLfloat)q);
+#endif
  }
 
 static void AmiglTexCoord4s( GLshort s, GLshort t, GLshort r, GLshort q )
  {
- #ifndef __MORPHOS__
+#ifndef __MORPHOS__
    glTexCoord4s(s, t, r, q);
- #endif
+#else
+   glTexCoord4f((GLfloat)s, (GLfloat)t, (GLfloat)r, (GLfloat)q);
+#endif
  }
 
 static void AmiglTexCoord1dv( const GLdouble *v )
@@ -897,6 +943,8 @@ static void AmiglTexCoord1fv( const GLfloat *v )
  {
 #ifndef __MORPHOS__
    glTexCoord1fv(v);
+#else
+	glTexCoord1f(v[0]);
 #endif
  }
 
@@ -904,6 +952,8 @@ static void AmiglTexCoord1iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glTexCoord1iv(v);
+#else
+	glTexCoord1f((GLfloat)v[0]);
 #endif
  }
 
@@ -911,6 +961,8 @@ static void AmiglTexCoord1sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glTexCoord1sv(v);
+#else
+	glTexCoord1f((GLfloat)v[0]);
 #endif
  }
 
@@ -930,6 +982,8 @@ static void AmiglTexCoord2sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glTexCoord2sv(v);
+#else
+	glTexCoord2f((GLfloat)v[0], (GLfloat)v[1]);
 #endif
  }
 
@@ -942,6 +996,8 @@ static void AmiglTexCoord3fv( const GLfloat *v )
  {
 #ifndef __MORPHOS__
    glTexCoord3fv(v);
+#else
+	glTexCoord3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
@@ -949,6 +1005,8 @@ static void AmiglTexCoord3iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glTexCoord3iv(v);
+#else
+	glTexCoord3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
@@ -956,6 +1014,8 @@ static void AmiglTexCoord3sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glTexCoord3sv(v);
+#else
+	glTexCoord3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
@@ -968,6 +1028,8 @@ static void AmiglTexCoord4fv( const GLfloat *v )
  {
 #ifndef __MORPHOS__
    glTexCoord4fv(v);
+#else
+	glTexCoord4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -975,6 +1037,8 @@ static void AmiglTexCoord4iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glTexCoord4iv(v);
+#else
+	glTexCoord4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -982,6 +1046,8 @@ static void AmiglTexCoord4sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glTexCoord4sv(v);
+#else
+	glTexCoord4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -1003,17 +1069,21 @@ static void AmiglRasterPos3d( GLdouble x, GLdouble y, GLdouble z )    { glRaster
 
 static void AmiglRasterPos3f( GLfloat x, GLfloat y, GLfloat z )       { glRasterPos3f(x, y, z); }
 
-void AmiglRasterPos3i( GLint x, GLint y, GLint z )
+static void AmiglRasterPos3i( GLint x, GLint y, GLint z )
 {
 #ifndef __MORPHOS__
    glRasterPos3i(x, y, z);
+#else
+	glRasterPos3f((GLfloat)x, (GLfloat)y, (GLfloat)z);
 #endif
 }
 
-void AmiglRasterPos3s( GLshort x, GLshort y, GLshort z )
+static void AmiglRasterPos3s( GLshort x, GLshort y, GLshort z )
 {
 #ifndef __MORPHOS__
    glRasterPos3s(x, y, z);
+#else
+	glRasterPos3f((GLfloat)x, (GLfloat)y, (GLfloat)z);
 #endif
 }
 
@@ -1049,10 +1119,12 @@ static void AmiglRasterPos2dv( const GLdouble *v )
  {
 #ifndef __MORPHOS__
    glRasterPos2dv(v);
+#else
+	glRasterPos2f((GLfloat)v[0], (GLfloat)v[1]);
 #endif
  }
 
-void AmiglRasterPos2fv( const GLfloat *v )
+static void AmiglRasterPos2fv( const GLfloat *v )
 {
    glRasterPos2fv((GLfloat *)v);
 }
@@ -1061,6 +1133,8 @@ static void AmiglRasterPos2iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glRasterPos2iv(v);
+#else
+	glRasterPos2f((GLfloat)v[0], (GLfloat)v[1]);
 #endif
  }
 
@@ -1068,6 +1142,8 @@ static void AmiglRasterPos2sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glRasterPos2sv(v);
+#else
+	glRasterPos2f((GLfloat)v[0], (GLfloat)v[1]);
 #endif
  }
 
@@ -1075,10 +1151,12 @@ static void AmiglRasterPos3dv( const GLdouble *v )
  {
 #ifndef __MORPHOS__
    glRasterPos3dv(v);
+#else
+	glRasterPos3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
-void AmiglRasterPos3fv( const GLfloat *v )
+static void AmiglRasterPos3fv( const GLfloat *v )
 {
    glRasterPos3fv((GLfloat *)v);
 }
@@ -1087,6 +1165,8 @@ static void AmiglRasterPos3iv( const GLint *v )
  {
 #ifndef __MORPHOS__
    glRasterPos3iv(v);
+#else
+	glRasterPos3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
@@ -1094,6 +1174,8 @@ static void AmiglRasterPos3sv( const GLshort *v )
  {
 #ifndef __MORPHOS__
    glRasterPos3sv(v);
+#else
+	glRasterPos3f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2]);
 #endif
  }
 
@@ -1240,8 +1322,8 @@ static void AmiglLightModeliv( GLenum pname, const GLint *params )
 #endif
 }
 
-void AmiglMaterialf( GLenum face, GLenum pname, GLfloat param )        { glMaterialf(face, pname, param); }
-void AmiglMateriali( GLenum face, GLenum pname, GLint param )
+static void AmiglMaterialf( GLenum face, GLenum pname, GLfloat param )        { glMaterialf(face, pname, param); }
+static void AmiglMateriali( GLenum face, GLenum pname, GLint param )
 {
    glMateriali(face, pname, param);
 }
@@ -1516,7 +1598,7 @@ static void AmiglGetTexImage( GLenum target, GLint level,
 
 /* 1.1 functions */
 
-void AmiglGenTextures( GLsizei n, GLuint *textures )   {
+static void AmiglGenTextures( GLsizei n, GLuint *textures )   {
 	glGenTextures(n, textures);
 }
 
@@ -1532,7 +1614,7 @@ static void AmiglPrioritizeTextures( GLsizei n, const GLuint *textures, const GL
         glPrioritizeTextures(n, textures, priorities);
  }
 
- GLboolean AmiglAreTexturesResident( GLsizei n, const GLuint *textures, GLboolean *residences ) {
+static GLboolean AmiglAreTexturesResident( GLsizei n, const GLuint *textures, GLboolean *residences ) {
 #ifndef __MORPHOS__
         return glAreTexturesResident(n, textures, residences);
 #else
@@ -1540,7 +1622,7 @@ static void AmiglPrioritizeTextures( GLsizei n, const GLuint *textures, const GL
 #endif
  }
 
- GLboolean AmiglIsTexture( GLuint texture ) {
+static GLboolean AmiglIsTexture( GLuint texture ) {
         return glIsTexture(texture);
  }
 
@@ -1758,181 +1840,17 @@ static void AmiglPopName( void ) {
  * 1.0 Extensions
  */
 
-/* GL_EXT_blend_minmax */
+/* GL_EXT_blend_minmax Imaging subset */
 static void AmiglBlendEquationEXT( GLenum mode ) {
 #ifndef __MORPHOS__
         glBlendEquationEXT(mode);
 #endif
  }
 
-/* GL_EXT_blend_color */
+/* GL_EXT_blend_color Imaging subset */
 static void AmiglBlendColorEXT( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha ) {
 #ifndef __MORPHOS__
         glBlendColorEXT(red, green, blue, alpha);
-#endif
- }
-
-/* GL_EXT_polygon_offset */
-static void AmiglPolygonOffsetEXT( GLfloat factor, GLfloat bias ) {
-#ifndef __MORPHOS__
-        glPolygonOffsetEXT(factor, bias);
-#endif
- }
-
-/* GL_EXT_vertex_array */
-
-static void AmiglVertexPointerEXT( GLint size, GLenum type,
-                        GLsizei stride,
-                        GLsizei count, const GLvoid *ptr ) {
-#ifndef __MORPHOS__
-        glVertexPointerEXT(size, type, stride, count, ptr);
-/*#else
-        glVertexPointer(size, type, stride, count, ptr);*/
-#endif
- }
-
-static void AmiglNormalPointerEXT( GLenum type, GLsizei stride,
-                        GLsizei count, const GLvoid *ptr ) {
-#ifndef __MORPHOS__
-        glNormalPointerEXT(type, stride, count, ptr);
-/*#else
-        glNormalPointer(type, stride, count, ptr);*/
-#endif
- }
-
-static void AmiglColorPointerEXT( GLint size, GLenum type,
-                       GLsizei stride,
-                       GLsizei count, const GLvoid *ptr ) {
-#ifndef __MORPHOS__
-        glColorPointerEXT(size, type, stride, count, ptr);
-/*#else
-        glColorPointer(size, type, stride, count, ptr);*/
-#endif
- }
-
-static void AmiglIndexPointerEXT( GLenum type, GLsizei stride,
-                       GLsizei count, const GLvoid *ptr ) {
-#ifndef __MORPHOS__
-        glIndexPointerEXT(type, stride, count, ptr);
-#endif
- }
-
-static void AmiglTexCoordPointerEXT( GLint size, GLenum type,
-                          GLsizei stride, GLsizei count,
-                          const GLvoid *ptr ) {
-#ifndef __MORPHOS__
-        glTexCoordPointerEXT(size, type, stride, count, ptr);
-/*#else
-        glTexCoordPointer(size, type, stride, count, ptr);*/
-#endif
- }
-
-static void AmiglEdgeFlagPointerEXT( GLsizei stride, GLsizei count, const GLboolean *ptr ) {
-#ifndef __MORPHOS__
-        glEdgeFlagPointerEXT(stride, count, ptr);
-#endif
- }
-
-static void AmiglGetPointervEXT( GLenum pname, void **params ) {
-#ifndef __MORPHOS__
-        glGetPointervEXT(pname, params);
-/*#else
-        glGetPointerv(pname, params);*/
-#endif
- }
-
-static void AmiglArrayElementEXT( GLint i ) {
-#ifndef __MORPHOS__
-        glArrayElementEXT(i);
-/*#else
-        glArrayElement(i);*/
-#endif
- }
-
-static void AmiglDrawArraysEXT( GLenum mode, GLint first, GLsizei count ) {
-#ifndef __MORPHOS__
-        glDrawArraysEXT(mode, first, count);
-/*#else
-        glDrawArrays(mode, first, count);*/
-#endif
- }
-
-/* GL_EXT_texture_object */
-
-static void AmiglGenTexturesEXT( GLsizei n, GLuint *textures ) {
-#ifndef __MORPHOS__
-        glGenTexturesEXT(n, textures);
-#endif
- }
-
-static void AmiglDeleteTexturesEXT( GLsizei n, const GLuint *textures) {
-#ifndef __MORPHOS__
-        glDeleteTexturesEXT(n, textures);
-#endif
- }
-
-static void AmiglBindTextureEXT( GLenum target, GLuint texture ) {
-#ifndef __MORPHOS__
-        glBindTextureEXT(target, texture);
-#endif
- }
-
-static void AmiglPrioritizeTexturesEXT( GLsizei n, const GLuint *textures, const GLclampf *priorities ) {
-#ifndef __MORPHOS__
-        glPrioritizeTexturesEXT(n, textures, priorities);
-#endif
- }
-
- GLboolean AmiglAreTexturesResidentEXT( GLsizei n, const GLuint *textures, GLboolean *residences ) {
-#ifndef __MORPHOS__
-        return glAreTexturesResidentEXT(n, textures, residences);
-#else
-    return 0;
-#endif
- }
-
- GLboolean AmiglIsTextureEXT( GLuint texture ) {
-#ifndef __MORPHOS__
-        return glIsTextureEXT(texture);
-#else
-    return 0;
-#endif
- }
-
-/* GL_EXT_texture3D */
-
-static void AmiglTexImage3DEXT( GLenum target, GLint level,
-                     GLenum internalFormat,
-                     GLsizei width, GLsizei height,
-                     GLsizei depth, GLint border,
-                     GLenum format, GLenum type,
-                     const GLvoid *pixels ) {
-#ifndef __MORPHOS__
-        glTexImage3DEXT(target, level, internalFormat, width, height, depth, border,
-                             format, type, pixels);
-#endif
- }
-
-static void AmiglTexSubImage3DEXT( GLenum target, GLint level,
-                        GLint xoffset, GLint yoffset,
-                        GLint zoffset, GLsizei width,
-                        GLsizei height, GLsizei depth,
-                        GLenum format,
-                        GLenum type, const GLvoid *pixels) {
-#ifndef __MORPHOS__
-        glTexSubImage3DEXT(target, level, xoffset, yoffset, zoffset,
-                                 width, height, depth, format, type, pixels);
-#endif
- }
-
-static void AmiglCopyTexSubImage3DEXT( GLenum target, GLint level,
-                        GLint xoffset, GLint yoffset,
-                        GLint zoffset, GLint x,
-                        GLint y, GLsizei width,
-                        GLsizei height ) {
-#ifndef __MORPHOS__
-        glCopyTexSubImage3DEXT(target, level, xoffset, yoffset, zoffset,
-                                      x, y, width, height);
 #endif
  }
 
@@ -1980,372 +1898,122 @@ static void AmiglGetColorTableParameterivEXT( GLenum target,
 #endif
  }
 
-/* GL_SGIS_multitexture */
 
-static void AmiglMultiTexCoord1dSGIS(GLenum target, GLdouble s) {
 #ifndef __MORPHOS__
-       glMultiTexCoord1dSGIS(target, s);
-#endif
- }
-static void AmiglMultiTexCoord1dvSGIS(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1dvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord1fSGIS(GLenum target, GLfloat s) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1fSGIS(target, s);
-#endif
- }
-static void AmiglMultiTexCoord1fvSGIS(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1fvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord1iSGIS(GLenum target, GLint s) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1iSGIS(target, s);
-#endif
- }
-static void AmiglMultiTexCoord1ivSGIS(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1ivSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord1sSGIS(GLenum target, GLshort s) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1sSGIS(target, s);
-#endif
- }
-static void AmiglMultiTexCoord1svSGIS(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord1svSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord2dSGIS(GLenum target, GLdouble s, GLdouble t) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2dSGIS(target, s, t);
-#endif
- }
-static void AmiglMultiTexCoord2dvSGIS(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2dvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord2fSGIS(GLenum target, GLfloat s, GLfloat t) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2fSGIS(target, s, t);
-#endif
- }
-static void AmiglMultiTexCoord2fvSGIS(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2fvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord2iSGIS(GLenum target, GLint s, GLint t) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2iSGIS(target, s, t);
-#endif
- }
-static void AmiglMultiTexCoord2ivSGIS(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2ivSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord2sSGIS(GLenum target, GLshort s, GLshort t) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2sSGIS(target, s, t);
-#endif
- }
-static void AmiglMultiTexCoord2svSGIS(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord2svSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord3dSGIS(GLenum target, GLdouble s, GLdouble t, GLdouble r) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3dSGIS(target, s, t, r);
-#endif
- }
-static void AmiglMultiTexCoord3dvSGIS(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3dvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord3fSGIS(GLenum target, GLfloat s, GLfloat t, GLfloat r) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3fSGIS(target, s, t, r);
-#endif
- }
-static void AmiglMultiTexCoord3fvSGIS(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3fvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord3iSGIS(GLenum target, GLint s, GLint t, GLint r) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3iSGIS(target, s, t, r);
-#endif
- }
-static void AmiglMultiTexCoord3ivSGIS(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3ivSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord3sSGIS(GLenum target, GLshort s, GLshort t, GLshort r) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3sSGIS(target, s, t, r);
-#endif
- }
-static void AmiglMultiTexCoord3svSGIS(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord3svSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord4dSGIS(GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4dSGIS(target, s, t, r, q);
-#endif
- }
-static void AmiglMultiTexCoord4dvSGIS(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4dvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord4fSGIS(GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4fSGIS(target, s, t, r, q);
-#endif
- }
-static void AmiglMultiTexCoord4fvSGIS(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4fvSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord4iSGIS(GLenum target, GLint s, GLint t, GLint r, GLint q) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4iSGIS(target, s, t, r, q);
-#endif
- }
-static void AmiglMultiTexCoord4ivSGIS(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4ivSGIS(target, v);
-#endif
- }
-static void AmiglMultiTexCoord4sSGIS(GLenum target, GLshort s, GLshort t, GLshort r, GLshort q) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4sSGIS(target, s, t, r, q);
-#endif
- }
-static void AmiglMultiTexCoord4svSGIS(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
-        glMultiTexCoord4svSGIS(target, v);
-#endif
- }
-
-static void AmiglMultiTexCoordPointerSGIS(GLenum target, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer) {
-#ifndef __MORPHOS__
-        glMultiTexCoordPointerSGIS(target, size, type, stride, pointer);
-#endif
- }
-
-static void AmiglSelectTextureSGIS(GLenum target) {
-#ifndef __MORPHOS__
-        glSelectTextureSGIS(target);
-#endif
- }
-
-static void AmiglSelectTextureCoordSetSGIS(GLenum target) {
-#ifndef __MORPHOS__
-        glSelectTextureCoordSetSGIS(target);
-#endif
- }
-
 /* GL_EXT_multitexture */
 
 static void AmiglMultiTexCoord1dEXT(GLenum target, GLdouble s) {
-#ifndef __MORPHOS__
         glMultiTexCoord1dEXT(target, s);
-#endif
  }
 static void AmiglMultiTexCoord1dvEXT(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord1dvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord1fEXT(GLenum target, GLfloat s) {
-#ifndef __MORPHOS__
         glMultiTexCoord1fEXT(target, s);
-#endif
  }
 static void AmiglMultiTexCoord1fvEXT(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord1fvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord1iEXT(GLenum target, GLint s) {
-#ifndef __MORPHOS__
         glMultiTexCoord1iEXT(target, s);
-#endif
  }
 static void AmiglMultiTexCoord1ivEXT(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord1ivEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord1sEXT(GLenum target, GLshort s) {
-#ifndef __MORPHOS__
         glMultiTexCoord1sEXT(target, s);
-#endif
  }
 static void AmiglMultiTexCoord1svEXT(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord1svEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord2dEXT(GLenum target, GLdouble s, GLdouble t) {
-#ifndef __MORPHOS__
         glMultiTexCoord2dEXT(target, s, t);
-#endif
  }
 static void AmiglMultiTexCoord2dvEXT(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord2dvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord2fEXT(GLenum target, GLfloat s, GLfloat t) {
-#ifndef __MORPHOS__
         glMultiTexCoord2fEXT(target, s, t);
-#endif
  }
 static void AmiglMultiTexCoord2fvEXT(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord2fvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord2iEXT(GLenum target, GLint s, GLint t) {
-#ifndef __MORPHOS__
         glMultiTexCoord2iEXT(target, s, t);
-#endif
  }
 static void AmiglMultiTexCoord2ivEXT(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord2ivEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord2sEXT(GLenum target, GLshort s, GLshort t) {
-#ifndef __MORPHOS__
         glMultiTexCoord2sEXT(target, s, t);
-#endif
  }
 static void AmiglMultiTexCoord2svEXT(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord2svEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord3dEXT(GLenum target, GLdouble s, GLdouble t, GLdouble r) {
-#ifndef __MORPHOS__
         glMultiTexCoord3dEXT(target, s, t, r);
-#endif
  }
 static void AmiglMultiTexCoord3dvEXT(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord3dvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord3fEXT(GLenum target, GLfloat s, GLfloat t, GLfloat r) {
-#ifndef __MORPHOS__
         glMultiTexCoord3fEXT(target, s, t, r);
-#endif
  }
 static void AmiglMultiTexCoord3fvEXT(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord3fvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord3iEXT(GLenum target, GLint s, GLint t, GLint r) {
-#ifndef __MORPHOS__
         glMultiTexCoord3iEXT(target, s, t, r);
-#endif
  }
 static void AmiglMultiTexCoord3ivEXT(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord3ivEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord3sEXT(GLenum target, GLshort s, GLshort t, GLshort r) {
-#ifndef __MORPHOS__
         glMultiTexCoord3sEXT(target, s, t, r);
-#endif
  }
 static void AmiglMultiTexCoord3svEXT(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord3svEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord4dEXT(GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q) {
-#ifndef __MORPHOS__
         glMultiTexCoord4dEXT(target, s, t, r, q);
-#endif
  }
 static void AmiglMultiTexCoord4dvEXT(GLenum target, const GLdouble *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord4dvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord4fEXT(GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q) {
-#ifndef __MORPHOS__
         glMultiTexCoord4fEXT(target, s, t, r, q);
-#endif
  }
 static void AmiglMultiTexCoord4fvEXT(GLenum target, const GLfloat *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord4fvEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord4iEXT(GLenum target, GLint s, GLint t, GLint r, GLint q) {
-#ifndef __MORPHOS__
         glMultiTexCoord4iEXT(target, s, t, r, q);
-#endif
  }
 static void AmiglMultiTexCoord4ivEXT(GLenum target, const GLint *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord4ivEXT(target, v);
-#endif
  }
 static void AmiglMultiTexCoord4sEXT(GLenum target, GLshort s, GLshort t, GLshort r, GLshort q) {
-#ifndef __MORPHOS__
         glMultiTexCoord4sEXT(target, s, t, r, q);
-#endif
  }
 static void AmiglMultiTexCoord4svEXT(GLenum target, const GLshort *v) {
-#ifndef __MORPHOS__
         glMultiTexCoord4svEXT(target, v);
-#endif
  }
 static void AmiglInterleavedTextureCoordSetsEXT( GLint factor ) {
-#ifndef __MORPHOS__
         glInterleavedTextureCoordSetsEXT(factor);
-#endif
  }
 
 static void AmiglSelectTextureEXT( GLenum target ) {
-#ifndef __MORPHOS__
         glSelectTextureEXT(target);
-#endif
  }
 
 static void AmiglSelectTextureCoordSetEXT( GLenum target ) {
-#ifndef __MORPHOS__
         glSelectTextureCoordSetEXT(target);
-#endif
  }
 
 static void AmiglSelectTextureTransformEXT( GLenum target ) {
-#ifndef __MORPHOS__
         glSelectTextureTransformEXT(target);
-#endif
  }
+#endif
 
 /* GL_EXT_point_parameters */
 #ifdef __MORPHOS__
@@ -2456,6 +2124,34 @@ static void AmiglClientActiveTextureARB(GLenum unit) {
 	glClientActiveTextureARB(unit);
 }
 
+/* 1.5 functions*/
+
+/* GL_ARB_vertex_buffer_object */
+
+static void AmiglGenBuffers(GLuint num, GLuint *out) {
+	glGenBuffers(num, out);
+}
+
+static void AmiglBufferData(GLenum target, GLsizei size, const GLvoid * data, GLenum usage) {
+	glBufferData(target, size, data, usage);
+}
+
+static void AmiglBufferSubData(GLenum target, GLintptr offset, GLsizei size, const GLvoid * data) {
+	glBufferSubData(target, offset, size, data);
+}
+
+static void AmiglBindBuffer(GLenum target, GLuint buffer) {
+	glBindBuffer(target, buffer);
+}
+
+static void AmiglDeleteBuffers(GLsizei n, const GLuint *buffers) {
+	glDeleteBuffers(n, buffers);
+}
+
+static void AmiglGetBufferParameteriv(GLContext *context, GLenum target, GLenum value, GLint * data) {
+	glGetBufferParameteriv(target, value, data);
+}
+
 /* The GLU API */
 
 /*
@@ -2477,7 +2173,7 @@ static void AmigluPerspective( GLdouble fovy, GLdouble aspect, GLdouble zNear, G
         gluPerspective(fovy, aspect, zNear, zFar);
  }
 
-void AmigluPickMatrix( GLdouble x, GLdouble y, GLdouble width, GLdouble height, const GLint viewport[4] )
+static void AmigluPickMatrix( GLdouble x, GLdouble y, GLdouble width, GLdouble height, const GLint viewport[4] )
 {
         gluPickMatrix(x, y, width, height, (GLint *)viewport);
 }
@@ -2487,7 +2183,7 @@ static void AmigluOrtho2D( GLdouble left, GLdouble right, GLdouble bottom, GLdou
         gluOrtho2D(left, right, bottom, top);
  }
 
- GLint AmigluProject( GLdouble objx, GLdouble objy, GLdouble objz,
+static GLint AmigluProject( GLdouble objx, GLdouble objy, GLdouble objz,
                                   const GLdouble modelMatrix[16],
                                   const GLdouble projMatrix[16],
                                   const GLint viewport[4],
@@ -2497,7 +2193,7 @@ static void AmigluOrtho2D( GLdouble left, GLdouble right, GLdouble bottom, GLdou
    return gluProject(objx, objy, objz, modelMatrix, projMatrix, viewport, winx, winy, winz);
 }
 
- GLint AmigluUnProject( GLdouble winx, GLdouble winy,
+static GLint AmigluUnProject( GLdouble winx, GLdouble winy,
                                     GLdouble winz,
                                     const GLdouble modelMatrix[16],
                                     const GLdouble projMatrix[16],
@@ -2522,7 +2218,7 @@ static const GLubyte* AmigluErrorString( GLenum errorCode ) {
  *
  */
 
- GLint AmigluScaleImage( GLenum format,
+static GLint AmigluScaleImage( GLenum format,
                                      GLint widthin, GLint heightin,
                                      GLenum typein, const void *datain,
                                      GLint widthout, GLint heightout,
@@ -2530,7 +2226,7 @@ static const GLubyte* AmigluErrorString( GLenum errorCode ) {
         return gluScaleImage(format, widthin, heightin, typein, datain, widthout, heightout, typeout, dataout);
  }
 
- GLint AmigluBuild1DMipmaps( GLenum target, GLint components,
+static GLint AmigluBuild1DMipmaps( GLenum target, GLint components,
                                          GLint width, GLenum format,
                                          GLenum type, const void *data ) {
 #ifndef __MORPHOS__
@@ -2540,7 +2236,7 @@ static const GLubyte* AmigluErrorString( GLenum errorCode ) {
 #endif
  }
 
- GLint AmigluBuild2DMipmaps( GLenum target, GLint components,
+static GLint AmigluBuild2DMipmaps( GLenum target, GLint components,
                                          GLint width, GLint height,
                                          GLenum format,
                                          GLenum type, void *data ) {
@@ -2554,7 +2250,7 @@ static const GLubyte* AmigluErrorString( GLenum errorCode ) {
  *
  */
 
- GLUquadricObj* AmigluNewQuadric( void ) {
+static GLUquadricObj* AmigluNewQuadric( void ) {
         return gluNewQuadric();
  }
 
@@ -2740,7 +2436,7 @@ static void AmigluNurbsCallback( GLUnurbsObj *nobj, GLenum which, void *fn )
  *
  */
 
- GLUtriangulatorObj* AmigluNewTess( void ) {
+static GLUtriangulatorObj* AmigluNewTess( void ) {
         return gluNewTess();
  }
 
@@ -2797,7 +2493,6 @@ struct MyGLFunc
 
 void *AmiGetGLProc(const char *proc)
 {
-	#if 1
    static CONST struct MyGLFunc table[] =
    {
      { "glClearColor", AmiglClearColor },
@@ -3137,68 +2832,34 @@ void *AmiGetGLProc(const char *proc)
      { "glLoadName", AmiglLoadName },
      { "glPushName", AmiglPushName },
      { "glPopName", AmiglPopName },
-   #if 1
+
      { "glBlendEquationEXT", AmiglBlendEquationEXT },
      { "glBlendColorEXT", AmiglBlendColorEXT },
-     { "glPolygonOffsetEXT", AmiglPolygonOffsetEXT },
-     { "glVertexPointerEXT", AmiglVertexPointerEXT },
-     { "glNormalPointerEXT", AmiglNormalPointerEXT },
-     { "glColorPointerEXT", AmiglColorPointerEXT },
-     { "glIndexPointerEXT", AmiglIndexPointerEXT },
-     { "glTexCoordPointerEXT", AmiglTexCoordPointerEXT },
-     { "glEdgeFlagPointerEXT", AmiglEdgeFlagPointerEXT },
-     { "glGetPointervEXT", AmiglGetPointervEXT },
-     { "glArrayElementEXT", AmiglArrayElementEXT },
-     { "glDrawArraysEXT", AmiglDrawArraysEXT },
-     { "glGenTexturesEXT", AmiglGenTexturesEXT },
-     { "glDeleteTexturesEXT", AmiglDeleteTexturesEXT },
-     { "glBindTextureEXT", AmiglBindTextureEXT },
-     { "glPrioritizeTexturesEXT", AmiglPrioritizeTexturesEXT },
-     { "glAreTexturesResidentEXT", AmiglAreTexturesResidentEXT },
-     { "glIsTextureEXT", AmiglIsTextureEXT },
-     { "glTexImage3DEXT", AmiglTexImage3DEXT },
-     { "glTexSubImage3DEXT", AmiglTexSubImage3DEXT },
-     { "glCopyTexSubImage3DEXT", AmiglCopyTexSubImage3DEXT },
+     { "glPolygonOffsetEXT", AmiglPolygonOffset },
+     { "glVertexPointerEXT", AmiglVertexPointer },
+     { "glNormalPointerEXT", AmiglNormalPointer },
+     { "glColorPointerEXT", AmiglColorPointer },
+     { "glIndexPointerEXT", AmiglIndexPointer },
+     { "glTexCoordPointerEXT", AmiglTexCoordPointer },
+     { "glEdgeFlagPointerEXT", AmiglEdgeFlagPointer },
+     { "glGetPointervEXT", AmiglGetPointerv },
+     { "glArrayElementEXT", AmiglArrayElement },
+     { "glDrawArraysEXT", AmiglDrawArrays },
+     { "glGenTexturesEXT", AmiglGenTextures },
+     { "glDeleteTexturesEXT", AmiglDeleteTextures },
+     { "glBindTextureEXT", AmiglBindTexture },
+     { "glPrioritizeTexturesEXT", AmiglPrioritizeTextures },
+     { "glAreTexturesResidentEXT", AmiglAreTexturesResident },
+     { "glIsTextureEXT", AmiglIsTexture },
+     { "glTexImage3DEXT", AmiglTexImage3D },
+     { "glTexSubImage3DEXT", AmiglTexSubImage3D },
+     { "glCopyTexSubImage3DEXT", AmiglCopyTexSubImage3D },
      { "glColorTableEXT", AmiglColorTableEXT },
      { "glColorSubTableEXT", AmiglColorSubTableEXT },
      { "glGetColorTableEXT", AmiglGetColorTableEXT },
      { "glGetColorTableParameterfvEXT", AmiglGetColorTableParameterfvEXT },
      { "glGetColorTableParameterivEXT", AmiglGetColorTableParameterivEXT },
-     { "glMultiTexCoord1dSGIS", AmiglMultiTexCoord1dSGIS },
-     { "glMultiTexCoord1dvSGIS", AmiglMultiTexCoord1dvSGIS },
-     { "glMultiTexCoord1fSGIS", AmiglMultiTexCoord1fSGIS },
-     { "glMultiTexCoord1fvSGIS", AmiglMultiTexCoord1fvSGIS },
-     { "glMultiTexCoord1iSGIS", AmiglMultiTexCoord1iSGIS },
-     { "glMultiTexCoord1ivSGIS", AmiglMultiTexCoord1ivSGIS },
-     { "glMultiTexCoord1sSGIS", AmiglMultiTexCoord1sSGIS },
-     { "glMultiTexCoord1svSGIS", AmiglMultiTexCoord1svSGIS },
-     { "glMultiTexCoord2dSGIS", AmiglMultiTexCoord2dSGIS },
-     { "glMultiTexCoord2dvSGIS", AmiglMultiTexCoord2dvSGIS },
-     { "glMultiTexCoord2fSGIS", AmiglMultiTexCoord2fSGIS },
-     { "glMultiTexCoord2fvSGIS", AmiglMultiTexCoord2fvSGIS },
-     { "glMultiTexCoord2iSGIS", AmiglMultiTexCoord2iSGIS },
-     { "glMultiTexCoord2ivSGIS", AmiglMultiTexCoord2ivSGIS },
-     { "glMultiTexCoord2sSGIS", AmiglMultiTexCoord2sSGIS },
-     { "glMultiTexCoord2svSGIS", AmiglMultiTexCoord2svSGIS },
-     { "glMultiTexCoord3dSGIS", AmiglMultiTexCoord3dSGIS },
-     { "glMultiTexCoord3dvSGIS", AmiglMultiTexCoord3dvSGIS },
-     { "glMultiTexCoord3fSGIS", AmiglMultiTexCoord3fSGIS },
-     { "glMultiTexCoord3fvSGIS", AmiglMultiTexCoord3fvSGIS },
-     { "glMultiTexCoord3iSGIS", AmiglMultiTexCoord3iSGIS },
-     { "glMultiTexCoord3ivSGIS", AmiglMultiTexCoord3ivSGIS },
-     { "glMultiTexCoord3sSGIS", AmiglMultiTexCoord3sSGIS },
-     { "glMultiTexCoord3svSGIS", AmiglMultiTexCoord3svSGIS },
-     { "glMultiTexCoord4dSGIS", AmiglMultiTexCoord4dSGIS },
-     { "glMultiTexCoord4dvSGIS", AmiglMultiTexCoord4dvSGIS },
-     { "glMultiTexCoord4fSGIS", AmiglMultiTexCoord4fSGIS },
-     { "glMultiTexCoord4fvSGIS", AmiglMultiTexCoord4fvSGIS },
-     { "glMultiTexCoord4iSGIS", AmiglMultiTexCoord4iSGIS },
-     { "glMultiTexCoord4ivSGIS", AmiglMultiTexCoord4ivSGIS },
-     { "glMultiTexCoord4sSGIS", AmiglMultiTexCoord4sSGIS },
-     { "glMultiTexCoord4svSGIS", AmiglMultiTexCoord4svSGIS },
-     { "glMultiTexCoordPointerSGIS", AmiglMultiTexCoordPointerSGIS },
-     { "glSelectTextureSGIS", AmiglSelectTextureSGIS },
-     { "glSelectTextureCoordSetSGIS", AmiglSelectTextureCoordSetSGIS },
+#ifndef __MORPHOS__
      { "glMultiTexCoord1dEXT", AmiglMultiTexCoord1dEXT },
      { "glMultiTexCoord1dvEXT", AmiglMultiTexCoord1dvEXT },
      { "glMultiTexCoord1fEXT", AmiglMultiTexCoord1fEXT },
@@ -3235,6 +2896,7 @@ void *AmiGetGLProc(const char *proc)
      { "glSelectTextureEXT", AmiglSelectTextureEXT },
      { "glSelectTextureCoordSetEXT", AmiglSelectTextureCoordSetEXT },
      { "glSelectTextureTransformEXT", AmiglSelectTextureTransformEXT },
+#endif
      { "glPointParameterfEXT", AmiglPointParameterfEXT },
      { "glPointParameterfvEXT", AmiglPointParameterfvEXT },
      { "glDrawRangeElements", AmiglDrawRangeElements },
@@ -3243,7 +2905,6 @@ void *AmiGetGLProc(const char *proc)
      { "glCopyTexSubImage3D", AmiglCopyTexSubImage3D },
      { "glLockArraysEXT", AmiglLockArraysEXT },
      { "glUnlockArraysEXT", AmiglUnlockArraysEXT },
-   #endif
 
      { "glActiveTextureARB", AmiglActiveTextureARB },
      { "glMultiTexCoord2fARB", AmiglMultiTexCoord2fARB },
@@ -3256,11 +2917,24 @@ void *AmiGetGLProc(const char *proc)
      { "glMultiTexCoord3dvARB", AmiglMultiTexCoord3dvARB },
      { "glClientActiveTextureARB", AmiglClientActiveTextureARB },
 
+     { "glGenBuffers", AmiglGenBuffers },
+     { "glGenBuffersARB", AmiglGenBuffers },
+     { "glBufferData", AmiglBufferData },
+     { "glBufferDataARB", AmiglBufferData },
+     { "glBufferSubData", AmiglBufferSubData },
+     { "glBufferSubDataARB", AmiglBufferSubData },
+     { "glBindBuffer", AmiglBindBuffer },
+     { "glBindBufferARB", AmiglBindBuffer },
+     { "glDeleteBuffers", AmiglDeleteBuffers },
+     { "glDeleteBuffersARB", AmiglDeleteBuffers },
+     { "glGetBufferParameteriv", AmiglGetBufferParameteriv },
+     { "glGetBufferParameterivARB", AmiglGetBufferParameteriv },
+
      { "gluLookAt", AmigluLookAt },
      { "gluPerspective", AmigluPerspective },
      { "gluPickMatrix", AmigluPickMatrix },
 
-	#if 0
+#ifndef __MORPHOS__
      { "gluOrtho2D", AmigluOrtho2D },
      { "gluProject", AmigluProject },
      { "gluUnProject", AmigluUnProject },
@@ -3302,7 +2976,7 @@ void *AmiGetGLProc(const char *proc)
      { "gluNextContour", AmigluNextContour },
      { "gluTessVertex", AmigluTessVertex },
      { "gluGetString", AmigluGetString },
-	#endif
+#endif
 
       { NULL, NULL }
    };
@@ -3318,7 +2992,6 @@ void *AmiGetGLProc(const char *proc)
       tb++;
    }
    while (tb->name);
-	#endif
 
    return NULL;
 }
