@@ -24,6 +24,11 @@
 
 #include "SDL_hints.h"
 #include "SDL_assert.h"
+
+#ifdef __MORPHOS__
+#define _NO_PPCINLINE
+#endif
+
 #include "SDL_opengl.h"
 #include "../SDL_sysrender.h"
 #include "SDL_shaders_gl.h"

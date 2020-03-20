@@ -46,7 +46,6 @@
 
 #elif defined(__MORPHOS__)
 
-#include <proto/tinygl.h>
 #include <tgl/gl.h>
 #include <tgl/glu.h>
 #include "SDL_opengl_glext.h"
