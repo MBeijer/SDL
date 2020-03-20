@@ -160,7 +160,7 @@ AMIGA_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 {
 	D("[%s] context 0x%08lx\n", __FUNCTION__, context);
 
-	if (window && context) {
+	/*if (window && context)*/ {
 		*SDL2Base->MyGLContext = __tglContext = context;
 		return 0;
 	}
