@@ -243,3 +243,15 @@ SDL_RWops *SDL_RWFromFP(void *fp, SDL_bool autoclose)
 {
 	return SDL_RWFromFP_clib(fp, autoclose, stdio_size, stdio_seek, stdio_read, stdio_write, stdio_close);
 }
+
+extern void *AmiGetGLProc(const char *proc);
+void *SDL_GL_GetProcAddress(const char *proc)
+{
+	void *func = NULL;
+
+	func = AmiGetGLProc(proc);
+
+	D("[%s] proc %s func 0x%08lx\n", __FUNCTION__, proc, func);
+
+	return func;
+}

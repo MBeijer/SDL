@@ -4419,14 +4419,6 @@
 		(((int (*)(const char *))*(void**)(__base - 3652))(__t__p0));\
 	})
 
-#define SDL_GL_GetProcAddress(__p0) \
-	({ \
-		const char * __t__p0 = __p0;\
-		long __base = (long)(SDL2_BASE_NAME);\
-		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((void *(*)(const char *))*(void**)(__base - 3658))(__t__p0));\
-	})
-
 #define SDL_GL_UnloadLibrary() \
 	({ \
 		long __base = (long)(SDL2_BASE_NAME);\

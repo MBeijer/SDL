@@ -556,7 +556,7 @@ int SDL_SetWindowShape(SDL_Window *window,SDL_Surface *shape,SDL_WindowShapeMode
 int SDL_GetShapedWindowMode(SDL_Window *window,SDL_WindowShapeMode *shape_mode);
 
 int SDL_GL_LoadLibrary(const char *path);
-void *SDL_GL_GetProcAddress(const char *proc);
+//void *SDL_GL_GetProcAddress(const char *proc);
 void SDL_GL_UnloadLibrary(void);
 SDL_bool SDL_GL_ExtensionSupported(const char *extension);
 void SDL_GL_ResetAttributes(void);

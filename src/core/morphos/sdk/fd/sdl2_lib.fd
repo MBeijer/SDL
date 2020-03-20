@@ -608,7 +608,9 @@ SDL_wcsstr(*haystack,needle)(sysv,r12base)
 SDL_wcsncmp(str1,str2,maxlen)(sysv,r12base)
 SDL_strtokr(s1,s2,saveptr)(sysv,r12base)
 SDL_GL_LoadLibrary(path)(sysv,r12base)
-SDL_GL_GetProcAddress(proc)(sysv,r12base)
+##private
+private1()()
+##public
 SDL_GL_UnloadLibrary()(sysv,r12base)
 SDL_GL_ExtensionSupported(extension)(sysv,r12base)
 SDL_GL_ResetAttributes()(sysv,r12base)

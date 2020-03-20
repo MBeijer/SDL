@@ -27,36 +27,48 @@ sdl-startup.o: sdl-startup.c sdl-stubs.c
 	$(COMPILING)
 	@$(CC) $(CFLAGS) -o $@ -c sdl-startup.c
 
+SDL_amigagl_wrapper.o: ../../../video/amiga/SDL_amigagl_wrapper.c
+	$(COMPILING)
+	@$(CC) $(CFLAGS) -o $@ -c $<
+
 sdl-startup-brel.o: sdl-startup.c sdl-stubs.c
 	$(COMPILING)
 	@$(CC) $(CFLAGS) -mresident32 -o $@ -c sdl-startup.c
+
+SDL_amigagl_wrapper-brel.o: ../../../video/amiga/SDL_amigagl_wrapper.c
+	$(COMPILING)
+	@$(CC) $(CFLAGS) -mresident32 -o $@ -c $<
 
 sdl-startup-brel-nc.o: sdl-startup.c sdl-stubs.c
 	$(COMPILING)
 	@$(CC) $(CFLAGS) -mresident32 -o $@ -c sdl-startup.c -D__NO_SDL_CONSTRUCTORS
 
-lib/libSDL2.a: sdl-startup.o ../sdk/fd/sdl2_lib.fd
+SDL_amigagl_wrapper-nc.o: ../../../video/amiga/SDL_amigagl_wrapper.c
+	$(COMPILING)
+	@$(CC) $(CFLAGS) -mresident32 -o $@ -c $< -D__NO_SDL_CONSTRUCTORS
+
+lib/libSDL2.a: sdl-startup.o SDL_amigagl_wrapper.o ../sdk/fd/sdl2_lib.fd
 	$(ARCHIVING)
 	@mkdir -p lib
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --gluelib=$@
-	@$(AR) cru $@ sdl-startup.o
+	@$(AR) cru $@ sdl-startup.o SDL_amigagl_wrapper.o
 	@ppc-morphos-ranlib $@
 
-lib/libb32/libSDL2.a: sdl-startup-brel.o ../sdk/fd/sdl2_lib.fd
+lib/libb32/libSDL2.a: sdl-startup-brel.o SDL_amigagl_wrapper-brel.o ../sdk/fd/sdl2_lib.fd
 	$(ARCHIVING)
 	@mkdir -p lib/libb32
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --brelgluelib=$@
-	@$(AR) cru $@ sdl-startup-brel.o
+	@$(AR) cru $@ sdl-startup-brel.o SDL_amigagl_wrapper-brel.o
 	@ppc-morphos-ranlib $@
 
-lib/libb32/libSDL2-nc.a: sdl-startup-brel-nc.o ../sdk/fd/sdl2_lib.fd
+lib/libb32/libSDL2-nc.a: sdl-startup-brel-nc.o SDL_amigagl_wrapper-nc.o ../sdk/fd/sdl2_lib.fd
 	$(ARCHIVING)
 	@mkdir -p lib/libb32
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --brelgluelib=$@
-	@$(AR) cru $@ sdl-startup-brel-nc.o
+	@$(AR) cru $@ sdl-startup-brel-nc.o SDL_amigagl_wrapper-nc.o
 	@ppc-morphos-ranlib $@
 
 clean:
