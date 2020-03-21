@@ -2148,9 +2148,108 @@ static void AmiglDeleteBuffers(GLsizei n, const GLuint *buffers) {
 	glDeleteBuffers(n, buffers);
 }
 
-static void AmiglGetBufferParameteriv(GLContext *context, GLenum target, GLenum value, GLint * data) {
+static void AmiglGetBufferParameteriv(GLenum target, GLenum value, GLint * data) {
 	glGetBufferParameteriv(target, value, data);
 }
+
+/* shaders */
+
+static void AmiglAttachShader(GLuint program, GLuint shader) {
+	glAttachShader(program, shader);
+}
+
+static void AmiglCompileShader(GLuint shader) {
+	glCompileShader(shader);
+}
+
+static void AmiglLinkProgram(GLuint program) {
+	glLinkProgram(program);
+}
+
+static void AmiglUseProgram(GLuint program) {
+	glUseProgram(program);
+}
+
+static GLuint AmiglCreateShader(GLenum type) {
+	return glCreateShader(type);
+}
+
+static GLuint AmiglCreateProgram(void) {
+	return glCreateProgram();
+}
+
+static void AmiglShaderSource(GLuint shader, GLsizei count, const GLchar **string, const GLint *length) {
+	glShaderSource(shader, count, string, length);
+}
+
+static void AmiglValidateProgram(GLuint program) {
+	glValidateProgram(program);
+}
+
+static void AmiglUniform1f(GLint location, GLfloat v0) {
+	glUniform1f(location, v0);
+}
+
+static void AmiglUniform2f(GLint location, GLfloat v0, GLfloat v1) {
+	glUniform2f(location, v0, v1);
+}
+
+static void AmiglUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2) {
+	glUniform3f(location, v0, v1, v2);
+}
+
+static void AmiglUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) {
+	glUniform4f(location, v0, v1, v2, v3);
+}
+
+static void AmiglUniform1i(GLint location, GLint v0) {
+	glUniform1i(location, v0);
+}
+
+static void AmiglUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) {
+	glUniformMatrix4fv(location, count, transpose, value);
+}
+
+static GLint AmiglGetUniformLocation(GLuint program, const char *name) {
+	return glGetUniformLocation(program, name);
+}
+
+static void AmiglUniform4fv(GLint location, GLsizei count, const GLfloat *value) {
+	glUniform4fv(location, count, value);
+}
+
+static GLint AmiglGetAttribLocation(GLuint program, const GLchar *name) {
+	return glGetAttribLocation(program, name);
+}
+
+static void AmiglVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer) {
+	glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+}
+
+static void AmiglEnableVertexAttribArray(GLuint index) {
+	glEnableVertexAttribArray(index);
+}
+
+static void AmiglDisableVertexAttribArray(GLuint index) {
+	glDisableVertexAttribArray(index);
+}
+
+static void AmiglGetShaderiv(GLuint shader, GLenum pname, GLint *params) {
+	glGetShaderiv(shader, pname, params);
+}
+
+static void AmiglGetProgramiv(GLuint program, GLenum pname, GLint *params) {
+	glGetProgramiv(program, pname, params);
+}
+
+static void AmiglGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog) {
+	glGetProgramInfoLog(program, bufSize, length, infoLog);
+}
+
+static void AmiglGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) {
+	glGetShaderInfoLog(shader, bufSize, length, infoLog);
+}
+
 
 /* The GLU API */
 
@@ -2929,6 +3028,33 @@ void *AmiGetGLProc(const char *proc)
      { "glDeleteBuffersARB", AmiglDeleteBuffers },
      { "glGetBufferParameteriv", AmiglGetBufferParameteriv },
      { "glGetBufferParameterivARB", AmiglGetBufferParameteriv },
+
+     { "glAttachShader", AmiglAttachShader },
+     { "glCompileShader", AmiglCompileShader },
+     { "glLinkProgram", AmiglLinkProgram },
+     { "glUseProgram", AmiglUseProgram },
+     { "glCreateShader", AmiglCreateShader },
+     { "glCreateProgram", AmiglCreateProgram },
+     { "glShaderSource", AmiglShaderSource },
+     { "glValidateProgram", AmiglValidateProgram },
+     { "glUniform1f", AmiglUniform1f },
+     { "glUniform1fv", AmiglUniform1f },
+     { "glUniform1i", AmiglUniform1i },
+     { "glUniform1iv", AmiglUniform1i },
+     { "glUniform2f", AmiglUniform2f },
+     { "glUniform3f", AmiglUniform3f },
+     { "glUniform4f", AmiglUniform4f },
+     { "glUniformMatrix4fv", AmiglUniformMatrix4fv },
+     { "glGetUniformLocation", AmiglGetUniformLocation },
+     { "glUniform4fv", AmiglUniform4fv },
+     { "glGetAttribLocation", AmiglGetAttribLocation },
+     { "glVertexAttribPointer", AmiglVertexAttribPointer },
+     { "glEnableVertexAttribArray", AmiglEnableVertexAttribArray },
+     { "glDisableVertexAttribArray", AmiglDisableVertexAttribArray },
+     { "glGetShaderiv", AmiglGetShaderiv },
+     { "glGetProgramiv", AmiglGetProgramiv },
+     { "glGetProgramInfoLog", AmiglGetProgramInfoLog },
+     { "glGetShaderInfoLog", AmiglGetShaderInfoLog },
 
      { "gluLookAt", AmigluLookAt },
      { "gluPerspective", AmigluPerspective },
