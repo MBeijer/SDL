@@ -220,6 +220,7 @@ AMIGA_GL_DeleteContext(_THIS, SDL_GLContext context)
 
 	if (context) {
 		GLADestroyContext((GLContext *)context);
+		GLClose(context);
 	}
 }
 
