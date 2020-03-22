@@ -24,12 +24,12 @@
 #ifdef SDL_JOYSTICK_AMIGA
 
 #include "SDL_joystick.h"
+#include "SDL_timer.h"
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
 
 #define USE_INLINE_STDARG
 #include <libraries/lowlevel.h>
-#define NO_LOWLEVEL_EXT
 #ifndef NO_LOWLEVEL_EXT
 #include <libraries/lowlevel_ext.h>
 #endif
@@ -58,7 +58,7 @@
 
 extern struct Library *LowLevelBase;
 
-static const unsigned long joybut[] =
+static const ULONG joybut[] =
 {
 	JPF_BUTTON_RED,
 	JPF_BUTTON_BLUE,
@@ -75,6 +75,7 @@ struct joystick_hwdata
 #ifndef NO_LOWLEVEL_EXT
 	ULONG joystate_ext;
 	ULONG supports_analog;
+	Uint32 effect_expiration;
 #endif
 };
 
@@ -101,20 +102,21 @@ static Uint8 SDL_numjoysticks = 0;
 
 static int SDL_SYS_JoystickGetCount(void)
 {
-	D("SDL_SYS_JoystickGetCount()\n");
+	D("[%s]\n", __FUNCTION__);
 	return SDL_numjoysticks;
 }
 
 static void SDL_SYS_JoystickDetect() 
 {
+	D("[%s]\n", __FUNCTION__);
 }
 
 static int SDL_SYS_JoystickInit(void)
 {
-	D("SDL_SYS_JoystickInit()\n");
-	
 	int numjoysticks = 0;
-	unsigned long joyflag = 0L;
+	ULONG joyflag = 0;
+
+	D("[%s]\n", __FUNCTION__);
 
 	if (SDL_numjoysticks == 0)
 	{
@@ -137,13 +139,9 @@ static int SDL_SYS_JoystickInit(void)
 					break;
 				}
 
-					
-				
 				numjoysticks++;
-			}			
+			}
 
-			//free((void *)SDL_JoyNames);
-			//SDL_JoyNames = malloc(numjoysticks * MAX_JOY_NAME);
 			SDL_numjoysticks = numjoysticks;
 			return numjoysticks;
 		}
@@ -160,15 +158,15 @@ static int SDL_SYS_JoystickInit(void)
 	}
 }
 
-const char *SDL_SYS_JoystickGetDeviceName(int device_index)
+static const char *SDL_SYS_JoystickGetDeviceName(int device_index)
 {
 	const char *name = NULL;
 
-	D("SDL_SYS_JoystickGetDeviceName()\n");
+	D("[%s] device_index %d\n", __FUNCTION__, device_index);
 
 	if (LowLevelBase && device_index < MAX_JOYSTICKS)
 	{
-		unsigned long joyflag;
+		ULONG joyflag;
 
 		joyflag = ReadJoyPort(PortIndex(device_index));
 
@@ -212,9 +210,9 @@ const char *SDL_SYS_JoystickGetDeviceName(int device_index)
 
 static int SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
-	unsigned long temp;
+	ULONG temp;
 	
-	D("SDL_SYS_JoystickOpen()");
+	D("[%s] joystick 0x%08lx device_index %d\n", __FUNCTION__, joystick, device_index);
 	
 	if(!LowLevelBase)
 	{
@@ -225,7 +223,6 @@ static int SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 		}
 	}
 
-	
 	joystick->hwdata = (struct joystick_hwdata *) malloc(sizeof(*joystick->hwdata));
 
 	if ( joystick->hwdata == NULL )
@@ -287,9 +284,11 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 {
 	ULONG data;
 #ifndef NO_LOWLEVEL_EXT
-	ULONG data_ext;
+	ULONG data_ext = 0;
 #endif
-	int	i;
+	int	i, index;
+
+	D("[%s] joystick 0x%08lx\n", __FUNCTION__, joystick);
 
 	if(!LowLevelBase)
 	{
@@ -300,10 +299,12 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 		}
 	}
 
-	data = ReadJoyPort(PortIndex(joystick->instance_id));
+	index = PortIndex(joystick->instance_id);
+
+	data = ReadJoyPort(index);
 #ifndef NO_LOWLEVEL_EXT
 	if (joystick->hwdata->supports_analog)
-		data_ext = ReadJoyPort(PortIndex(joystick->instance_id) + JP_ANALOGUE_PORT_MAGIC);
+		data_ext = ReadJoyPort(index + JP_ANALOGUE_PORT_MAGIC);
 #endif
 
 	/* only send an event when something changed */
@@ -428,15 +429,31 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 	joystick->hwdata->joystate = data;
 #ifndef NO_LOWLEVEL_EXT
 	joystick->hwdata->joystate_ext = data_ext;
+
+	/* Rumble */
+	if (joystick->hwdata->effect_expiration) {
+		Uint32 now = SDL_GetTicks();
+		if (SDL_TICKS_PASSED(now, joystick->hwdata->effect_expiration)) {
+			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
+			joystick->hwdata->effect_expiration = 0;
+		}
+	}
 #endif
 }
 
 static void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 {
+	D("[%s] joystick 0x%08lx\n", __FUNCTION__, joystick);
 
 	if(LowLevelBase)	/* ne to reinitialize */
 	{
-		SetJoyPortAttrs(PortIndex(joystick->instance_id), SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
+		int index = PortIndex(joystick->instance_id);
+		SetJoyPortAttrs(index, SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
+#ifndef NO_LOWLEVEL_EXT
+		if (joystick->hwdata->effect_expiration) {
+			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
+		}
+#endif
 	}
 
 	if(joystick->hwdata)
@@ -450,6 +467,8 @@ static void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 /* Function to perform any system-specific joystick related cleanup */
 static void SDL_SYS_JoystickQuit(void)
 {
+	D("[%s]\n", __FUNCTION__);
+
 	if(LowLevelBase)
 	{
 		CloseLibrary(LowLevelBase);
@@ -461,16 +480,20 @@ static void SDL_SYS_JoystickQuit(void)
 
 static int SDL_SYS_JoystickGetDevicePlayerIndex(int device_index)
 {
+	D("[%s] device_index %d\n", __FUNCTION__, device_index);
+
 	return device_index;
 }
 
-static void SDL_SYS_JoystickSetDevicePlayerIndex(int device_index)
+static void SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
 {
-	D("Not implemented\n");
+	D("[%s] Not implemented\n", __FUNCTION__);
 }
 
 static SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID(int device_index)
 {
+	D("[%s] device_index %d\n", __FUNCTION__, device_index);
+
 	SDL_JoystickGUID guid;
 	const char *name = SDL_SYS_JoystickGetDeviceName(device_index);
 	SDL_zero(guid);
@@ -480,12 +503,36 @@ static SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID(int device_index)
 
 static SDL_JoystickID SDL_SYS_JoystickGetDeviceInstanceID(int device_index)
 {
+	D("[%s] device_index %d\n", __FUNCTION__, device_index);
 	return device_index;
 }
 
-static int SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 hig_frequence_rumble, Uint32 duration_ms)
+static int SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
 {
-	return 0;	
+	D("[%s] joystick 0x%08lx low %d high %d ms %d\n", __FUNCTION__, joystick, low_frequency_rumble, high_frequency_rumble, duration_ms);
+
+	if (!LowLevelBase) {
+		return SDL_Unsupported();
+	}
+
+#ifndef NO_LOWLEVEL_EXT
+	if (joystick) {
+		int index = PortIndex(joystick->instance_id);
+
+		if ((low_frequency_rumble || high_frequency_rumble) && duration_ms) {
+			SetJoyPortAttrs(index, SJA_RumbleSetSlowMotor, low_frequency_rumble >> 8, SJA_RumbleSetFastMotor, low_frequency_rumble >> 8, TAG_END);
+			joystick->hwdata->effect_expiration = SDL_GetTicks() + duration_ms;
+			if (!joystick->hwdata->effect_expiration) {
+				joystick->hwdata->effect_expiration = 1;
+			}
+		} else {
+			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
+			joystick->hwdata->effect_expiration = 0;
+		}
+	}
+#endif
+
+	return 0;
 }
 
 SDL_JoystickDriver SDL_AMIGA_JoystickDriver =
