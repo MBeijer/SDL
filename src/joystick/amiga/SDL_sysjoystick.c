@@ -448,7 +448,7 @@ static void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 	if(LowLevelBase)	/* ne to reinitialize */
 	{
 		int index = PortIndex(joystick->instance_id);
-		SetJoyPortAttrs(index, SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
+		//SetJoyPortAttrs(index, SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
 #ifndef NO_LOWLEVEL_EXT
 		if (joystick->hwdata->effect_expiration) {
 			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
