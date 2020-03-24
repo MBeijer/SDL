@@ -44,20 +44,6 @@
 /* The maximum number of joysticks we'll detect */
 #define MAX_JOYSTICKS 4 /* lowlevel.library is limited to 4 ports */
 
-/* Directions/Axis differences */
-#define MOS_PLUS  32767 /* was 127, changed by Henes (20040801) */
-#define MOS_MINUS -32768 /* was -127 */
-
-#ifndef JP_TYPE_ANALOGUE
-#define JP_TYPE_ANALOGUE  (14<<28)	  /* port has analogue joystick  */
-#define JP_XAXIS_MASK	(255<<0)	/* horizontal position */
-#define JP_YAXIS_MASK	(255<<8)	/* vertical position */
-#define JP_ANALOGUE_PORT_MAGIC (1<<16) /* port offset to force analogue readout */
-#endif
-
-
-extern struct Library *LowLevelBase;
-
 static const ULONG joybut[] =
 {
 	JPF_BUTTON_RED,
@@ -266,14 +252,16 @@ static int SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 	}
 		
 	joystick->nballs = 0;
-	joystick->naxes = 2; /* FIXME: even for JP_TYPE_NOTAVAIL ? */
+	joystick->naxes = 0;
 	joystick->hwdata->joystate = 0L;
 #ifndef NO_LOWLEVEL_EXT
 	joystick->hwdata->joystate_ext = 0L;
 	joystick->hwdata->supports_analog = 0;
 
-	if (LowLevelBase->lib_Version > 50 || (LowLevelBase->lib_Version >= 50 && LowLevelBase->lib_Revision >= 17))
+	if (LowLevelBase->lib_Version > 50 || (LowLevelBase->lib_Version >= 50 && LowLevelBase->lib_Revision >= 17)) {
 		joystick->hwdata->supports_analog = 1;
+		joystick->naxes = 2;
+	}
 #endif
 
 	return 0;
@@ -358,62 +346,19 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 			SDL_PrivateJoystickAxis(joystick, 1, value);
 		}
 	}
-	else
 #endif
-	{
-		if((joystick->hwdata->joystate & (JPF_JOY_DOWN|JPF_JOY_UP)) != (data & (JPF_JOY_DOWN|JPF_JOY_UP)))
-		{
-			Sint16 value;
-
-			/* UP and DOWN direction */
-			if(data & JPF_JOY_DOWN)
-			{
-				value = MOS_PLUS;
-			}
-			else if(data & JPF_JOY_UP)
-			{
-				value = MOS_MINUS;
-			}
-			else
-			{
-				value = 0;
-			}
-
-			SDL_PrivateJoystickAxis(joystick, 1, value);
-		}
-
-		if((joystick->hwdata->joystate & (JPF_JOY_LEFT|JPF_JOY_RIGHT)) != (data & (JPF_JOY_LEFT|JPF_JOY_RIGHT)))
-		{
-			Sint16 value;
-
-			/* LEFT and RIGHT direction */
-			if(data & JPF_JOY_LEFT)
-			{
-				value = MOS_MINUS;
-			}
-			else if(data & JPF_JOY_RIGHT)
-			{
-				value = MOS_PLUS;
-			}
-			else
-			{
-				value = 0;
-			}
-
-			SDL_PrivateJoystickAxis(joystick, 0, value);
-		}
-	}
 
 	/* Joy buttons */
 	for(i = 0; i < joystick->nbuttons; i++)
 	{
 		if( (data & joybut[i]) )
 		{
-			
+			/*
 			if(i == 1)
 			{
 				data &= ~(joybut[2]);
 			}
+			*/
 
 			if(!(joystick->hwdata->joystate & joybut[i]))
 			{
