@@ -7,8 +7,7 @@ CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
 #CC      = ppc-morphos-gcc-9 -noixemul
 INCLUDE = -I./include
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
-AR	= ar
-RANLIB	= ranlib
+AR	= ppc-morphos-ar
 
 ECHE = echo -e
 BOLD = \033[1m
@@ -97,8 +96,7 @@ src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/
 
 $(TARGET): $(OBJECTS)
 	$(ARCHIVING)
-	@$(AR) crv $@ $^
-	$(RANLIB) $@
+	@$(AR) crvs $@ $^
 
 $(LIBRARY): $(TARGET) $(COREOBJECTS)
 	$(LINKING)
