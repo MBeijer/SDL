@@ -174,6 +174,25 @@ char *SDL_getenv(const char *name)
 	return var;
 }
 
+int SDL_setenv(const char *name, const char *value, int overwrite)
+{
+	char dummy[2];
+
+	if (!name || SDL_strlen(name) == 0 || SDL_strchr(name, '=') != NULL || !value) {
+		return (-1);
+	}
+
+	if (!overwrite && GetVar(name, dummy, sizeof(dummy), GVF_BINARY_VAR) != -1) {
+		return 0;
+	}
+	// TODO make these global?
+	if (!SetVar(name, value, -1, LV_VAR /*| GVF_GLOBAL_ONLY | GVF_SAVE_VAR*/)) {
+		return -1;
+	}
+
+	return 0;
+}
+
 /* SDL_RWops() replacement
  *
  * Functions to read/write stdio file pointers. Will link with libc stdio.
