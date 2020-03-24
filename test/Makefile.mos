@@ -1,8 +1,9 @@
 # Makefile to build the MorphOS SDL tests
 
-CC	= ppc-morphos-gcc-9
+AR = ppc-morphos-ar
+CC	= ppc-morphos-gcc
 CFLAGS	= -noixemul -O2 -Wall -g -I../include
-LIBS	= -L../src/core/morphos/devenv/lib/ -lSDL2 -noixemul -lm
+LIBS	= -L. -lSDL2test -L../src/core/morphos/devenv/lib/ -lSDL2 -noixemul -lm
 
 TARGETS = \
 	checkkeys \
@@ -26,7 +27,6 @@ TARGETS = \
 	testfile \
 	testfilesystem \
 	testgamecontroller \
-	testgesture \
 	testgl2 \
 	testgles \
 	testgles2 \
@@ -55,7 +55,6 @@ TARGETS = \
 	testrumble \
 	testscale \
 	testsem \
-	testsensor \
 	testshader \
 	testshape \
 	testsprite2 \
@@ -69,8 +68,22 @@ TARGETS = \
 	testwm2 \
 	testyuv \
 	torturethread \
-	
-all: $(TARGETS)
+
+#	testgesture \
+#	testsensor \
+
+CSRCS = SDL_test_assert.c SDL_test_common.c SDL_test_compare.c \
+        SDL_test_crc32.c SDL_test_font.c SDL_test_fuzzer.c SDL_test_harness.c \
+        SDL_test_imageBlit.c SDL_test_imageBlitBlend.c SDL_test_imageFace.c \
+        SDL_test_imagePrimitives.c SDL_test_imagePrimitivesBlend.c \
+        SDL_test_log.c SDL_test_md5.c SDL_test_random.c SDL_test_memory.c
+TESTLIB = libSDL2test.a
+COBJS = $(addprefix ../src/test/, $(CSRCS:.c=.o))
+
+all: $(TESTLIB) $(TARGETS)
+
+$(TESTLIB): $(COBJS)
+	$(AR) crvs $@ $^
 
 checkkeys: checkkeys.o
 	$(CC) -o $@ $^ $(LIBS)
