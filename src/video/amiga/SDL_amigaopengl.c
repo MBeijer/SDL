@@ -170,19 +170,19 @@ AMIGA_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 
 void AMIGA_GL_GetDrawableSize(_THIS, SDL_Window * window, int *w, int *h)
 {
-	D("[%s]\n", __FUNCTION__);
+	//D("[%s]\n", __FUNCTION__);
 
 	if (window) {
 		SDL_WindowData * data = window->driverdata;
 
 		if (w) {
 			*w = data->win->Width - data->win->BorderLeft - data->win->BorderRight;
-			D("[%s] w %d\n", __FUNCTION__, *w);
+			//D("[%s] w %d\n", __FUNCTION__, *w);
 		}
 
 		if (h) {
 			*h = data->win->Height - data->win->BorderTop - data->win->BorderBottom;
-			D("[%s] h %d\n", __FUNCTION__, *h);
+			//D("[%s] h %d\n", __FUNCTION__, *h);
 		}
 	}
 }
