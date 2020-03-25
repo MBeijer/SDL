@@ -2,7 +2,7 @@
 
 AR = ppc-morphos-ar
 CC	= ppc-morphos-gcc
-CFLAGS	= -noixemul -O2 -Wall -g -I../include
+CFLAGS	= -noixemul -O2 -Wall -g -I../include -DHAVE_OPENGL
 LIBS	= -L. -lSDL2test -L../src/core/morphos/devenv/lib/ -lSDL2 -noixemul -lm
 
 TARGETS = \
@@ -296,4 +296,4 @@ testvulkan: testvulkan.o
 	$(CC) -o $@ $^ $(LIBS)
 
 clean:
-	rm -f $(TARGETS) *.o
+	rm -f $(TARGETS) *.o $(COBJS) $(TESTLIB)
