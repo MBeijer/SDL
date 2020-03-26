@@ -66,12 +66,11 @@
 #include "nacl_io/nacl_io.h"
 #endif
 
-#if defined(AMIGA)
+#ifdef __MORPHOS__
 #include "../core/morphos/SDL_library.h"
 #include "../core/morphos/SDL_misc.h"
 #include <proto/dos.h>
 
-#if defined(__MORPHOS__)
 #undef SDLCALL
 #define SDLCALL __saveds
 
@@ -87,7 +86,6 @@ asm
 "__end__restore_r13:\n"
 "	.size __restore_r13, __end__restore_r13 - __restore_r13\n"
 );
-#endif
 #endif
 
 #ifdef __WIN32__
