@@ -109,8 +109,8 @@
 #define HAVE_TANF 1
 
 #define HAVE_WCHAR_H 1
-#define HAVE_ICONV_H 1
-#define HAVE_ICONV 1
+//#define HAVE_ICONV_H 1
+//#define HAVE_ICONV 1
 #define HAVE_STDIO_H 1
 #define HAVE_LIMITS_H 1
 #define HAVE_ATANF 1
