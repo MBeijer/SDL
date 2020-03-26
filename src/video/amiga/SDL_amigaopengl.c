@@ -218,6 +218,11 @@ AMIGA_GL_DeleteContext(_THIS, SDL_GLContext context)
 {
 	D("[%s] context 0x%08lx\n", __FUNCTION__, context);
 
+	if (TinyGLBase == NULL) {
+		D("[%s] the library is already closed\n", __FUNCTION__);
+		return;
+	}
+
 	if (context) {
 		GLADestroyContext((GLContext *)context);
 		GLClose(context);
