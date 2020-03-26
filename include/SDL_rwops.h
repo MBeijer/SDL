@@ -116,7 +116,7 @@ typedef struct SDL_RWops
                 size_t left;
             } buffer;
         } windowsio;
-#elif defined(AMIGA)
+#elif defined(__MORPHOS__)
         struct
         {
             Uint8 AppendMode : 1, NoSeek : 1, IsAtEnd : 1, autoclose : 1;
