@@ -366,7 +366,8 @@ amiga_file_open(SDL_RWops *context, const char *filename, const char *mode)
 
         fh = Open(filename, mode);
 
-        context->hidden.amigaio.Writable = (flag_w || flag_a) ? 1 : 0;
+        context->hidden.amigaio.Writable = (flag_w || flag_a || flag_p) ? 1 : 0;
+        context->hidden.amigaio.Readable = (flag_r || flag_p) ? 1 : 0;
 
         context->hidden.amigaio.autoclose = 1;
         context->hidden.amigaio.fp.dos = fh;
@@ -449,9 +450,16 @@ amiga_file_read(SDL_RWops *context, void *ptr, size_t size, size_t maxnum)
     size_t rsize = size * maxnum, result;
     D("[%s]\n", __FUNCTION__);
 
-    if ((result = Read(context->hidden.amigaio.fp.dos, ptr, rsize)) != rsize)
+    if (context->hidden.amigaio.Readable)
     {
-        SDL_Error(SDL_EFWRITE);
+        if ((result = Read(context->hidden.amigaio.fp.dos, ptr, rsize)) != rsize)
+        {
+            SDL_Error(SDL_EFWRITE);
+        }
+    }
+    else
+    {
+        result = 0;
     }
 
     return result / size;

@@ -120,7 +120,7 @@ typedef struct SDL_RWops
         struct
         {
             Uint8 AppendMode : 1, NoSeek : 1, IsAtEnd : 1, autoclose : 1;
-				Uint8 Writable : 1;
+            Uint8 Writable : 1, Readable : 1;
 
             union
             {
