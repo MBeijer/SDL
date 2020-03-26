@@ -61,7 +61,6 @@ struct joystick_hwdata
 #ifndef NO_LOWLEVEL_EXT
 	ULONG joystate_ext;
 	ULONG supports_analog;
-	Uint32 effect_expiration;
 #endif
 };
 
@@ -374,15 +373,6 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 	joystick->hwdata->joystate = data;
 #ifndef NO_LOWLEVEL_EXT
 	joystick->hwdata->joystate_ext = data_ext;
-
-	/* Rumble */
-	if (joystick->hwdata->effect_expiration) {
-		Uint32 now = SDL_GetTicks();
-		if (SDL_TICKS_PASSED(now, joystick->hwdata->effect_expiration)) {
-			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
-			joystick->hwdata->effect_expiration = 0;
-		}
-	}
 #endif
 }
 
@@ -394,11 +384,6 @@ static void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 	{
 		int index = PortIndex(joystick->instance_id);
 		//SetJoyPortAttrs(index, SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
-#ifndef NO_LOWLEVEL_EXT
-		if (joystick->hwdata->effect_expiration) {
-			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
-		}
-#endif
 	}
 
 	if(joystick->hwdata)
@@ -452,9 +437,9 @@ static SDL_JoystickID SDL_SYS_JoystickGetDeviceInstanceID(int device_index)
 	return device_index;
 }
 
-static int SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
+static int SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {
-	D("[%s] joystick 0x%08lx low %d high %d ms %d\n", __FUNCTION__, joystick, low_frequency_rumble, high_frequency_rumble, duration_ms);
+	D("[%s] joystick 0x%08lx low %d high %d\n", __FUNCTION__, joystick, low_frequency_rumble, high_frequency_rumble);
 
 	if (!LowLevelBase) {
 		return SDL_Unsupported();
@@ -464,15 +449,10 @@ static int SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_
 	if (joystick) {
 		int index = PortIndex(joystick->instance_id);
 
-		if ((low_frequency_rumble || high_frequency_rumble) && duration_ms) {
+		if (low_frequency_rumble > 0 || high_frequency_rumble > 0) {
 			SetJoyPortAttrs(index, SJA_RumbleSetSlowMotor, low_frequency_rumble >> 8, SJA_RumbleSetFastMotor, low_frequency_rumble >> 8, TAG_END);
-			joystick->hwdata->effect_expiration = SDL_GetTicks() + duration_ms;
-			if (!joystick->hwdata->effect_expiration) {
-				joystick->hwdata->effect_expiration = 1;
-			}
 		} else {
 			SetJoyPortAttrs(index, SJA_RumbleOff, 0, TAG_END);
-			joystick->hwdata->effect_expiration = 0;
 		}
 	}
 #endif

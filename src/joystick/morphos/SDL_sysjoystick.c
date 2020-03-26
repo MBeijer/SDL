@@ -492,7 +492,7 @@ SDL_SYS_JoystickGetDeviceGUID( int device_index )
 	return hwdata->guid;
 }
 static int
-SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
+SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {
     return 0;
 }
