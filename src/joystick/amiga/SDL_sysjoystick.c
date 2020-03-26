@@ -94,7 +94,7 @@ static int SDL_SYS_JoystickGetCount(void)
 
 static void SDL_SYS_JoystickDetect() 
 {
-	D("[%s]\n", __FUNCTION__);
+	//D("[%s]\n", __FUNCTION__);
 }
 
 static int SDL_SYS_JoystickInit(void)
@@ -276,16 +276,14 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 #endif
 	int	i, index;
 
-	D("[%s] joystick 0x%08lx\n", __FUNCTION__, joystick);
-
-	if(!LowLevelBase)
+	/*if(!LowLevelBase)
 	{
 		if(SDL_JoystickInit() < 1)
 		{
 			D("Initialize Joysticks first!\n");
 			return;
 		}
-	}
+	}*/
 
 	index = PortIndex(joystick->instance_id);
 
@@ -294,6 +292,8 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 	if (joystick->hwdata->supports_analog)
 		data_ext = ReadJoyPort(index + JP_ANALOGUE_PORT_MAGIC);
 #endif
+
+	D("[%s] joystick 0x%08lx index %d data 0x%08lx data_ext 0x%08lx\n", __FUNCTION__, joystick, index, data, data_ext);
 
 	/* only send an event when something changed */
 
