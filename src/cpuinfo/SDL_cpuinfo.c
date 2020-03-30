@@ -972,7 +972,9 @@ SDL_GetSystemRAM(void)
         }
 #endif
 #ifdef __MORPHOS__
-        SDL_SystemRAM = AvailMem(MEMF_FAST | MEMF_TOTAL); // Exclude possible chip ram.
+        if (SDL_SystemRAM <= 0) {
+            SDL_SystemRAM = AvailMem(MEMF_TOTAL) / (1024 * 1024);
+        }
 #endif
 #endif
     }
