@@ -402,7 +402,7 @@ amiga_file_size(SDL_RWops * context)
 {
     struct FileInfoBlock fib;
 
-    if (ExamineFH(context->hidden.amigaio.fp.dos, &fib))
+    if (ExamineFH64(context->hidden.amigaio.fp.dos, &fib, TAG_DONE))
         return fib.fib_Size64;
 
     return -1;
