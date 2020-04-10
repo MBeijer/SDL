@@ -184,7 +184,9 @@ int AMIGA_GL_GetSwapInterval(_THIS)
 int AMIGA_GL_SwapWindow(_THIS, SDL_Window * window)
 {
 	//D("[%s]\n", __FUNCTION__);
-
+	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+	if (!data->win)
+		return -;
 	// TODO check the window context
 	GLASwapBuffers(__tglContext);
 	return 0;
