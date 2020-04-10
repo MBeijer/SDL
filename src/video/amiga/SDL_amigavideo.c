@@ -125,6 +125,7 @@ AMIGA_ShowApp(_THIS)
 
 	//AMIGA_GetScreen(_this);
 	AMIGA_OpenWindows(_this);
+	AMIGA_GL_ResizeContext(_this, _this->current_glwin);
 }
 
 /* Amiga driver bootstrap functions */
