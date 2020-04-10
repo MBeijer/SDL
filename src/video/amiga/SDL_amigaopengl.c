@@ -186,7 +186,7 @@ int AMIGA_GL_SwapWindow(_THIS, SDL_Window * window)
 	//D("[%s]\n", __FUNCTION__);
 	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	if (!data->win)
-		return -;
+		return -1;
 	// TODO check the window context
 	GLASwapBuffers(__tglContext);
 	return 0;
