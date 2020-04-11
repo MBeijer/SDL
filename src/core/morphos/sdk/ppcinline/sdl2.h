@@ -4403,14 +4403,6 @@
 		(((int (*)(SDL_Window *, SDL_WindowShapeMode *))*(void**)(__base - 2842))(__t__p0, __t__p1));\
 	})
 
-#define SDL_sqrtf(__p0) \
-	({ \
-		float  __t__p0 = __p0;\
-		long __base = (long)(SDL2_BASE_NAME);\
-		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((float (*)(float ))*(void**)(__base - 2932))(__t__p0));\
-	})
-
 #define SDL_GL_LoadLibrary(__p0) \
 	({ \
 		const char * __t__p0 = __p0;\
@@ -4529,6 +4521,14 @@
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
 		(((void (*)(SDL_GLContext ))*(void**)(__base - 3742))(__t__p0));\
+	})
+
+#define SDL_sqrtf(__p0) \
+	({ \
+		float  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((float (*)(float ))*(void**)(__base - 2932))(__t__p0));\
 	})
 
 #define SDL_tan(__p0) \
@@ -5695,6 +5695,22 @@
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
 		(((char *(*)(char *, const char *, char **))*(void**)(__base - 3646))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_isupper(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(int ))*(void**)(__base - 3928))(__t__p0));\
+	})
+
+#define SDL_islower(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(int ))*(void**)(__base - 3934))(__t__p0));\
 	})
 
 #endif /* !_PPCINLINE_SDL2_H */

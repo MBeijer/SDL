@@ -710,7 +710,7 @@ int SDL_RWclose(SDL_RWops *context);
 void *SDL_LoadFile(const char *file, size_t *datasize);
 SDL_TouchDeviceType SDL_GetTouchDeviceType(SDL_TouchID touchID);
 
-/* 2.0.11 */
+/* 2.0.12 */
 SDL_bool SDL_HasARMSIMD(void);
 SDL_GameControllerType SDL_GameControllerTypeForIndex(int joystick_index);
 SDL_GameController *SDL_GameControllerFromPlayerIndex(int player_index);
@@ -724,9 +724,8 @@ int SDL_LockTextureToSurface(SDL_Texture *texture, const SDL_Rect *rect, SDL_Sur
 wchar_t *SDL_wcsstr(const wchar_t *haystack, const wchar_t *needle);
 int SDL_wcsncmp(const wchar_t *str1, const wchar_t *str2, size_t maxlen);
 char *SDL_strtokr(char *s1, const char *s2, char **saveptr);
-
-
-
+int SDLCALL SDL_isupper(int x);
+int SDLCALL SDL_islower(int x);
 
 
 #endif

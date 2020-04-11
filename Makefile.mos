@@ -9,6 +9,8 @@ INCLUDE = -I./include
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
 AR	= ppc-morphos-ar
 
+AMIGADATE = $(shell date +"%-d.%-m.%Y")
+
 ECHE = echo -e
 BOLD = \033[1m
 NRML = \033[22m
@@ -70,7 +72,6 @@ sdk: $(LIBRARY)
 	cp include/*.h /usr/local/include/SDL2
 	cp src/core/morphos/devenv/lib/libSDL2.a /usr/local/lib/libSDL2.a
 	cp src/core/morphos/devenv/lib/libb32/libSDL2.a /usr/local/lib/libb32/libSDL2.a
-	cp sdl2-config /usr/local/bin
 
 headers:
 	$(HEADERING)
@@ -92,7 +93,7 @@ src/core/morphos/SDL_cpu.o: src/core/morphos/SDL_cpu.c
 
 src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/SDL_library.h src/core/morphos/SDL_stubs.h
 	$(COMPILING)
-	@$(CC) -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
+	@$(CC) -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing  -D__AMIGADATE__=\"$(AMIGADATE)\" -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
 
 $(TARGET): $(OBJECTS)
 	$(ARCHIVING)

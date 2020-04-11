@@ -722,3 +722,5 @@
 	STUB(SDL_HapticRumbleInit)
 	STUB(SDL_HapticRumblePlay)
 	STUB(SDL_HapticRumbleStop)
+	STUB(SDL_isupper)
+	STUB(SDL_islower)
