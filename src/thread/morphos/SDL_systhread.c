@@ -40,9 +40,9 @@ RunThread(APTR data, struct MsgPort *port)
 #endif
 
 int
-SDL_SYS_CreateThread(SDL_Thread * thread, void *args)
+SDL_SYS_CreateThread(SDL_Thread * thread)
 {
-	thread->handle = QueueWorkItem(threadpool, (APTR)SDL_RunThread, args);
+	thread->handle = QueueWorkItem(threadpool, (APTR)SDL_RunThread, thread);
 	return thread->handle == WORKITEM_INVALID ? -1 : 0;
 }
 
