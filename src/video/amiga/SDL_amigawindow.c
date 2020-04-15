@@ -250,8 +250,8 @@ AMIGA_SetWindowMinimumSize(_THIS, SDL_Window * window)
 
 		if ((window->flags & SDL_WINDOW_BORDERLESS) == 0)
 		{
-			min_w += scr->WBorLeft + scr->WBorRight;
-			min_h += scr->WBorTop + scr->WBorBottom;
+			min_w += data->win->BorderLeft + data->win->BorderRight;
+			min_h += data->win->BorderTop + data->win->BorderBottom;
 		}
 
 		if (vd->CustomScreen == NULL)
@@ -277,8 +277,8 @@ AMIGA_SetWindowMaximumSize(_THIS, SDL_Window * window)
 
 		if ((window->flags & SDL_WINDOW_BORDERLESS) == 0)
 		{
-			max_w += scr->WBorLeft + scr->WBorRight;
-			max_h += scr->WBorTop + scr->WBorBottom;
+			max_w += data->win->BorderLeft + data->win->BorderRight;
+			max_h += data->win->BorderTop + data->win->BorderBottom;
 		}
 
 		if (vd->CustomScreen == NULL)
@@ -304,8 +304,8 @@ AMIGA_SetWindowSize(_THIS, SDL_Window * window)
 
 		if ((window->flags & SDL_WINDOW_BORDERLESS) == 0)
 		{
-			w += scr->WBorLeft + scr->WBorRight;
-			h += scr->WBorTop + scr->WBorBottom;
+			w += data->win->BorderLeft + data->win->BorderRight;
+			h += data->win->BorderTop + data->win->BorderBottom;
 		}
 
 		if (vd->CustomScreen == NULL)
