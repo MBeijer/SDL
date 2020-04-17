@@ -396,7 +396,7 @@ AMIGA_CreateDevice(int devindex)
 			device->GetClipboardText = AMIGA_GetClipboardText;
 			device->HasClipboardText = AMIGA_HasClipboardText;
 
-			device->ShowMessageBox = AMIGA_ShowMessageBox;
+			//device->ShowMessageBox = AMIGA_ShowMessageBox;
 			
 			//device->SetWindowResizable = AMIGA_SetWindowResizable;
 			//device->GetWindowBordersSize = AMIGA_GetWindowBordersSize;
