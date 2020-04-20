@@ -400,7 +400,7 @@ AMIGA_CreateDevice(int devindex)
 			
 			device->SetWindowResizable = AMIGA_SetWindowResizable;
 			//device->GetWindowBordersSize = AMIGA_GetWindowBordersSize;
-			//device->SetWindowOpacity = AMIGA_SetWindowOpacity;
+			device->SetWindowOpacity = AMIGA_SetWindowOpacity;
 			
 			device->free = AMIGA_DeleteDevice;
 

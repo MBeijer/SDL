@@ -748,4 +748,27 @@ AMIGA_SetWindowResizable(_THIS, SDL_Window * window, SDL_bool resizable)
         D("[%s] Failed to re-create window '%s'\n", __FUNCTION__, window->title);
     }
 }
+
+int
+AMIGA_SetWindowOpacity(_THIS, SDL_Window * window, float opacity)
+{
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+    LONG ret;
+
+    ULONG value = ((opacity) * (ULONG_MAX));
+
+    D("Setting window '%s' opaqueness to %lu\n", window->title, value);
+
+    ret = SetAttrs(
+        data->win,
+        WA_Opacity, value,
+        TAG_DONE);
+
+    if (ret) {
+        D("Failed to set window opaqueness to %d\n", value);
+        return -1;
+    }
+
+    return 0;
+}
 /* vi: set ts=4 sw=4 expandtab: */
