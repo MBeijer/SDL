@@ -398,7 +398,7 @@ AMIGA_CreateDevice(int devindex)
 
 			//device->ShowMessageBox = AMIGA_ShowMessageBox;
 			
-			//device->SetWindowResizable = AMIGA_SetWindowResizable;
+			device->SetWindowResizable = AMIGA_SetWindowResizable;
 			//device->GetWindowBordersSize = AMIGA_GetWindowBordersSize;
 			//device->SetWindowOpacity = AMIGA_SetWindowOpacity;
 			

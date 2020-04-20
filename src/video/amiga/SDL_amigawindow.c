@@ -107,7 +107,7 @@ void AMIGA_OpenWindows(_THIS)
 	{
 		if (wd->win == NULL && !(wd->window->flags & SDL_WINDOW_FOREIGN) && (wd->winflags & SDL_AMIGA_WINDOW_SHOWN))
 		{
-			AMIGA_ShowWindow_Internal(wd->window);
+			AMIGA_ShowWindow_Internal(_this, wd->window);
 		}
 	}
 }
@@ -300,7 +300,7 @@ AMIGA_SetWindowSize(_THIS, SDL_Window * window)
 	{
 		SDL_VideoData *vd = data->videodata;
 		struct Screen *scr = vd->WScreen;
-		size_t bh = 0, h = window->h, w = window->w;
+		size_t bh = 0, h = window->h, w = window->w; 
 
 		if ((window->flags & SDL_WINDOW_BORDERLESS) == 0)
 		{
@@ -346,7 +346,7 @@ AMIGA_WindowToFront(struct Window *win)
 }
 
 void
-AMIGA_ShowWindow_Internal(SDL_Window * window)
+AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window) 
 {
 	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	SDL_VideoData *vd = data->videodata;
@@ -497,6 +497,7 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 			if (data->grabbed > 0)
 				DoMethod((Object *)data->win, WM_ObtainEvents);
 		}
+			
 	}
 	else if (data->win)
 	{
@@ -507,14 +508,13 @@ AMIGA_ShowWindow_Internal(SDL_Window * window)
 void
 AMIGA_ShowWindow(_THIS, SDL_Window * window)
 {
-	//SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	D("[%s]\n", __FUNCTION__);
 
-	AMIGA_ShowWindow_Internal(window);
+	AMIGA_ShowWindow_Internal(_this, window);
 }
 
 void
-AMIGA_HideWindow_Internal(SDL_Window * window)
+AMIGA_HideWindow_Internal(_THIS, SDL_Window * window)
 {
 	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 	D("[%s] 0x%08lx\n", __FUNCTION__, data->win);
@@ -533,7 +533,7 @@ AMIGA_HideWindow(_THIS, SDL_Window * window)
 	D("[%s]\n", __FUNCTION__);
 
 	data->winflags &= ~SDL_AMIGA_WINDOW_SHOWN;
-	AMIGA_HideWindow_Internal(window);
+	AMIGA_HideWindow_Internal(_this, window);
 }
 
 void
@@ -709,4 +709,43 @@ AMIGA_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo * info)
 	}
 }
 
+static void AMIGA_CloseWindow(SDL_Window *window) 
+{
+	
+	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+	D("[%s] 0x%08lx\n", __FUNCTION__, data->win);
+
+	if (data->win)
+	{
+		struct Window *win = data->win;
+		CloseWindow(win);
+		data->win = NULL;	
+	}
+}
+
+void
+AMIGA_SetWindowResizable(_THIS, SDL_Window * window, SDL_bool resizable)
+{
+	SDL_WindowData *data = window->driverdata;
+	D("[%s] 0x%08lx\n", __FUNCTION__, data->win);
+	
+    if (window->flags & SDL_WINDOW_FOREIGN) {
+        D("[%s] Cannot modify native window '%s'\n", __FUNCTION__, window->title);
+        return;
+    }
+
+    if (data->win) {
+        D("[%s] Closing system window '%s' before re-creation\n", __FUNCTION__, window->title);
+        AMIGA_CloseWindow(window);
+    }
+
+    AMIGA_ShowWindow_Internal(_this, window);
+
+    if (data->win) {
+        // Make sure the new window is active
+        AMIGA_ShowWindow(_this, window);
+    } else {
+        D("[%s] Failed to re-create window '%s'\n", __FUNCTION__, window->title);
+    }
+}
 /* vi: set ts=4 sw=4 expandtab: */

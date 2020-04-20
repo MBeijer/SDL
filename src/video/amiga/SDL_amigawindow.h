@@ -66,6 +66,7 @@ typedef struct
 extern void AMIGA_CloseWindows(_THIS);
 extern void AMIGA_OpenWindows(_THIS);
 
+
 extern int AMIGA_CreateWindow(_THIS, SDL_Window * window);
 extern int AMIGA_CreateWindowFrom(_THIS, SDL_Window * window, const void *data);
 extern void AMIGA_SetWindowTitle(_THIS, SDL_Window * window);
@@ -87,10 +88,11 @@ extern void AMIGA_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed);
 extern void AMIGA_DestroyWindow(_THIS, SDL_Window * window);
 extern SDL_bool AMIGA_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info);
 
-extern void AMIGA_ShowWindow_Internal(SDL_Window * window);
-extern void AMIGA_HideWindow_Internal(SDL_Window * window);
+extern void AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window);
+extern void AMIGA_HideWindow_Internal(_THIS, SDL_Window * window);
 
-//extern void AMIGA_SetWindowResizable (_THIS, SDL_Window * window, SDL_bool resizable);
+extern void AMIGA_SetWindowResizable (_THIS, SDL_Window * window, SDL_bool resizable);
+
 //extern int AMIGA_SetWindowOpacity(_THIS, SDL_Window * window, float opacity);
 //extern int AMIGA_GetWindowBordersSize(_THIS, SDL_Window * window, int * top, int * left, int * bottom, int * right);
 
