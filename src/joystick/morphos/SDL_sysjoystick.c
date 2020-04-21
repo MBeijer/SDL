@@ -23,7 +23,6 @@
 
 #ifdef SDL_JOYSTICK_MORPHOS
 
-#include "SDL_joystick.h"
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
 
@@ -131,12 +130,12 @@ SDL_SYS_JoystickInit(void)
 {
 	struct sensordata *s = SDL_malloc(sizeof(*s));
 	int rc = -1;
-	D("[SDL_SYS_JoystickInit]\n");
+	D("[%s]\n", __FUNCTION__);
 
 	if (s)
 	{
 		s->notifytask = SysBase->ThisTask;
-		D("[SDL_SYS_JoystickInit] Create sensor events worker thread...\n");
+		D("[%s] Create sensor events worker thread...\n", __FUNCTION__);
 
 		if (QueueWorkItem(threadpool, (THREADFUNC)sensor_events, s) == WORKITEM_INVALID)
 		{
@@ -154,21 +153,25 @@ SDL_SYS_JoystickInit(void)
 			while (s->sensorport == NULL)
 				Wait(SIGF_SINGLE);
 
-			D("[SDL_SYS_JoystickInit] Obtain sensor list...\n");
+			D("[%s] Obtain sensor list...\n", __FUNCTION__);
 			sensorlist = ObtainSensorsList((struct TagItem *)&sensortags), sensor = NULL;
 
 			while ((sensor = NextSensor(sensor, sensorlist, NULL)))
 			{
-				CONST_STRPTR name = "<unknown>", *serial = NULL;
-				ULONG *id;
-				
+				CONST_STRPTR name = "<unknown>", serial = NULL;
 				GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-				
-				GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
+								
+				size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
+					
+				//ULONG *id;
 
-				serial = va("#%lu", id);
+				//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
+
+				//serial = va("#%lu", id);
 				
-				if (id > 0)
+				D("[%s] name=%s, serial=%s\n", __FUNCTION__, name, serial);
+				
+				if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0)
 				{
 					size_t namelen = strlen(name) + 1;
 					struct joystick_hwdata *hwdata = SDL_malloc(sizeof(*hwdata) + namelen);
@@ -191,7 +194,7 @@ SDL_SYS_JoystickInit(void)
 
 			ReleaseSensorsList(sensorlist, NULL);
 
-			D("[SDL_SYS_JoystickInit] Found %ld joysticks...\n", count);
+			D("[%s] Found %ld joysticks...\n", __FUNCTION__, count);
 
 			s->joystick_count = count;
 			rc = count;
@@ -203,6 +206,7 @@ SDL_SYS_JoystickInit(void)
 
 static int SDL_SYS_JoystickGetCount(void)
 {
+		D("[%s]\n", __FUNCTION__);
 	return sensors->joystick_count;
 }
 
@@ -233,6 +237,7 @@ static void SDL_SYS_JoystickDetect(void)
 static const char *
 SDL_SYS_JoystickGetDeviceName(int device_index)
 {
+		D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	return hwdata->name;
 }
@@ -241,6 +246,7 @@ SDL_SYS_JoystickGetDeviceName(int device_index)
 static 
 SDL_JoystickID SDL_SYS_JoystickGetDeviceInstanceID(int device_index)
 {
+		D("[%s]\n", __FUNCTION__);
 	return device_index;
 }
 
@@ -358,6 +364,7 @@ static void GetJoyData(SDL_Joystick * joystick, struct joystick_hwdata *hwdata, 
 static int
 SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
+	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	int rc = -1;
 
@@ -367,27 +374,28 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 
 		while ((sensor = NextSensor(sensor, sensorlist, NULL)))
 		{
-			CONST_STRPTR name = "<unknown>";
-			ULONG *id;
-			//size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
+			CONST_STRPTR name = "<unknown>", serial = NULL;
+
+			size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
 			
 			GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
 			
-			GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
+			//ULONG *id;
+			//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
 			
-			//if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
-			if (id > 0 && strcmp(hwdata->name, name) == 0)
+			D("[%s] name=%s, serial=%s\n", __FUNCTION__, name, serial);
+			if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
 			{
-				/*SDL_JoystickGUID guid;
+				SDL_JoystickGUID guid;
 
 				strncpy((char *)&guid, serial, sizeof(guid));
 
 				if (memcmp(&hwdata->guid, &guid, sizeof(guid)) == 0)
-				{*/
+				{
 					GetJoyData(joystick, hwdata, sensor);
 					rc = 0;
 					break;
-				/*}*/
+				}
 			}
 		}	
 
@@ -400,6 +408,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 static void
 SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 {
+	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = joystick->hwdata;
 	struct sensornotify *sn;
 	void *buffer;
@@ -454,6 +463,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 void
 SDL_SYS_JoystickClose(SDL_Joystick * joystick)
 {
+	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = joystick->hwdata;
 
 	if (hwdata)
@@ -474,6 +484,7 @@ SDL_SYS_JoystickClose(SDL_Joystick * joystick)
 static void
 SDL_SYS_JoystickQuit(void)
 {
+	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata, *tmp;
 	struct sensordata *s = sensors;
 
@@ -491,6 +502,7 @@ SDL_SYS_JoystickGetDeviceGUID( int device_index )
 	struct joystick_hwdata *hwdata = GetByIndex(device_index);
 	return hwdata->guid;
 }
+
 static int
 SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {

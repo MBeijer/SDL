@@ -23,6 +23,8 @@
 
 #ifdef SDL_JOYSTICK_MORPHOS
 
+#include "SDL_joystick.h"
+
 #ifndef EXEC_LISTS_H
 #include <exec/lists.h>
 #endif
