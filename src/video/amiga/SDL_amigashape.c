@@ -84,7 +84,7 @@ AMIGA_ShapeToRegion(struct Region *region, SDL_Surface *shape, const SDL_WindowS
 
 		for (x = 0; x < shape->w; x++)
 		{
-			Uint32 pixel_value, mask_value;
+			Uint32 pixel_value = 0, mask_value = 0;
 			Uint8 *pixel = (Uint8 *)(pixels) + (y * pitch) + (x * bpr);
 			Uint8 r, g, b, alpha;
 

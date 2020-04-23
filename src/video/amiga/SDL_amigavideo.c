@@ -157,7 +157,7 @@ AMIGA_VideoInit(_THIS)
 static void
 AMIGA_VideoQuit(_THIS)
 {
-	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
+	//SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	D("[%s]\n", __FUNCTION__);
 
 	AMIGA_CloseWindows(_this);

@@ -148,7 +148,7 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 static void
 AMIGA_MouseMove(const struct IntuiMessage *m, SDL_WindowData *data)
 {
-	SDL_Mouse *mouse = SDL_GetMouse();
+	//SDL_Mouse *mouse = SDL_GetMouse();
 
 	if (!SDL_GetRelativeMouseMode()) 
 	{

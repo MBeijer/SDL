@@ -448,7 +448,7 @@ static size_t SDLCALL
 amiga_file_read(SDL_RWops *context, void *ptr, size_t size, size_t maxnum)
 {
     size_t rsize = size * maxnum, result;
-    D("[%s]\n", __FUNCTION__);
+    //D("[%s]\n", __FUNCTION__);
 
     if (context->hidden.amigaio.Readable)
     {
@@ -469,7 +469,7 @@ static size_t SDLCALL
 amiga_file_write(SDL_RWops *context, const void *ptr, size_t size, size_t num)
 {
     size_t wnum = 0;
-    D("[%s]\n", __FUNCTION__);
+    //D("[%s]\n", __FUNCTION__);
 
     if (context->hidden.amigaio.Writable)
     {
@@ -537,9 +537,7 @@ SDL_RWops * SDL_RWFromFP_clib_REAL(void *fp,
     }
     return(rwops);
 }
-#endif
-
-#ifdef HAVE_STDIO_H
+#elif defined(HAVE_STDIO_H)
 
 #ifdef HAVE_FOPEN64
 #define fopen   fopen64

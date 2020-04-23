@@ -1,11 +1,10 @@
-# Makefile to build the SDL 2
+# Makefile to build the SDL 2 Library
 
-CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
-#CC      = ppc-morphos-gcc-9 -noixemul
+#CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
+CC      = ppc-morphos-gcc-9 -noixemul
 INCLUDE = -I../../../../include -I../sdk
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -Wall -Wno-pointer-sign -fno-strict-aliasing -D_LARGEFILE64_SOURCE
-AR	= ar
-RANLIB	= ranlib
+AR	= ppc-morphos-ar
 
 ECHE = echo -e
 BOLD = \033[1m
@@ -52,27 +51,24 @@ lib/libSDL2.a: sdl-startup.o SDL_amigagl_wrapper.o ../sdk/fd/sdl2_lib.fd
 	@mkdir -p lib
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --gluelib=$@
-	@$(AR) cru $@ sdl-startup.o SDL_amigagl_wrapper.o
-	@ppc-morphos-ranlib $@
+	@$(AR) crus $@ sdl-startup.o SDL_amigagl_wrapper.o
 
 lib/libb32/libSDL2.a: sdl-startup-brel.o SDL_amigagl_wrapper-brel.o ../sdk/fd/sdl2_lib.fd
 	$(ARCHIVING)
 	@mkdir -p lib/libb32
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --brelgluelib=$@
-	@$(AR) cru $@ sdl-startup-brel.o SDL_amigagl_wrapper-brel.o
-	@ppc-morphos-ranlib $@
+	@$(AR) crus $@ sdl-startup-brel.o SDL_amigagl_wrapper-brel.o
 
 lib/libb32/libSDL2-nc.a: sdl-startup-brel-nc.o SDL_amigagl_wrapper-nc.o ../sdk/fd/sdl2_lib.fd
 	$(ARCHIVING)
 	@mkdir -p lib/libb32
 	@-rm -f $@
 	@cvinclude.pl --fd=../sdk/fd/sdl2_lib.fd --clib=../sdk/clib/sdl2_protos.h --brelgluelib=$@
-	@$(AR) cru $@ sdl-startup-brel-nc.o SDL_amigagl_wrapper-nc.o
-	@ppc-morphos-ranlib $@
+	@$(AR) crus $@ sdl-startup-brel-nc.o SDL_amigagl_wrapper-nc.o
 
 clean:
 	@-rm -rf lib *.s *.o
 
 dump:
-	objdump --disassemble-all --reloc lib/libSDL2.a >lib/libSDL2.s
+	ppc-morphos-objdump --disassemble-all --reloc lib/libSDL2.a >lib/libSDL2.s

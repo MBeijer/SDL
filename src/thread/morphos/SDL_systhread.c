@@ -64,13 +64,21 @@ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
 {
 	ssize_t pri = 0;
 
-	switch (priority)
-	{
-		case SDL_THREAD_PRIORITY_LOW: pri = -5; break;
-		case SDL_THREAD_PRIORITY_NORMAL: pri = 0; break;
-		case SDL_THREAD_PRIORITY_HIGH: pri = 5; break;
-	}
-
+    switch (priority) {
+        case SDL_THREAD_PRIORITY_LOW:
+            pri = -5;
+            break;
+        case SDL_THREAD_PRIORITY_HIGH:
+            pri = 5;
+            break;
+        case SDL_THREAD_PRIORITY_TIME_CRITICAL:
+            pri = 10;
+            break;
+        default:
+            pri = 0;
+            break;
+    }
+	
 	SetTaskPri(SysBase->ThisTask, pri);
 	return 0;
 }

@@ -292,7 +292,7 @@ static void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 		data_ext = ReadJoyPort(index + JP_ANALOGUE_PORT_MAGIC);
 #endif
 
-	D("[%s] joystick 0x%08lx index %d data 0x%08lx data_ext 0x%08lx\n", __FUNCTION__, joystick, index, data, data_ext);
+	//D("[%s] joystick 0x%08lx index %d data 0x%08lx data_ext 0x%08lx\n", __FUNCTION__, joystick, index, data, data_ext);
 
 	/* only send an event when something changed */
 

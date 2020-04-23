@@ -3,11 +3,11 @@
 # Enable debug with -D__SDL_DEBUG
 
 CDEFS   = -DAROS_ALMOST_COMPATIBLE -DBUILD_SDL2_LIBRARY -D__SDL_DEBUG
-CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
-#CC      = ppc-morphos-gcc-9 -noixemul
+#CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
+CC      = ppc-morphos-gcc-9 -noixemul
 INCLUDE = -I./include
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
-AR	= ppc-morphos-ar
+AR      = ppc-morphos-ar
 
 AMIGADATE = $(shell date +"%-d.%-m.%Y")
 
@@ -93,7 +93,7 @@ src/core/morphos/SDL_cpu.o: src/core/morphos/SDL_cpu.c
 
 src/core/morphos/SDL_library.o: src/core/morphos/SDL_library.c src/core/morphos/SDL_library.h src/core/morphos/SDL_stubs.h
 	$(COMPILING)
-	@$(CC) -mcpu=750 -O2 $(INCLUDE) -Wall -fno-strict-aliasing  -D__AMIGADATE__=\"$(AMIGADATE)\" -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
+	@$(CC) -mcpu=750 $(INCLUDE) -Wall -fno-strict-aliasing -D__AMIGADATE__=\"$(AMIGADATE)\" -DAROS_ALMOST_COMPATIBLE -o $@ -c $*.c
 
 $(TARGET): $(OBJECTS)
 	$(ARCHIVING)
@@ -110,4 +110,4 @@ clean:
 	@cd src/core/morphos/devenv; if ! $(MAKE) $(MAKECMDGOALS); then exit 1; fi;
 
 dump:
-	objdump --disassemble-all --reloc $(LIBRARY).db >$(LIBRARY).s
+	ppc-morphos-objdump --disassemble-all --reloc $(LIBRARY).db >$(LIBRARY).s

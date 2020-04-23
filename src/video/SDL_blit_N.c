@@ -68,16 +68,7 @@ GetL3CacheSize(void)
 
     return result;
 }
-#else
-static size_t
-GetL3CacheSize(void)
-{
-    /* XXX: Just guess G4 */
-    return 2097152;
-}
-#endif /* __MACOSX__ */
-
-#if defined(__MORPHOS__)
+#elif defined(__MORPHOS__)
 #include <exec/system.h>
 #include <proto/exec.h>
 
@@ -87,7 +78,7 @@ SDL_IsG5(void)
     size_t is_g5 = 0;
     char *cpu_family;
 
-    if (NewGetSystemAttrs(&cpu_family, sizeof(cpu_family), SYSTEMINFOTYPE_CPUFAMILYNAME, TAG_DONE))
+    if (NewGetSystemAttrsA(&cpu_family, sizeof(cpu_family), SYSTEMINFOTYPE_CPUFAMILYNAME, NULL))
     {
         if (cpu_family && stricmp(cpu_family, "G5") == 0)
             is_g5 = 1;
@@ -95,7 +86,14 @@ SDL_IsG5(void)
 
     return is_g5;
 }
-#endif
+#else
+static size_t
+GetL3CacheSize(void)
+{
+    /* XXX: Just guess G4 */
+    return 2097152;
+}
+#endif /* __MACOSX__ */
 
 #if ((defined(__MACOSX__) || defined(__MORPHOS__)) && (__GNUC__ < 4))
 #define VECUINT8_LITERAL(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
@@ -942,12 +940,12 @@ GetBlitFeatures(void)
                         /* Feature 2 is has-AltiVec */
                         | ((SDL_HasAltiVec())? BLIT_FEATURE_HAS_ALTIVEC : 0)
                         /* Feature 4 is dont-use-prefetch */
-			#if defined(__MORPHOS__)
-                        | (SDL_IsG5() ? 4 : 0)
-                        #else
+#if defined(__MORPHOS__)
+                        | (SDL_IsG5() ? BLIT_FEATURE_ALTIVEC_DONT_USE_PREFETCH : 0)
+#else
                         /* !!!! FIXME: Check for G5 or later, not the cache size! Always prefetch on a G4. */
                         | ((GetL3CacheSize() == 0) ? BLIT_FEATURE_ALTIVEC_DONT_USE_PREFETCH : 0)
-			#endif
+#endif
                 );
         }
     }

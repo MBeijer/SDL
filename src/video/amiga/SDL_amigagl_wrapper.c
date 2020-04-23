@@ -1622,7 +1622,11 @@ static void AmiglTexSubImage1D( GLenum target, GLint level,
                      GLint xoffset,
                      GLsizei width, GLenum format,
                      GLenum type, const GLvoid *pixels ) {
+						 #ifndef __MORPHOS__
         glTexSubImage1D(target, level, xoffset, width, format, type, pixels);
+						 #else
+		   glTexSubImage1D(target, level, xoffset, width, format, type, (GLvoid *)pixels);				 
+						 #endif
  }
 
 static void AmiglTexSubImage2D( GLenum target, GLint level,
@@ -1630,8 +1634,11 @@ static void AmiglTexSubImage2D( GLenum target, GLint level,
                      GLsizei width, GLsizei height,
                      GLenum format, GLenum type,
                      GLvoid *pixels ) {
-
+#ifndef __MORPHOS__
         glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+						 #else
+		  glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, (GLvoid *)pixels);				 
+						 #endif
  }
 
 static void AmiglCopyTexImage1D( GLenum target, GLint level,
@@ -1854,7 +1861,7 @@ static void AmiglColorTableEXT( GLenum target, GLenum internalformat,
 #ifndef __MORPHOS__
         glColorTableEXT(target, internalformat, width, format, type, table);
 #else
-        glColorTable(target, internalformat, width, format, type, table);
+        glColorTable(target, internalformat, width, format, type, (GLvoid *)table);
 #endif
  }
 
@@ -2022,7 +2029,11 @@ static void AmiglPointParameterfvEXT( GLenum pname, GLfloat *params ) {
 /* 1.2 functions */
 static void AmiglDrawRangeElements( GLenum mode, GLuint start,
     GLuint end, GLsizei count, GLenum type, const GLvoid *indices ) {
+		#ifndef __MORPHOS__
         glDrawRangeElements(mode, start, end, count, type, indices);
+		#else
+		glDrawRangeElements(mode, start, end, count, type, (GLvoid *)indices);
+		#endif
  }
 
 static void AmiglTexImage3D( GLenum target, GLint level,
