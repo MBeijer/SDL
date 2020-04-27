@@ -60,6 +60,10 @@
 #include <kernel/OS.h>
 #endif
 
+#ifdef __amigaos4__
+#include <proto/exec.h>
+#endif
+
 #include "SDL_assert.h"
 
 #ifndef __NACL__
@@ -110,7 +114,7 @@ SDL_SYS_CreateThread(SDL_Thread * thread, void *args)
         return SDL_SetError("Couldn't initialize pthread attributes");
     }
     pthread_attr_setdetachstate(&type, PTHREAD_CREATE_JOINABLE);
-    
+
     /* Set caller-requested stack size. Otherwise: use the system default. */
     if (thread->stacksize) {
         pthread_attr_setstacksize(&type, thread->stacksize);
@@ -127,7 +131,7 @@ SDL_SYS_CreateThread(SDL_Thread * thread, void *args)
 void
 SDL_SYS_SetupThread(const char *name)
 {
-#if !defined(__NACL__)
+#if !defined(__NACL__) && !defined(__AMIGAOS4__)
     int i;
     sigset_t mask;
 #endif /* !__NACL__ */
@@ -160,7 +164,7 @@ SDL_SYS_SetupThread(const char *name)
     }
 
    /* NativeClient does not yet support signals.*/
-#if !defined(__NACL__)
+#if !defined(__NACL__) && !defined(__AMIGAOS4__)
     /* Mask asynchronous signals for this thread */
     sigemptyset(&mask);
     for (i = 0; sig_list[i]; ++i) {
@@ -204,7 +208,22 @@ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
     } else {
         value = 0;
     }
+
     return SDL_LinuxSetThreadPriority(thread, value);
+#elif defined(__AMIGAOS4__)
+    int value;
+
+    if (priority == SDL_THREAD_PRIORITY_LOW) {
+        value = -5;
+    } else if (priority == SDL_THREAD_PRIORITY_HIGH) {
+        value = 5;
+    } else if (priority == SDL_THREAD_PRIORITY_TIME_CRITICAL) {
+        value = 10; /* TODO: AmigaOS priorities need checking and testing... */
+    } else {
+        value = 0;
+    }
+    IExec->SetTaskPri(IExec->FindTask(NULL), value);
+    return 0;
 #else
     struct sched_param sched;
     int policy;

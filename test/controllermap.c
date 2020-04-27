@@ -52,7 +52,7 @@ enum
 
 #define BINDING_COUNT (SDL_CONTROLLER_BUTTON_MAX + SDL_CONTROLLER_BINDING_AXIS_MAX)
 
-static struct 
+static struct
 {
     int x, y;
     double angle;
@@ -150,7 +150,7 @@ typedef struct
 
 static int s_nNumAxes;
 static AxisState *s_arrAxisState;
-    
+
 static int s_iCurrentBinding;
 static Uint32 s_unPendingAdvanceTime;
 static SDL_bool s_bBindingComplete;
@@ -306,7 +306,7 @@ ConfigureBinding(const SDL_GameControllerExtendedBind *pBinding)
     if (pCurrent->bindType != SDL_CONTROLLER_BINDTYPE_NONE) {
         SDL_bool bNativeDPad, bCurrentDPad;
         SDL_bool bNativeAxis, bCurrentAxis;
-        
+
         bNativeDPad = (iCurrentElement == SDL_CONTROLLER_BUTTON_DPAD_UP ||
                        iCurrentElement == SDL_CONTROLLER_BUTTON_DPAD_DOWN ||
                        iCurrentElement == SDL_CONTROLLER_BUTTON_DPAD_LEFT ||
@@ -359,7 +359,7 @@ WatchJoystick(SDL_Joystick * joystick)
 {
     SDL_Window *window = NULL;
     SDL_Renderer *screen = NULL;
-    SDL_Texture *background, *button, *axis, *marker;
+    SDL_Texture *background, *button, *axis, *marker = NULL;
     const char *name = NULL;
     SDL_bool done = SDL_FALSE;
     SDL_Event event;
@@ -383,7 +383,7 @@ WatchJoystick(SDL_Joystick * joystick)
         SDL_DestroyWindow(window);
         return;
     }
-    
+
     background = LoadTexture(screen, "controllermap.bmp", SDL_FALSE);
     button = LoadTexture(screen, "button.bmp", SDL_TRUE);
     axis = LoadTexture(screen, "axis.bmp", SDL_TRUE);
@@ -399,7 +399,7 @@ WatchJoystick(SDL_Joystick * joystick)
     SDL_Log("Joystick has %d axes, %d hats, %d balls, and %d buttons\n",
            SDL_JoystickNumAxes(joystick), SDL_JoystickNumHats(joystick),
            SDL_JoystickNumBalls(joystick), SDL_JoystickNumButtons(joystick));
-    
+
     SDL_Log("\n\n\
     ====================================================================================\n\
     Press the buttons on your controller when indicated\n\
@@ -433,7 +433,7 @@ WatchJoystick(SDL_Joystick * joystick)
             default:
                 break;
         }
-        
+
         dst.x = s_arrBindingDisplay[iElement].x;
         dst.y = s_arrBindingDisplay[iElement].y;
         SDL_QueryTexture(marker, NULL, NULL, &dst.w, &dst.h);
@@ -456,7 +456,7 @@ WatchJoystick(SDL_Joystick * joystick)
         SDL_SetTextureColorMod(marker, 10, 255, 21);
         SDL_RenderCopyEx(screen, marker, NULL, &dst, s_arrBindingDisplay[iElement].angle, NULL, SDL_FLIP_NONE);
         SDL_RenderPresent(screen);
-            
+
         while (SDL_PollEvent(&event) > 0) {
             switch (event.type) {
             case SDL_JOYDEVICEREMOVED:
@@ -703,7 +703,7 @@ WatchJoystick(SDL_Joystick * joystick)
 
     SDL_free(s_arrAxisState);
     s_arrAxisState = NULL;
-    
+
     SDL_DestroyRenderer(screen);
     SDL_DestroyWindow(window);
 }
@@ -771,6 +771,7 @@ main(int argc, char *argv[])
         SDL_Log("\n\nUsage: ./controllermap number\nFor example: ./controllermap 0\nOr: ./controllermap 0 >> gamecontrollerdb.txt");
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
+    SDL_Quit();
 
     return 0;
 }
