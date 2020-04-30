@@ -271,7 +271,7 @@ AMIGA_InitMouse(_THIS)
 	mouse->WarpMouse = AMIGA_WarpMouse;
 	mouse->SetRelativeMouseMode = AMIGA_SetRelativeMouseMode;
 
-	//SDL_SetDefaultCursor(WIN_CreateDefaultCursor());
+	SDL_SetDefaultCursor(AMIGA_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
 	//SDL_SetDoubleClickTime(GetDoubleClickTime());
 }
 
