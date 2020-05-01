@@ -24,6 +24,7 @@
 #include "SDL_amigavideo.h"
 
 #include "../../events/SDL_mouse_c.h"
+#include "SDL_hints.h"
 
 #include <cybergraphx/cybergraphics.h>
 #include <devices/input.h>
@@ -32,7 +33,8 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
-
+#include <proto/dos.h>
+#include <dos/rdargs.h>
 
 static SDL_Cursor *
 AMIGA_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
@@ -183,11 +185,11 @@ AMIGA_WarpMouse(SDL_Window * window, int x, int y)
 	D("[%s]\n", __FUNCTION__);
 
 		BOOL warpHostPointer;
-	
+
 	warpHostPointer = !SDL_GetRelativeMouseMode() && (window == SDL_GetMouseFocus());
-	
+
 	if (warpHostPointer) {
-	
+
 		if ((win = data->win))
 		{
 			struct MsgPort port;
@@ -259,10 +261,53 @@ AMIGA_SetRelativeMouseMode(SDL_bool enabled)
 	return 0;
 }
 
+static Uint32
+AMIGA_GetDoubleClickTimeInMillis(_THIS)
+{
+    Uint32 interval = 500;
+
+#ifdef __MORPHOS__
+    struct RDArgs rda;
+    SDL_memset(&rda, 0, sizeof(rda));
+    rda.RDA_Source.CS_Buffer = (STRPTR)SDL_LoadFile("ENV:sys/mouse.conf", (size_t *)&rda.RDA_Source.CS_Length);
+    if (rda.RDA_Source.CS_Buffer) {
+        LONG *array[4] = {0};
+        if (ReadArgs("Pointer/K,RMBEmulationQualifier/K,DoubleClickS/N/K,DoubleClickM/N/K,/F", (LONG *)array, &rda)) {
+            interval = *array[2] * 1000 + *array[3] / 1000;
+	    	FreeArgs(&rda);
+        }
+        SDL_free(rda.RDA_Source.CS_Buffer);
+    }
+#else
+    struct IFFHandle *iffhandle;
+    if ((iffhandle = AllocIFF())) {
+        if ((iffhandle->iff_Stream = (ULONG)Open("ENV:Sys/input.prefs", MODE_OLDFILE))) {
+            InitIFFasDOS(iffhandle);
+            if (!OpenIFF(iffhandle, IFFF_READ)) {
+                PropChunk(iffhandle, ID_PREF, ID_INPT);
+                while (!ParseIFF(iffhandle, IFFPARSE_STEP)) {
+                    struct StoredProperty *sp;
+                    if ((sp = FindProp(iffhandle, ID_PREF, ID_INPT))) {
+                        struct InputPrefs *ip = (struct InputPrefs *)sp->sp_Data;
+                        interval = ip->ip_DoubleClick.tv_secs * 1000 + ip->ip_DoubleClick.tv_micro / 1000;
+                        break;
+                    }
+                }
+                CloseIFF(iffhandle);
+            }
+            Close(iffhandle->iff_Stream);
+        }
+        FreeIFF(iffhandle);
+    }
+#endif
+    return interval;
+}
+
 void
 AMIGA_InitMouse(_THIS)
 {
 	SDL_Mouse *mouse = SDL_GetMouse();
+	char buffer[16];
 
 	mouse->CreateCursor = AMIGA_CreateCursor;
 	mouse->CreateSystemCursor = AMIGA_CreateSystemCursor;
@@ -272,7 +317,7 @@ AMIGA_InitMouse(_THIS)
 	mouse->SetRelativeMouseMode = AMIGA_SetRelativeMouseMode;
 
 	SDL_SetDefaultCursor(AMIGA_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
-	//SDL_SetDoubleClickTime(GetDoubleClickTime());
+	SDL_SetHint(SDL_HINT_MOUSE_DOUBLE_CLICK_TIME,  SDL_uitoa(AMIGA_GetDoubleClickTimeInMillis(_this), buffer, 10));
 }
 
 void
