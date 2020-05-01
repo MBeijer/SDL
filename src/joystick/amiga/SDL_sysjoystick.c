@@ -382,7 +382,7 @@ static void SDL_SYS_JoystickClose(SDL_Joystick *joystick)
 
 	if(LowLevelBase)	/* ne to reinitialize */
 	{
-		int index = PortIndex(joystick->instance_id);
+		//int index = PortIndex(joystick->instance_id);
 		//SetJoyPortAttrs(index, SJA_Type, SJA_TYPE_AUTOSENSE, TAG_END);
 	}
 

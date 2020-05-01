@@ -32,6 +32,7 @@
 #include "SDL_amigavideo.h"
 #include "SDL_amigamodes.h"
 #include "SDL_amigamouse.h"
+#include "SDL_amigaopengl.h"
 
 #include <sys/param.h>
 

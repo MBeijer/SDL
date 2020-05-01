@@ -23,7 +23,7 @@
 #ifndef _SDL_amigamouse_h
 #define _SDL_amigamouse_h
 
-#include "../../events/SDL_mouse_c.h"
+#include "SDL_amigavideo.h"
 
 #define IS_SYSTEM_CURSOR(cursor) (cursor == NULL || ((size_t)(cursor)->driverdata) < POINTERTYPE_NUMTYPES)
 

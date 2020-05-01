@@ -21,7 +21,7 @@
 #if defined(__NO_SDL_CONSTRUCTORS)
 extern struct Library *SDL2Base;
 #else
-void _INIT_4_SDL2Base(void) __attribute__((alias("__CSTP_init_SDL2Base")));
+int _INIT_4_SDL2Base(void) __attribute__((alias("__CSTP_init_SDL2Base")));
 void _EXIT_4_SDL2Base(void) __attribute__((alias("__DSTP_cleanup_SDL2Base")));
 //void _INIT_4_TinyGLBase(void) __attribute__((alias("__CSTP_init_TinyGLBase")));
 //void _EXIT_4_TinyGLBase(void) __attribute__((alias("__DSTP_cleanup_TinyGLBase")));
@@ -111,7 +111,7 @@ static DESTRUCTOR_P(cleanup_SDL2Base, 100)
  */
 #include <stdlib.h>
 
-void _getenv(void) __attribute__((alias("SDL_getenv")));
+char *_getenv(const char *) __attribute__((alias("SDL_getenv")));
 
 static const char home[] = "PROGDIR:home";
 

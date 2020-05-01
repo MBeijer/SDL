@@ -52,8 +52,8 @@ void *SDL_calloc(size_t nmemb, size_t size);
 void *SDL_realloc(void *mem, size_t size);
 void SDL_free(void *mem);
 
-char *SDL_getenv(const char *name);
-int SDL_setenv(const char *name, const char *value, int overwrite);
+//char *SDL_getenv(const char *name);
+//int SDL_setenv(const char *name, const char *value, int overwrite);
 
 void SDL_qsort(void *base, size_t nmemb, size_t size, int (*compare) (const void *, const void *));
 
@@ -365,7 +365,7 @@ void SDL_DestroyRenderer(SDL_Renderer * renderer);
 int SDL_GL_BindTexture(SDL_Texture *texture, float *texw, float *texh);
 int SDL_GL_UnbindTexture(SDL_Texture *texture);
 SDL_RWops *SDL_RWFromFile(const char *file, const char *mode);
-SDL_RWops *SDL_RWFromFP(FILE * fp, SDL_bool autoclose);
+//SDL_RWops *SDL_RWFromFP(FILE * fp, SDL_bool autoclose);
 SDL_RWops *SDL_RWFromMem(void *mem, int size);
 SDL_RWops *SDL_RWFromConstMem(const void *mem, int size);
 SDL_RWops *SDL_AllocRW(void);

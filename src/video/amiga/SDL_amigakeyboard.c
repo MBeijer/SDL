@@ -20,8 +20,8 @@
 */
 #include "../../SDL_internal.h"
 
+#include "../SDL_sysvideo.h"
 #include "../../events/SDL_keyboard_c.h"
-
 #include "../../events/scancodes_amiga.h"
 
 #include <proto/keymap.h>
@@ -78,7 +78,7 @@ static void AMIGA_UpdateKeymap(_THIS)
 
 void AMIGA_InitKeyboard(_THIS)
 {
-    AMIGA_UpdateKeymap(_THIS);
+    AMIGA_UpdateKeymap(_this);
   
     SDL_SetScancodeName(SDL_SCANCODE_APPLICATION, "Menu");
     SDL_SetScancodeName(SDL_SCANCODE_LGUI, "Left Command");
