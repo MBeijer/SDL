@@ -43,8 +43,12 @@
 #define DEADZONE_MIN (-0.05)
 #define DEADZONE_MAX (0.05)
 
-#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
+#define JOYSTICK_MIN -1.0
+#define JOYSTICK_MAX 1.0
 
+#define CLAMP(val) \
+			(((val) <= (DEADZONE_MAX) && (val) >= (DEADZONE_MIN)) ? (0) : \
+			((val) > (JOYSTICK_MAX)) ? (JOYSTICK_MAX) : (((val) < (JOYSTICK_MIN)) ? (JOYSTICK_MIN) : (val)))
 //#define HOT_PLUG
 #define MAX_JOYSTICKS 32
 
@@ -252,20 +256,14 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 					SENSORS_HIDInput_Z_Index, (IPTR)&z_value,
 					TAG_DONE);
 
-				if (x_value >= DEADZONE_MAX || x_value <= DEADZONE_MIN) {
-					sval = (Sint16)(CLAMP(x_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j, sval);
-				}
+				sval = (Sint16)(CLAMP(x_value) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j, sval);
 
-				if (y_value >= DEADZONE_MAX || y_value <= DEADZONE_MIN) {
-					sval = (Sint16)(CLAMP(y_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j+1, sval);
-				}
+				sval = (Sint16)(CLAMP(y_value) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j+1, sval);
 
-				if (z_value >= DEADZONE_MAX || z_value <= DEADZONE_MIN) {
-					sval = (Sint16)(CLAMP(z_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j+2, sval);
-				}
+				sval = (Sint16)(CLAMP(z_value) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j+2, sval);
 
 				j += 3;
 				break;
@@ -273,10 +271,8 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 			case SensorType_HIDInput_Analog:
 				GetSensorAttrTags(hwdata->stick[i], SENSORS_HIDInput_Value, (IPTR)&btn_value, TAG_DONE);
 
-				if (btn_value >= DEADZONE_MAX || btn_value <= DEADZONE_MIN) {
-					sval = (Sint16)(btn_value * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j, sval);
-				}
+				sval = (Sint16)(btn_value * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j, sval);
 
 				j++;
 				break;
@@ -287,16 +283,11 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 					SENSORS_HIDInput_NS_Value, (IPTR)&ns_value,
 					TAG_DONE);
 
-				
-				if (ew_value >= DEADZONE_MAX || ew_value <= DEADZONE_MIN) {
-					sval = (Sint16)(CLAMP(ew_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j, sval);
-				}
+				sval = (Sint16)(CLAMP(ew_value) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j, sval);
 
-				if (ns_value >= DEADZONE_MAX || ns_value <= DEADZONE_MIN) {
-					sval = (Sint16)(CLAMP(ns_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
-					SDL_PrivateJoystickAxis(joystick, j+1, sval);
-				}
+				sval = (Sint16)(CLAMP(ns_value) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j+1, sval);
 
 				j += 2;
 				break;
