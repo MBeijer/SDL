@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,58 +25,24 @@
 
 #include "SDL_joystick.h"
 
-#ifndef EXEC_LISTS_H
-#include <exec/lists.h>
-#endif
-
-typedef unsigned int uint32;
-typedef signed int int32;
-
-#define MAX_JOYSTICKS       32
-
-#define MAX_AXES            8
 #define MAX_BUTTONS         16
 #define MAX_HATS            8
 
-struct sensordata
-{
-	struct MsgPort *sensorport;
-	struct MinList  sensorlist;
-	int             joystick_count;
-
-	struct Task    *notifytask;
-};
+#define MAX_STICKS           8
 
 struct joystick_hwdata
 {
-	struct MinNode node;
-	struct MinList notifylist;
+	APTR main_sensor; // Main HID sensor
+	APTR child_sensors; // List of specific sub-sensor entries
+	APTR button[MAX_BUTTONS]; // SensorType_HIDInput_Trigger
+	APTR hat[MAX_HATS]; // SensorType_HIDInput_Stick
+	APTR stick[MAX_STICKS]; // SensorType_HIDInput_Analog, SensorType_HIDInput_AnalogStick, SensorType_HIDInput_3DStick
+	ULONG stickType[MAX_STICKS];
+	int numSticks;
 
-	ULONG attached;
-	SDL_JoystickGUID guid;
-	TEXT name[0];
-	
-    //AIN_DeviceHandle   *handle;
-    //APTR                context;
-
-    uint32              axisBufferOffset[MAX_AXES];
-    int32               axisData[MAX_AXES];
-    TEXT                axisName[MAX_AXES][32];
-
-    uint32              buttonBufferOffset[MAX_BUTTONS];
-    int32               buttonData[MAX_BUTTONS];
-
-    uint32              hatBufferOffset[MAX_HATS];
-    int32               hatData[MAX_HATS];
-};
-
-
-struct sensornotify
-{
-	struct MinNode node;
-	APTR   notifyptr;
-	ULONG  type;
-	DOUBLE values[0];
+	// hot plug support
+	struct MsgPort *notifyPort;
+	APTR sensorsNotify;
 };
 
 #endif

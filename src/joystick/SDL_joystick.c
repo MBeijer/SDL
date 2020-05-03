@@ -1468,10 +1468,18 @@ void SDL_GetJoystickGUIDInfo(SDL_JoystickGUID guid, Uint16 *vendor, Uint16 *prod
         /* guid16[6] is product version */
    ) {
         if (vendor) {
+			#ifdef __MORPHOS__
+			*vendor = SDL_SwapLE16(guid16[2]);
+			#else
             *vendor = guid16[2];
+			#endif
         }
         if (product) {
+			#ifdef __MORPHOS__
+			*product = SDL_SwapLE16(guid16[4]);
+			#else
             *product = guid16[4];
+			#endif
         }
         if (version) {
             *version = guid16[6];

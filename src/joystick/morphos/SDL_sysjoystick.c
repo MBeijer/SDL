@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,6 +25,8 @@
 
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
+#include "SDL_endian.h"
+#include "SDL_joystick.h"
 
 #include <dos/dos.h>
 #include <exec/execbase.h>
@@ -37,89 +39,22 @@
 #include <proto/threadpool.h>
 #include <proto/utility.h>
 
-#define BUFFER_OFFSET(buffer, offset)   (((int32 *)buffer)[offset])
-#define BUFFER_SIZE (256)
+// SDL2 deadzone is around 409, we need 1638
+#define DEADZONE_MIN (-0.05)
+#define DEADZONE_MAX (0.05)
 
-static const size_t sensortags[] = { SENSORS_Class, SensorClass_HID, SENSORS_Type, SensorType_HID_Gamepad, TAG_DONE };
-static struct sensordata *sensors;
+#define CLAMP(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
-extern APTR threadpool;
+//#define HOT_PLUG
+#define MAX_JOYSTICKS 32
 
-static char *va(char *fmt, ...) {
-	va_list ap;
-	static char string[2][BUFFER_SIZE];
-	static unsigned int index = 0;
-	char *buf;
-	
-	buf = string[index & 1];
-	index++;
-	
-	va_start(ap, fmt);
-	vsnprintf(buf, BUFFER_SIZE, fmt, ap);
-	va_end(ap);
-	
-	return buf;	
-}
+APTR sensorlist;
+APTR JoySensor[MAX_JOYSTICKS];
+int joystick_count;
 
-static void sensor_events(struct sensordata *sensors, struct MsgPort *port)
+static int SDL_SYS_JoystickGetCount(void)
 {
-	struct SensorsNotificationMessage *snm;
-
-	sensors->sensorport = port;
-
-	Signal(sensors->notifytask, SIGF_SINGLE);
-
-	for (;;)
-	{
-		ULONG sigs = Wait(1 << port->mp_SigBit | SIGBREAKF_CTRL_C);
-
-		if (sigs & SIGBREAKF_CTRL_C)
-			break;
-
-		snm = (struct SensorsNotificationMessage *)GetMsg(port);
-
-		// a NULL snm->Sensor means it's a class list change notification!
-		if (snm->Sensor == NULL)
-		{
-		}
-		else
-		{
-			struct TagItem *tag, *tags = snm->Notifications;
-			struct sensornotify *sn = snm->UserData;
-
-			while ((tag = NextTagItem(&tags)))
-			{
-				DOUBLE *ptr = (DOUBLE *)tag->ti_Data;
-
-				switch (tag->ti_Tag)
-				{
-					case SENSORS_HIDInput_Value:
-						if (sn->type == SensorType_HIDInput_Trigger)
-							sn->values[0] = *ptr;
-						break;
-
-					case SENSORS_HIDInput_Y_Index:
-					case SENSORS_HIDInput_NS_Value:
-						sn->values[1] = *ptr;
-						break;
-
-					case SENSORS_HIDInput_X_Index:
-					case SENSORS_HIDInput_EW_Value:
-						sn->values[0] = *ptr;
-						break;
-
-					case SENSORS_HIDInput_Z_Index:
-						sn->values[2] = *ptr;
-						break;
-				}
-			}
-		}
-	
-		ReplyMsg(&snm->Msg);
-	}
-
-	while ((snm = (APTR)GetMsg(port)))
-		ReplyMsg(&snm->Msg);
+	return joystick_count;
 }
 
 /* Function to scan the system for joysticks.
@@ -128,108 +63,26 @@ static void sensor_events(struct sensordata *sensors, struct MsgPort *port)
 static int
 SDL_SYS_JoystickInit(void)
 {
-	struct sensordata *s = SDL_malloc(sizeof(*s));
 	int rc = -1;
-	D("[%s]\n", __FUNCTION__);
 
-	if (s)
+	APTR sensor = NULL;
+	ULONG count = 0;
+
+	D("[%s] Obtain sensor list...\n", __FUNCTION__);
+	sensorlist = ObtainSensorsListTags(SENSORS_Class, SensorClass_HID, /*SENSORS_Type, SensorType_HID_Gamepad,*/ TAG_DONE);
+	while ((sensor = NextSensor(sensor, sensorlist, NULL)) && count < MAX_JOYSTICKS)
 	{
-		s->notifytask = SysBase->ThisTask;
-		D("[%s] Create sensor events worker thread...\n", __FUNCTION__);
-
-		if (QueueWorkItem(threadpool, (THREADFUNC)sensor_events, s) == WORKITEM_INVALID)
-		{
-			SDL_free(s);
-		}
-		else
-		{
-			APTR sensorlist, sensor = NULL;
-			ULONG count = 0;
-
-			sensors = s;
-
-			NEWLIST(&s->sensorlist);
-
-			while (s->sensorport == NULL)
-				Wait(SIGF_SINGLE);
-
-			D("[%s] Obtain sensor list...\n", __FUNCTION__);
-			sensorlist = ObtainSensorsList((struct TagItem *)&sensortags), sensor = NULL;
-
-			while ((sensor = NextSensor(sensor, sensorlist, NULL)))
-			{
-				CONST_STRPTR name = "<unknown>", serial = NULL;
-				GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-								
-				size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
-					
-				//ULONG *id;
-
-				//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
-
-				//serial = va("#%lu", id);
-				
-				D("[%s] name=%s, serial=%s\n", __FUNCTION__, name, serial);
-				
-				if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0)
-				{
-					size_t namelen = strlen(name) + 1;
-					struct joystick_hwdata *hwdata = SDL_malloc(sizeof(*hwdata) + namelen);
-
-					if (hwdata)
-					{
-						count++;
-
-						ADDTAIL(&s->sensorlist, hwdata);
-						NEWLIST(&hwdata->notifylist);
-
-						hwdata->attached = 1;
-
-						// Using strncpy() is intentional
-						strncpy((char *)&hwdata->guid, serial, sizeof(hwdata->guid));
-						strcpy(hwdata->name, name);
-					}
-				}	
-			}
-
-			ReleaseSensorsList(sensorlist, NULL);
-
-			D("[%s] Found %ld joysticks...\n", __FUNCTION__, count);
-
-			s->joystick_count = count;
-			rc = count;
-		}
+		JoySensor[count++] = sensor;
 	}
 
+	D("[%s] Found %ld joysticks...\n", __FUNCTION__, count);
+	joystick_count = count;
+	rc = count;
 	return rc;
 }
 
-static int SDL_SYS_JoystickGetCount(void)
-{
-		D("[%s]\n", __FUNCTION__);
-	return sensors->joystick_count;
-}
-
-static struct joystick_hwdata *GetByIndex(int index)
-{
-	struct joystick_hwdata *hwdata = NULL, *ptr;
-
-
-	ForeachNode(&sensors->sensorlist, ptr)
-	{
-		if (index == 0)
-		{
-			hwdata = ptr;
-			break;
-		}
-
-		index--;
-	};
-
-	return hwdata;
-}
-
-static void SDL_SYS_JoystickDetect(void)
+static void
+SDL_SYS_JoystickDetect(void)
 {
 }
 
@@ -237,124 +90,33 @@ static void SDL_SYS_JoystickDetect(void)
 static const char *
 SDL_SYS_JoystickGetDeviceName(int device_index)
 {
-		D("[%s]\n", __FUNCTION__);
-	struct joystick_hwdata *hwdata = GetByIndex(device_index);
-	return hwdata->name;
+	APTR sensor = JoySensor[device_index];
+	const char *name = NULL;
+	GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+	return name;
 }
 
 /* Function to perform the mapping from device index to the instance id for this index */
-static 
+static
 SDL_JoystickID SDL_SYS_JoystickGetDeviceInstanceID(int device_index)
 {
-		D("[%s]\n", __FUNCTION__);
 	return device_index;
 }
 
-static void set_notify(struct sensordata *s, struct joystick_hwdata *hwdata, APTR sensor, ULONG type)
+/* Function to sort Sensors */
+/*static int
+SortSensorFunc(const void *a, const void *b)
 {
-	struct sensornotify *sn;
-	int count = 1;
-
-	switch (type)
-	{
-		case SensorType_HIDInput_Stick:
-		case SensorType_HIDInput_AnalogStick:
-			count = 2;
-			break;
-
-		case SensorType_HIDInput_3DStick:
-			count = 3;
-			break;
-	}
-
-	sn = SDL_malloc(sizeof(*sn) + count * sizeof(DOUBLE));
-
-	if (sn)
-	{
-		size_t notifytags[] = { SENSORS_Notification_Destination, (size_t)s->sensorport, SENSORS_Notification_SendInitialValue, TRUE, SENSORS_Notification_UserData, (size_t)sn, TAG_DONE };
-		struct TagItem tags[4];
-		int i;
-
-		sn->type = type;
-
-		for (i = 0; i < count;  i++)
-			sn->values[i] = 0.0;
-
-		tags[0].ti_Data = TRUE;
-		tags[1].ti_Tag  = TAG_IGNORE;
-		tags[1].ti_Data = TRUE;
-		tags[2].ti_Tag  = TAG_IGNORE;
-		tags[2].ti_Data = TRUE;
-		tags[3].ti_Tag  = TAG_MORE;
-		tags[3].ti_Data = (size_t)&notifytags;
-
-		switch (type)
-		{
-			case SensorType_HIDInput_Trigger:
-				tags[0].ti_Tag  = SENSORS_HIDInput_Value;
-				break;
-
-			case SensorType_HIDInput_Stick:
-			case SensorType_HIDInput_AnalogStick:
-				tags[0].ti_Tag  = SENSORS_HIDInput_NS_Value;
-				tags[1].ti_Tag  = SENSORS_HIDInput_EW_Value;
-				break;
-
-			case SensorType_HIDInput_3DStick:
-				tags[0].ti_Tag  = SENSORS_HIDInput_X_Index;
-				tags[1].ti_Tag  = SENSORS_HIDInput_Y_Index;
-				tags[2].ti_Tag  = SENSORS_HIDInput_Z_Index;
-				break;
-		}
-
-		sn->notifyptr = StartSensorNotify(sensor, (struct TagItem *)&tags);
-
-		ADDTAIL(&hwdata->notifylist, sn);
-	}
-}
-
-static void GetJoyData(SDL_Joystick * joystick, struct joystick_hwdata *hwdata, APTR parent)
-{
-	struct sensordata *s = sensors;
-	size_t sensortags[] = { SENSORS_Parent, (size_t)parent, SENSORS_Class, SensorClass_HID, TAG_DONE };
-	size_t buttons = 0, naxes = 0;
-	APTR sensorlist = ObtainSensorsList((struct TagItem *)&sensortags), sensor = NULL;
-
-	while ((sensor = NextSensor(sensor, sensorlist, NULL)) != NULL)
-	{
-		SensorType_HIDInput type = SensorType_HIDInput_Unknown;
-		size_t qt[] = { SENSORS_Type, (size_t)&type, TAG_DONE };
-		
-		if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0)
-		{
-			switch (type)
-			{
-				case SensorType_HIDInput_Trigger:
-					buttons++;
-					break;
-				
-				case SensorType_HIDInput_Stick:
-				case SensorType_HIDInput_AnalogStick:
-					naxes += 2;
-					break;
-
-				case SensorType_HIDInput_3DStick:
-					naxes += 3;
-					break;
-
-				default:
-					continue;
-			}
-
-			set_notify(s, hwdata, sensor, type);
-		}	
-	}
-
-	ReleaseSensorsList(sensorlist, NULL);
-
-	joystick->naxes = naxes;
-	joystick->nbuttons = buttons;
-}
+	LONG ida = 0;
+	LONG idb = 0;
+	GetSensorAttrTags((APTR)a, SENSORS_HIDInput_ID, (IPTR)&ida, TAG_DONE);
+	GetSensorAttrTags((APTR)b, SENSORS_HIDInput_ID, (IPTR)&idb, TAG_DONE);
+	if (ida < idb)
+		return -1;
+	if (ida > idb)
+		return 1;
+	return 0;
+}*/
 
 /* Function to open a joystick for use.
    The joystick to open is specified by the index field of the joystick.
@@ -365,98 +127,193 @@ static int
 SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
 	D("[%s]\n", __FUNCTION__);
-	struct joystick_hwdata *hwdata = GetByIndex(device_index);
+	APTR sensor = JoySensor[device_index];
 	int rc = -1;
 
-	if (hwdata)
-	{
-		APTR sensorlist = ObtainSensorsList((struct TagItem *)&sensortags), sensor = NULL;
+	if (sensor) {
+		size_t buttons = 0, naxes = 0, nhats = 0, nsticks = 0;
+		CONST_STRPTR name = "<unknown>";
+		//ULONG id;
+		struct joystick_hwdata *hwdata = SDL_calloc(1, sizeof(*hwdata));
 
-		while ((sensor = NextSensor(sensor, sensorlist, NULL)))
-		{
-			CONST_STRPTR name = "<unknown>", serial = NULL;
+		hwdata->main_sensor = sensor;
 
-			size_t qt[] = { SENSORS_HIDInput_Name_Translated, SENSORS_HID_Serial, (size_t)&serial, TAG_DONE };
-			
-			GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-			
-			//ULONG *id;
-			//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, TAG_DONE);
-			
-			D("[%s] name=%s, serial=%s\n", __FUNCTION__, name, serial);
-			if (GetSensorAttr(sensor, (struct TagItem *)&qt) > 0 && strcmp(hwdata->name, name) == 0)
-			{
-				SDL_JoystickGUID guid;
+		hwdata->child_sensors = ObtainSensorsListTags(
+			SENSORS_Parent, (IPTR)hwdata->main_sensor,
+			SENSORS_Class, SensorClass_HID,
+			TAG_DONE);
 
-				strncpy((char *)&guid, serial, sizeof(guid));
-
-				if (memcmp(&hwdata->guid, &guid, sizeof(guid)) == 0)
-				{
-					GetJoyData(joystick, hwdata, sensor);
-					rc = 0;
-					break;
+		sensor = NULL;
+		while ((sensor = NextSensor(sensor, hwdata->child_sensors, NULL))) {
+			ULONG type = SensorType_HIDInput_Unknown;
+			//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, SENSORS_HIDInput_Name, (IPTR)&name, TAG_DONE);
+			//D("[%s] sensor id: %d name: %s\n", __FUNCTION__, id, name);	
+			if (GetSensorAttrTags(sensor, SENSORS_Type, (IPTR)&type, TAG_DONE)) {
+				switch (type) {
+					case SensorType_HIDInput_Trigger:
+						if (buttons < MAX_BUTTONS) {
+							hwdata->button[buttons++] = sensor;
+						}
+						break;
+					case SensorType_HIDInput_Stick:
+						if (nhats < MAX_HATS) {
+							hwdata->hat[nhats++] = sensor;
+						}
+						break;
+					case SensorType_HIDInput_Analog:
+					case SensorType_HIDInput_AnalogStick:
+					case SensorType_HIDInput_3DStick:
+						if (nsticks < MAX_STICKS) {
+							hwdata->stick[nsticks] = sensor;
+							hwdata->stickType[nsticks] = type;
+							nsticks++;
+							if (type == SensorType_HIDInput_AnalogStick)
+								naxes += 2;
+							else if (type == SensorType_HIDInput_3DStick)
+								naxes += 3;
+							else
+								naxes++;
+						}
+						break;
+					case SensorType_HIDInput_Rumble:
+						if (GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE)) {
+							D("[%s] rumble sensor: %s\n", __FUNCTION__, name);
+						}
+					default:
+						D("[%s] unknown SensorType: %d\n", __FUNCTION__, type);
+						continue;
 				}
 			}
-		}	
+		}
 
-		ReleaseSensorsList(sensorlist, NULL);
+#ifdef HOT_PLUG
+		if ((hwdata->notifyPort = CreateMsgPort())) {
+			hwdata->sensorsNotify = StartSensorNotifyTags(sensor,
+				SENSORS_Notification_Destination, (IPTR)hwdata->notifyPort,
+				SENSORS_Notification_UserData, (IPTR)SDL_SYS_JoystickGetDeviceInstanceID(device_index),
+				SENSORS_Notification_Removed, TRUE,
+				TAG_DONE);
+		}
+#endif
+
+		joystick->naxes = naxes;
+		joystick->nhats = nhats;
+		joystick->nbuttons = buttons;
+		//SDL_qsort(hwdata->button, joystick->nbuttons, sizeof(APTR), SortSensorFunc);
+		hwdata->numSticks = nsticks;
+		joystick->hwdata = hwdata;
+
+		rc = 0;
 	}
-
 	return rc;
 }
 
 static void
 SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 {
-	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = joystick->hwdata;
-	struct sensornotify *sn;
-	void *buffer;
-	int naxe = 0, nbutton = 0;
+	int i, j;
+	Sint16 sval;
+	double btn_value, x_value, y_value, z_value, ns_value, ew_value;
 
-	ForeachNode(&hwdata->notifylist, sn)
-	{
-		DOUBLE val;
-		WORD sval;
+	for (i = 0; i < joystick->nbuttons; i++) {
+		GetSensorAttrTags(hwdata->button[i], SENSORS_HIDInput_Value, (IPTR)&btn_value, TAG_DONE);
+		if ((joystick->buttons[i] && btn_value == 0.0) || (joystick->buttons[i] == 0 && btn_value > 0.0)) {
+			SDL_PrivateJoystickButton(joystick, i, btn_value == 0.0 ? 0 : 1);
+		}
+	}
 
-		switch (sn->type)
-		{
-			case SensorType_HIDInput_Trigger:
-				val = sn->values[0];
-			    int buttondata = BUFFER_OFFSET(buffer, hwdata->buttonBufferOffset[nbutton]);
-				if ((joystick->buttons[nbutton] && val == 0.0) || (joystick->buttons[nbutton] == 0 && val > 0.0)) {
-					SDL_PrivateJoystickButton(joystick, nbutton, val == 0.0 ? 0 : 1);
-					hwdata->buttonData[nbutton] = (val == 0.0 ? 0 : 1);
-			   }
+	for (i = 0; i < joystick->nhats; i++) {
+		GetSensorAttrTags(hwdata->hat[i],
+			SENSORS_HIDInput_EW_Value, (IPTR)&ew_value,
+			SENSORS_HIDInput_NS_Value, (IPTR)&ns_value,
+			TAG_DONE);
+		Uint8 value_hat = SDL_HAT_CENTERED;
+		if (ns_value >= 1.0) {
+			value_hat |= SDL_HAT_DOWN;
+		} else if (ns_value <= -1.0) {
+			value_hat |= SDL_HAT_UP;
+		}
+		if (ew_value >= 1.0) {
+			value_hat |= SDL_HAT_RIGHT;
+		} else if (ew_value <= -1.0) {
+			value_hat |= SDL_HAT_LEFT;
+		}
+		SDL_PrivateJoystickHat(joystick, i, value_hat);
+	}
 
-				nbutton++;
+	j = 0;
+	for (i = 0; i < hwdata->numSticks; i++) {
+		switch (hwdata->stickType[i]) {
+			case SensorType_HIDInput_3DStick:
+				GetSensorAttrTags(hwdata->stick[i],
+					SENSORS_HIDInput_X_Index, (IPTR)&x_value,
+					SENSORS_HIDInput_Y_Index, (IPTR)&y_value,
+					SENSORS_HIDInput_Z_Index, (IPTR)&z_value,
+					TAG_DONE);
+
+				if (x_value >= DEADZONE_MAX || x_value <= DEADZONE_MIN) {
+					sval = (Sint16)(CLAMP(x_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j, sval);
+				}
+
+				if (y_value >= DEADZONE_MAX || y_value <= DEADZONE_MIN) {
+					sval = (Sint16)(CLAMP(y_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j+1, sval);
+				}
+
+				if (z_value >= DEADZONE_MAX || z_value <= DEADZONE_MIN) {
+					sval = (Sint16)(CLAMP(z_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j+2, sval);
+				}
+
+				j += 3;
 				break;
 
-			case SensorType_HIDInput_Stick:
+			case SensorType_HIDInput_Analog:
+				GetSensorAttrTags(hwdata->stick[i], SENSORS_HIDInput_Value, (IPTR)&btn_value, TAG_DONE);
+
+				if (btn_value >= DEADZONE_MAX || btn_value <= DEADZONE_MIN) {
+					sval = (Sint16)(btn_value * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j, sval);
+				}
+
+				j++;
+				break;
+
 			case SensorType_HIDInput_AnalogStick:
-			case SensorType_HIDInput_3DStick:
-				sval = (WORD)(sn->values[0] * 32768.0);
+				GetSensorAttrTags(hwdata->stick[i],
+					SENSORS_HIDInput_EW_Value, (IPTR)&ew_value,
+					SENSORS_HIDInput_NS_Value, (IPTR)&ns_value,
+					TAG_DONE);
 
-				if (sval !=hwdata->axisData[naxe])	{
-					SDL_PrivateJoystickAxis(joystick, naxe, sval);
-					hwdata->axisData[naxe] = sval;
-				}
-
-				naxe++;
-
-				sval = (WORD)(sn->values[1] * 32768.0);
-
-				if (sval != hwdata->axisData[naxe]) {			
-					SDL_PrivateJoystickAxis(joystick, naxe, sval);
-					hwdata->axisData[naxe] = sval;
-				}
-
-				// TODO : sn->values[2] ?? for SANSORS_HIDInput_Z_Index
 				
-				naxe++;
+				if (ew_value >= DEADZONE_MAX || ew_value <= DEADZONE_MIN) {
+					sval = (Sint16)(CLAMP(ew_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j, sval);
+				}
+
+				if (ns_value >= DEADZONE_MAX || ns_value <= DEADZONE_MIN) {
+					sval = (Sint16)(CLAMP(ns_value, -1.0, 1.0) * SDL_JOYSTICK_AXIS_MAX);
+					SDL_PrivateJoystickAxis(joystick, j+1, sval);
+				}
+
+				j += 2;
 				break;
 		}
 	}
+
+#ifdef HOT_PLUG
+	if (hwdata->notifyPort) {
+		struct SensorsNotificationMessage *notifyMsg;
+		while ((notifyMsg = (struct SensorsNotificationMessage *)GetMsg(hwdata->notifyPort))) {
+			if (GetTagData(SENSORS_Notification_Removed, FALSE, notifyMsg->Notifications)) {
+				SDL_PrivateJoystickRemoved((SDL_JoystickID)notifyMsg->UserData);
+			}
+			ReplyMsg(notifyMsg);
+		}
+	}
+#endif
 }
 
 /* Function to close a joystick after use */
@@ -465,18 +322,21 @@ SDL_SYS_JoystickClose(SDL_Joystick * joystick)
 {
 	D("[%s]\n", __FUNCTION__);
 	struct joystick_hwdata *hwdata = joystick->hwdata;
-
-	if (hwdata)
-	{
-		struct sensornotify *sn, *tmp;
-
-		ForeachNodeSafe(&hwdata->notifylist, sn, tmp)
-		{
-			if (sn->notifyptr)
-				EndSensorNotify(sn->notifyptr, NULL);
-
-			SDL_free(sn);
+	if (hwdata) {
+#ifdef HOT_PLUG
+		if (hwdata->sensorsNotify) {
+			EndSensorNotify(hwdata->sensorsNotify, NULL);
 		}
+		if (hwdata->notifyPort) {
+			struct Message *notifyMsg;
+			while ((notifyMsg = GetMsg(hwdata->notifyPort)))
+				ReplyMsg(notifyMsg);
+			DeleteMsgPort(hwdata->notifyPort);
+		}
+#endif
+		ReleaseSensorsList(hwdata->child_sensors, NULL);
+		SDL_free(hwdata);
+		joystick->hwdata = NULL;
 	}
 }
 
@@ -485,34 +345,50 @@ static void
 SDL_SYS_JoystickQuit(void)
 {
 	D("[%s]\n", __FUNCTION__);
-	struct joystick_hwdata *hwdata, *tmp;
-	struct sensordata *s = sensors;
-
-	ForeachNodeSafe(&s->sensorlist, hwdata, tmp)
-	{
-		SDL_free(hwdata);
-	}
-
-	Signal(s->sensorport->mp_SigTask, SIGBREAKF_CTRL_C);
+	if (sensorlist)
+		ReleaseSensorsList(sensorlist, NULL);
 }
 
 static SDL_JoystickGUID
 SDL_SYS_JoystickGetDeviceGUID( int device_index )
 {
-	struct joystick_hwdata *hwdata = GetByIndex(device_index);
-	return hwdata->guid;
+	SDL_JoystickGUID guid;
+	APTR sensor = JoySensor[device_index];
+	Uint16 *guid16 = (Uint16 *)guid.data;
+	const char *name = NULL;
+
+	ULONG product, vendor;
+	
+	GetSensorAttrTags(sensor,
+			SENSORS_HID_Name, (IPTR)&name,
+			SENSORS_HID_Product, (IPTR)&product,
+			SENSORS_HID_Vendor, (IPTR)&vendor,
+			TAG_DONE);
+
+	SDL_zero(guid);
+	SDL_memset(guid.data, 0, sizeof(guid.data));
+
+	*guid16++ = SDL_SwapLE16(SDL_HARDWARE_BUS_USB);
+    *guid16++ = 0;
+
+    if (vendor && product) {
+        *guid16++ = SDL_SwapLE16(vendor);
+        *guid16++ = 0;
+        *guid16++ = SDL_SwapLE16(product);
+        *guid16++ = 0;
+        *guid16++ = 0;
+        *guid16++ = 0;
+    } else {
+        SDL_strlcpy((char*)guid16, name, sizeof(guid.data) - 4);
+    }
+	
+	return guid;
 }
 
 static int
 SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {
     return 0;
-}
-
-static SDL_JoystickGUID
-SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
-{
-	return joystick->hwdata->guid;
 }
 
 static int
@@ -524,7 +400,6 @@ SDL_SYS_JoystickGetDevicePlayerIndex(int device_index)
 static void
 SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
 {
-    D("Not implemented\n");
 }
 
 SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
