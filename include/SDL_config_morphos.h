@@ -143,9 +143,9 @@
 #define SDL_HAPTIC_DUMMY       1
 
 /* Enable AMIGA (lowlevel.library) JOYSTICK/GAMEPAD */
-#define SDL_JOYSTICK_AMIGA     1
+//#define SDL_JOYSTICK_AMIGA     1
 /* Enable MORPHOS SENSORS JOYSTICK/GAMEPAD */
-//#define SDL_JOYSTICK_MORPHOS   1  
+#define SDL_JOYSTICK_MORPHOS   1  
 
 /* Enable various shared object loading systems */
 #define SDL_LOADSO_DLOPEN   1

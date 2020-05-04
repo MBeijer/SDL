@@ -23,6 +23,7 @@
 
 #ifdef SDL_JOYSTICK_MORPHOS
 
+#include <exec/types.h>
 #include "SDL_joystick.h"
 
 #define MAX_BUTTONS         16
