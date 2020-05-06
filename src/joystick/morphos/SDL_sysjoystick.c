@@ -206,7 +206,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 		//SDL_qsort(hwdata->button, joystick->nbuttons, sizeof(APTR), SortSensorFunc);
 		hwdata->numSticks = nsticks;
 		joystick->hwdata = hwdata;
-
+		joystick->name = (char *)SDL_SYS_JoystickGetDeviceName(device_index);
 		rc = 0;
 	}
 	return rc;
