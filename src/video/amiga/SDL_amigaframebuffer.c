@@ -129,10 +129,12 @@ AMIGA_UpdateWindowFramebuffer(_THIS, SDL_Window * window, const SDL_Rect * rects
 			if (y + h > window->h)
 				h = window->h - y;
 
-			if (y + h < 0 || y > h)
+			//if (y + h < 0 || y > h)
+			if (y + h < 0)
 				continue;
 
-			if (x + w < 0 || x > w)
+			//if (x + w < 0 || x > w)
+			if (x + w < 0)
 				continue;
 
 			dx = x + offx;
