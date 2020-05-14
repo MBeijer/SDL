@@ -84,81 +84,45 @@ AMIGA_CreateWindowFramebuffer(_THIS, SDL_Window * window, Uint32 * format,
 	return 0;
 }
 
+#ifndef MIN
+#   define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+
 int
 AMIGA_UpdateWindowFramebuffer(_THIS, SDL_Window * window, const SDL_Rect * rects, int numrects)
 {
 	SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
-
-	if (data->win)
+	if (data && data->win && data->fb)
 	{
 		SDL_Framebuffer *fb = data->fb;
 		struct RastPort *rp = data->win->RPort;
-		int i, x, y, w, h, offx, offy;
-
-		offx = data->win->BorderLeft;
-		offy = data->win->BorderTop;
-
-		for (i = 0; i < numrects; ++i)
-		{
-			int dx, dy;
-
-			x = rects[i].x;
-			y = rects[i].y;
-			w = rects[i].w;
-			h = rects[i].h;
-
-			/* Clipped? */
-			if (w <= 0 || h <= 0 || (x + w) <= 0 || (y + h) <= 0)
-				continue;
-
-			if (x < 0)
-			{
-				x += w;
-				w += rects[i].x;
-			}
-
-			if (y < 0)
-			{
-				y += h;
-				h += rects[i].y;
-			}
-
-			if (x + w > window->w)
-				w = window->w - x;
-
-			if (y + h > window->h)
-				h = window->h - y;
-
-			//if (y + h < 0 || y > h)
-			if (y + h < 0)
-				continue;
-
-			//if (x + w < 0 || x > w)
-			if (x + w < 0)
-				continue;
-
-			dx = x + offx;
-			dy = y + offy;
-
+	   	const struct IBox windowBox = {
+                data->win->BorderLeft,
+                data->win->BorderTop,
+                data->win->Width - data->win->BorderLeft - data->win->BorderRight,
+                data->win->Height - data->win->BorderTop - data->win->BorderBottom };
+		int i, w, h, dx, dy;
+		const SDL_Rect * r;		
+       	for (i = 0; i < numrects; ++i) {
+            r = &rects[i];
+			dx = r->x + windowBox.Left;
+			dy = r->y + windowBox.Top;
+		    w =  MIN(r->w, windowBox.Width);
+			h = MIN(r->h, windowBox.Height);
 			switch (fb->pixfmt)
 			{
 				case SDL_PIXELFORMAT_INDEX8:
-					if (data->videodata->CustomScreen)
-						WritePixelArray(fb->buffer, x, y, fb->bpr, rp, dx, dy, w, h, RECTFMT_RAW);
-					else
-						WriteLUTPixelArray(fb->buffer, x, y, fb->bpr, rp, data->videodata->coltab, dx, dy, w, h, CTABFMT_XRGB8);
+					if (data->videodata->CustomScreen) 
+						WritePixelArray(fb->buffer, r->x, r->y, fb->bpr, rp, dx, dy, w, h, RECTFMT_RAW);
+					else 
+						WriteLUTPixelArray(fb->buffer, r->x, r->y, fb->bpr, rp, data->videodata->coltab, dx, dy, w, h, CTABFMT_XRGB8);
 					break;
-
 				default:
 				case SDL_PIXELFORMAT_ARGB8888:
-					WritePixelArray(fb->buffer, x, y, fb->bpr, rp, dx, dy, w, h, RECTFMT_ARGB);
-					break;
+					WritePixelArray(fb->buffer, r->x, r->y, fb->bpr, rp, dx, dy, w, h, RECTFMT_ARGB);
+					break; 
 			}
 		}
-	}
-
+    }
 	return 0;
 }
-
-
-/* vi: set ts=4 sw=4 expandtab: */
