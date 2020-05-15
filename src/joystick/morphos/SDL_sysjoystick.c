@@ -174,15 +174,28 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 							if (type == SensorType_HIDInput_AnalogStick)
 								naxes += 2;
 							else if (type == SensorType_HIDInput_3DStick)
-								naxes += 3;
+								naxes += 4;
 							else
 								naxes++;
 						}
 						break;
 					case SensorType_HIDInput_Rumble:
-						if (GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE)) {
-							D("[%s] rumble sensor: %s\n", __FUNCTION__, name);
-						}
+						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+						D("[%s] Rumble Sensor: %s - Sensor=%lu\n", __FUNCTION__, name, sensor);
+						break;
+					case SensorType_HIDInput_Battery:
+						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+						D("[%s] Battery SensorType: %d\n", __FUNCTION__, name);
+
+						break;
+					case SensorType_HIDInput_Knob:
+						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+						D("[%s] Knob SensorType: %d\n", __FUNCTION__, name);
+						break;
+					case SensorType_HIDInput_Wheel:
+						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+						D("[%s] Wheel SensorType: %d\n", __FUNCTION__, name);
+						break;
 					default:
 						D("[%s] unknown SensorType: %d\n", __FUNCTION__, type);
 						continue;
@@ -218,7 +231,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 	struct joystick_hwdata *hwdata = joystick->hwdata;
 	int i, j;
 	Sint16 sval;
-	double btn_value, x_value, y_value, z_value, ns_value, ew_value;
+	double btn_value, x_value, y_value, z_value, ns_value, ew_value, z_rotation;
 
 	for (i = 0; i < joystick->nbuttons; i++) {
 		GetSensorAttrTags(hwdata->button[i], SENSORS_HIDInput_Value, (IPTR)&btn_value, TAG_DONE);
@@ -254,6 +267,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 					SENSORS_HIDInput_X_Index, (IPTR)&x_value,
 					SENSORS_HIDInput_Y_Index, (IPTR)&y_value,
 					SENSORS_HIDInput_Z_Index, (IPTR)&z_value,
+					SENSORS_HIDInput_Z_Rotation, (IPTR)&z_rotation,
 					TAG_DONE);
 
 				sval = (Sint16)(CLAMP(x_value) * SDL_JOYSTICK_AXIS_MAX);
@@ -265,7 +279,10 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 				sval = (Sint16)(CLAMP(z_value) * SDL_JOYSTICK_AXIS_MAX);
 				SDL_PrivateJoystickAxis(joystick, j+2, sval);
 
-				j += 3;
+				sval = (Sint16)(CLAMP(z_rotation) * SDL_JOYSTICK_AXIS_MAX);
+				SDL_PrivateJoystickAxis(joystick, j+3, sval);
+				
+				j += 4;
 				break;
 
 			case SensorType_HIDInput_Analog:
