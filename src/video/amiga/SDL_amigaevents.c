@@ -53,18 +53,31 @@ static void
 AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *data)
 {
 	int i = 1, state = SDL_PRESSED;
-
+	
 	switch (m->Code)
 	{
-		case SELECTUP  : i = 1; state = SDL_RELEASED; break;
-		case SELECTDOWN: i = 1; break;
-		case MENUUP    : i = 2; state = SDL_RELEASED; break;
-		case MENUDOWN  : i = 2; break;
-		case MIDDLEUP  : i = 3; state = SDL_RELEASED; break;
-		case MIDDLEDOWN: i = 3; break;
-		default        : return;
+		case SELECTUP: 
+			state = SDL_RELEASED;
+		    // fallthrough
+		case SELECTDOWN: 
+			i = SDL_BUTTON_LEFT;
+			break;
+		case MENUUP:
+			state = SDL_RELEASED;
+			// fallthrough
+		case MENUDOWN  :
+			i = SDL_BUTTON_RIGHT; 
+			break;
+		case MIDDLEUP: 
+			state = SDL_RELEASED;
+			// fallthrough
+		case MIDDLEDOWN: 
+			i = SDL_BUTTON_MIDDLE; 
+			break;
+		default: 
+			return;
 	}
-
+	
 	SDL_SendMouseButton(data->window, 0, state, i);
 }
 
