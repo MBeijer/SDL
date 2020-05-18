@@ -52,33 +52,20 @@
 static void
 AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *data)
 {
-	int i = 1, state = SDL_PRESSED;
-	
-	switch (m->Code)
+	int state = (m->Code & IECODE_UP_PREFIX) ? SDL_RELEASED : SDL_PRESSED;
+
+	switch (m->Code & ~(IECODE_UP_PREFIX))
 	{
-		case SELECTUP: 
-			state = SDL_RELEASED;
-		    // fallthrough
-		case SELECTDOWN: 
-			i = SDL_BUTTON_LEFT;
+		case IECODE_LBUTTON:
+			SDL_SendMouseButton(data->window, 0, state, SDL_BUTTON_LEFT);
 			break;
-		case MENUUP:
-			state = SDL_RELEASED;
-			// fallthrough
-		case MENUDOWN  :
-			i = SDL_BUTTON_RIGHT; 
+		case IECODE_RBUTTON:
+			SDL_SendMouseButton(data->window, 0, state, SDL_BUTTON_RIGHT);
 			break;
-		case MIDDLEUP: 
-			state = SDL_RELEASED;
-			// fallthrough
-		case MIDDLEDOWN: 
-			i = SDL_BUTTON_MIDDLE; 
+		case IECODE_MBUTTON:
+			SDL_SendMouseButton(data->window, 0, state, SDL_BUTTON_MIDDLE);
 			break;
-		default: 
-			return;
 	}
-	
-	SDL_SendMouseButton(data->window, 0, state, i);
 }
 
 static int
@@ -132,11 +119,11 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 			break;
 
 		case RAWKEY_NM_BUTTON_FOURTH:
-			SDL_SendMouseButton(data->window, 0, SDL_PRESSED, 4);
+			SDL_SendMouseButton(data->window, 0, SDL_PRESSED, SDL_BUTTON_X1);
 			break;
 
 		case RAWKEY_NM_BUTTON_FOURTH | IECODE_UP_PREFIX:
-			SDL_SendMouseButton(data->window, 0, SDL_RELEASED, 4);
+			SDL_SendMouseButton(data->window, 0, SDL_RELEASED, SDL_BUTTON_X1);
 			break;
 
 		default:
