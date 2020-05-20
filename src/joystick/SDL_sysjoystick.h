@@ -121,7 +121,11 @@ typedef struct _SDL_JoystickDriver
     int (*Open)(SDL_Joystick * joystick, int device_index);
 
     /* Rumble functionality */
+	#ifdef __MORPHOS__
+	int (*Rumble)(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
+	#else
     int (*Rumble)(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble);
+	#endif
 
     /* Function to update the state of a joystick - called as a device poll.
      * This function shouldn't update the joystick structure directly,

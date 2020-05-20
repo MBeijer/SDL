@@ -149,9 +149,15 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 
 		sensor = NULL;
 		while ((sensor = NextSensor(sensor, hwdata->child_sensors, NULL))) {
-			ULONG type = SensorType_HIDInput_Unknown;
-			//GetSensorAttrTags(sensor, SENSORS_HIDInput_ID, (IPTR)&id, SENSORS_HIDInput_Name, (IPTR)&name, TAG_DONE);
-			//D("[%s] sensor id: %d name: %s\n", __FUNCTION__, id, name);	
+			ULONG type = SensorType_HIDInput_Unknown, Limb, color;
+			/*GetSensorAttrTags(sensor, 
+								SENSORS_HIDInput_ID, (IPTR)&id, 
+								SENSORS_HIDInput_Name, (IPTR)&name, 
+								SENSORS_HIDInput_Limb, (IPTR)&Limb, 
+								SENSORS_HIDInput_Color, (IPTR)&color, 
+								TAG_DONE);
+			D("[%s] sensor id: %d name: %s Limb:%d LimbName:%s color:%d\n", __FUNCTION__, id, name, Limb, color);	*/
+			
 			if (GetSensorAttrTags(sensor, SENSORS_Type, (IPTR)&type, TAG_DONE)) {
 				switch (type) {
 					case SensorType_HIDInput_Trigger:
@@ -180,13 +186,23 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 						}
 						break;
 					case SensorType_HIDInput_Rumble:
-						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-						D("[%s] Rumble Sensor: %s - Sensor=%lu\n", __FUNCTION__, name, sensor);
+						if (nrumbles < MAX_RUMBLE) {
+							GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
+							D("[%s] Rumble SensorName: %s\n", __FUNCTION__, name);
+							hwdata->rumble[nrumbles] = sensor;
+							nrumbles++;
+						}
 						break;
 					case SensorType_HIDInput_Battery:
 						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
-						D("[%s] Battery SensorType: %d\n", __FUNCTION__, name);
-
+						D("[%s] Battery SensorName: %s\n", __FUNCTION__, name);
+					    // Force "Xbox360 Controller" (WIRED) to use SDL_JOYSTICK_POWER_WIRED
+						if (strcmp((const char *)SDL_SYS_JoystickGetDeviceName(device_index),(const char *)"Xbox360 Controller") == 0) {
+							SDL_PrivateJoystickBatteryLevel(joystick, SDL_JOYSTICK_POWER_WIRED);  
+							hwdata->battery = NULL;
+						} else {							
+							hwdata->battery = sensor;
+						}
 						break;
 					case SensorType_HIDInput_Knob:
 						GetSensorAttrTags(sensor, SENSORS_HID_Name, (IPTR)&name, TAG_DONE);
@@ -218,6 +234,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 		joystick->nbuttons = buttons;
 		//SDL_qsort(hwdata->button, joystick->nbuttons, sizeof(APTR), SortSensorFunc);
 		hwdata->numSticks = nsticks;
+		hwdata->numRumbles = nrumbles;
 		joystick->hwdata = hwdata;
 		joystick->name = (char *)SDL_SYS_JoystickGetDeviceName(device_index);
 		rc = 0;
@@ -310,7 +327,31 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 				break;
 		}
 	}
-
+	
+	if (hwdata->battery) {
+	   SDL_JoystickPowerLevel ePowerLevel = SDL_JOYSTICK_POWER_UNKNOWN;
+	   GetSensorAttrTags(hwdata->battery,
+					SENSORS_HIDInput_Value, (IPTR)&bt_value,
+					TAG_DONE);
+	   ULONG level = bt_value*100;
+	   switch (level)
+	   {
+		   case 0 ... 5:
+			    ePowerLevel = SDL_JOYSTICK_POWER_EMPTY;
+                break;
+		   case 6 ... 20:
+			   ePowerLevel = SDL_JOYSTICK_POWER_LOW;
+		    	break;
+		   case 21 ... 70:
+			    ePowerLevel = SDL_JOYSTICK_POWER_MEDIUM;
+		        break;
+		   case 71 ... 100:
+			    ePowerLevel = SDL_JOYSTICK_POWER_FULL;
+		   		break;
+	   }
+        SDL_PrivateJoystickBatteryLevel(joystick, ePowerLevel);  
+	}
+	
 #ifdef HOT_PLUG
 	if (hwdata->notifyPort) {
 		struct SensorsNotificationMessage *notifyMsg;
@@ -393,9 +434,31 @@ SDL_SYS_JoystickGetDeviceGUID( int device_index )
 	return guid;
 }
 
+/*
+ Rumble experimental
+ Add duration in function, impossible to stop rumble in progress, so SDL2 can't stop it
+*/
 static int
-SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
+SDL_SYS_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms)
 {
+	struct joystick_hwdata *hwdata = joystick->hwdata;
+	if (hwdata) {
+		if (hwdata->numRumbles) {
+			DOUBLE lpower=(DOUBLE)(low_frequency_rumble/65535), hpower=(DOUBLE)(high_frequency_rumble/65535);
+			ULONG duration = duration_ms;
+			if (duration != 0 && (lpower > 0.0 || hpower > 0.0)) { 
+				D("[%s] SetSensorAttrTags lpower=%f - hpower=%f - duration=%d\n", __FUNCTION__,lpower, hpower, duration);
+				SetSensorAttrTags(hwdata->rumble[0], 
+					SENSORS_HIDInput_Rumble_Power, (IPTR)&lpower, 
+					SENSORS_HIDInput_Rumble_Duration, duration, 
+					TAG_DONE);
+				SetSensorAttrTags(hwdata->rumble[1], 
+					SENSORS_HIDInput_Rumble_Power , (IPTR)&hpower, 
+					SENSORS_HIDInput_Rumble_Duration, duration, 
+					TAG_DONE);
+			}
+		}	
+	}		
     return 0;
 }
 

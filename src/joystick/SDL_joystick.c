@@ -890,7 +890,11 @@ SDL_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 
         /* Just update the expiration */
         result = 0;
     } else {
+		#ifdef __MORPHOS__
+		result = joystick->driver->Rumble(joystick, low_frequency_rumble, high_frequency_rumble, duration_ms);
+		#else
         result = joystick->driver->Rumble(joystick, low_frequency_rumble, high_frequency_rumble);
+		#endif
     }
 
     /* Save the rumble value regardless of success, so we don't spam the driver */
