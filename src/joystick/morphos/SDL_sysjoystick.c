@@ -135,7 +135,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 	int rc = -1;
 
 	if (sensor) {
-		size_t buttons = 0, naxes = 0, nhats = 0, nsticks = 0;
+		size_t buttons = 0, naxes = 0, nhats = 0, nsticks = 0, nrumbles=0;
 		CONST_STRPTR name = "<unknown>";
 		//ULONG id;
 		struct joystick_hwdata *hwdata = SDL_calloc(1, sizeof(*hwdata));
@@ -248,7 +248,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
 	struct joystick_hwdata *hwdata = joystick->hwdata;
 	int i, j;
 	Sint16 sval;
-	double btn_value, x_value, y_value, z_value, ns_value, ew_value, z_rotation;
+	double btn_value, bt_value, x_value, y_value, z_value, ns_value, ew_value, z_rotation;
 
 	for (i = 0; i < joystick->nbuttons; i++) {
 		GetSensorAttrTags(hwdata->button[i], SENSORS_HIDInput_Value, (IPTR)&btn_value, TAG_DONE);
