@@ -280,7 +280,7 @@ foreach(target ${LIB_TARGET})
 			target_compile_definitions(${target} PRIVATE $<$<COMPILE_LANGUAGE:C>:APOLLO_BLIT>)
 			target_compile_options(${target} PRIVATE -I${CMAKE_SYSROOT}/m68k-amigaos/ndk-include)
 			target_include_directories(${target} PUBLIC video/apollo)
-			enable_language(ASM-VASM)
+			enable_language(ASM_VASM)
 			target_sources(${target}
 					PRIVATE
 						# APOLLO AMMX
