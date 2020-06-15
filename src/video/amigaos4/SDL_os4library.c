@@ -30,13 +30,35 @@
 #include <proto/exec.h>
 
 struct ExecIFace* IExec; // Need the symbol for .so linkage
+struct Interface* INewlib;
+
+struct Library* NewlibBase;
 
 void _OS4_INIT(void) __attribute__((constructor));
+void _OS4_EXIT(void) __attribute__((destructor));
 
 void _OS4_INIT(void)
 {
     IExec = ((struct ExecIFace *)((*(struct ExecBase **)4)->MainInterface));
-    dprintf("IExec %p\n", IExec);
+
+    NewlibBase = OS4_OpenLibrary("newlib.library", 53);
+
+    if (NewlibBase) {
+        INewlib = OS4_GetInterface(NewlibBase);
+    }
+
+    dprintf("IExec %p, INewlib %p\n", IExec, INewlib);
+}
+
+void _OS4_EXIT(void)
+{
+    if (INewlib) {
+        OS4_DropInterface(&INewlib);
+    }
+
+    if (NewlibBase) {
+        OS4_CloseLibrary(&NewlibBase);
+    }
 }
 
 struct Library *
