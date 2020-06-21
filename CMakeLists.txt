@@ -268,7 +268,7 @@ foreach(target ${LIB_TARGET})
 	target_compile_definitions(${target} PRIVATE $<$<COMPILE_LANGUAGE:C>:NOIXEMUL _HAVE_STDINT_H>)
 
 	if(NOT DEBUG)
-		target_compile_options(${target} PUBLIC $<$<COMPILE_LANGUAGE:C>:-O3 -ffast-math>)
+		target_compile_options(${target} PUBLIC $<$<COMPILE_LANGUAGE:C>:-O3 -ffast-math -Wall>)
 	endif()
 
 	if(AMIGA)
