@@ -50,16 +50,23 @@
 #include "../SDL_sysaudio.h"
 
 /* Hidden "this" pointer for the audio functions */
-#define _THIS    SDL_AudioDevice *this
+#define _THIS   SDL_AudioDevice *this
 
-struct SDL_PrivateAudioData {
-	/* The handle for the audio device */
-	struct AHIRequest	*ahi_IORequest[2];
-	struct MsgPort		*ahi_ReplyPort;
-	Sint32 freq, type, bytespersample, size;
-	Uint8 *audio_MixBuffer[2];           /* The app mixing buffer */
-	int current_buffer;
-	Uint32 playing;
+struct SDL_PrivateAudioData
+{
+    struct MsgPort       *ahi_ReplyPort;
+    struct AHIRequest    *ahi_IORequest[2];
+
+    struct AHIAudioCtrl  *ahi_AudioCtrl;
+    Uint32                ahi_Type;
+    int                   currentBuffer; // buffer number to fill
+    struct AHIRequest    *link;          // point to previous I/O request sent
+
+    int                   audio_IsOpen;
+    Uint32                audio_MixBufferSize;
+    Uint8                *audio_MixBuffer[2];
+
+    APTR                  audio_Mutex;
 };
 
 /* Old variable names */
