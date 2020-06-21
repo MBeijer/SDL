@@ -224,7 +224,14 @@ int SDLCALL SDL_RunAudio(void *audiop)
 			audio->PlayAudio(audio);
 		}
 
+		/* Wait for an audio buffer to become available */
+		if ( stream == audio->fake_stream ) {
+			SDL_Delay((audio->spec.samples*1000)/audio->spec.freq);
+		} else {
+			audio->WaitAudio(audio);
+		}
 	}
+
 	/* Wait for the audio to drain.. */
 	if ( audio->WaitDone ) {
 		audio->WaitDone(audio);
