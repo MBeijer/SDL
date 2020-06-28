@@ -912,11 +912,9 @@ SetWindowStyle(SDL_Window * window, NSUInteger style)
        keypresses; it won't toggle the mod state if you send a keyrelease.  */
     const SDL_bool osenabled = ([theEvent modifierFlags] & NSEventModifierFlagCapsLock) ? SDL_TRUE : SDL_FALSE;
     const SDL_bool sdlenabled = (SDL_GetModState() & KMOD_CAPS) ? SDL_TRUE : SDL_FALSE;
-    if (!osenabled && sdlenabled) {
-        SDL_ToggleModState(KMOD_CAPS, SDL_FALSE);
-        SDL_SendKeyboardKey(SDL_RELEASED, SDL_SCANCODE_CAPSLOCK);
-    } else if (osenabled && !sdlenabled) {
+    if (osenabled ^ sdlenabled) {
         SDL_SendKeyboardKey(SDL_PRESSED, SDL_SCANCODE_CAPSLOCK);
+        SDL_SendKeyboardKey(SDL_RELEASED, SDL_SCANCODE_CAPSLOCK);
     }
 }
 - (void)keyDown:(NSEvent *)theEvent
@@ -1567,8 +1565,8 @@ int
 Cocoa_CreateWindowFrom(_THIS, SDL_Window * window, const void *data)
 { @autoreleasepool
 {
-    NSView* nsview;
-    NSWindow *nswindow;
+    NSView* nsview = nil;
+    NSWindow *nswindow = nil;
 
     if ([(id)data isKindOfClass:[NSWindow class]]) {
       nswindow = (NSWindow*)data;
@@ -1587,6 +1585,21 @@ Cocoa_CreateWindowFrom(_THIS, SDL_Window * window, const void *data)
     if (title) {
         window->title = SDL_strdup([title UTF8String]);
     }
+
+    /* We still support OpenGL as long as Apple offers it, deprecated or not, so disable deprecation warnings about it. */
+    #ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    #endif
+    /* Note: as of the macOS 10.15 SDK, this defaults to YES instead of NO when
+     * the NSHighResolutionCapable boolean is set in Info.plist. */
+    if ([nsview respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
+        BOOL highdpi = (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) != 0;
+        [nsview setWantsBestResolutionOpenGLSurface:highdpi];
+    }
+    #ifdef __clang__
+    #pragma clang diagnostic pop
+    #endif
 
     return SetupWindowData(_this, window, nswindow, nsview, SDL_FALSE);
 }}
