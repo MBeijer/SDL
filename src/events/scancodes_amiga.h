@@ -135,7 +135,7 @@ static SDL_Scancode const amiga_scancode_table[] = {
     /*  106 */    SDL_SCANCODE_UNKNOWN,
     /*  107 */    SDL_SCANCODE_MENU,
     /*  108 */    SDL_SCANCODE_KP_PERIOD,
-    /*  109 */    SDL_SCANCODE_SYSREQ,
+    /*  109 */    SDL_SCANCODE_PRINTSCREEN,
     /*  110 */    SDL_SCANCODE_PAUSE,
     /*  111 */    SDL_SCANCODE_F12,
     /*  112 */    SDL_SCANCODE_HOME,
