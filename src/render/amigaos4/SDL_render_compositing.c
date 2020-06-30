@@ -618,6 +618,11 @@ OS4_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
     return 0;
 }
 
+static int min(int a, int b)
+{
+    return (a < b) ? a : b;
+}
+
 static void
 OS4_RenderPresent(SDL_Renderer * renderer)
 {
@@ -639,6 +644,9 @@ OS4_RenderPresent(SDL_Renderer * renderer)
         if (syswin) {
 
             int32 ret;
+            int width;
+            int height;
+
             //dprintf("target %p\n", data->target);
 
             if (data->vsyncEnabled) {
@@ -647,14 +655,17 @@ OS4_RenderPresent(SDL_Renderer * renderer)
 
             data->iLayers->LockLayer(0, syswin->WLayer);
 
+            width = min(window->w, syswin->Width - (syswin->BorderLeft + syswin->BorderRight));
+            height = min(window->h, syswin->Height - (syswin->BorderTop + syswin->BorderBottom));
+
             ret = data->iGraphics->BltBitMapTags(
                 BLITA_Source, source,
                 BLITA_DestType, BLITT_RASTPORT,
                 BLITA_Dest, syswin->RPort,
                 BLITA_DestX, syswin->BorderLeft,
                 BLITA_DestY, syswin->BorderTop,
-                BLITA_Width, window->w,
-                BLITA_Height, window->h,
+                BLITA_Width, width,
+                BLITA_Height, height,
                 TAG_DONE);
 
             data->iLayers->UnlockLayer(syswin->WLayer);
