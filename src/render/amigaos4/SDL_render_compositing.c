@@ -165,7 +165,7 @@ OS4_GetBitMapSize(SDL_Renderer * renderer, struct BitMap * bitmap, int * w, int 
 
     if (bitmap) {
         if (w) {
-            *w = data->iGraphics->GetBitMapAttr(bitmap, BMA_WIDTH);
+            *w = data->iGraphics->GetBitMapAttr(bitmap, BMA_ACTUALWIDTH);
 	        //dprintf("w=%d\n", *w);
         }
         if (h) {
@@ -479,6 +479,8 @@ OS4_RenderCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd,
 
     scalex = srcrect->w ? (float)dstrect->w / srcrect->w : 1.0f;
     scaley = srcrect->h ? (float)dstrect->h / srcrect->h : 1.0f;
+
+    //dprintf("scalex %f, scaley %f (source %d, dest %d)\n", scalex, scaley, srcrect->w, dstrect->w);
 
     ret_code = data->iGraphics->CompositeTags(
         OS4_ConvertBlendMode(mode),
