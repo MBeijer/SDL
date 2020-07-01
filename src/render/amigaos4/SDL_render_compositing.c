@@ -75,7 +75,7 @@ SDL_bool
 OS4_IsColorModEnabled(SDL_Texture * texture)
 {
     if ((texture->r & texture->g & texture->b) != 255) {
-        //dprintf("Color mod enabled (%d, %d, %d)\n", r, g, b);
+        //dprintf("Color mod enabled (%d, %d, %d)\n", texture->r, texture->g, texture->b);
         return SDL_TRUE;
     }
 
@@ -92,6 +92,7 @@ OS4_AllocBitMap(SDL_Renderer * renderer, int width, int height, int depth) {
         depth,
         BMATags_Displayable, TRUE,
         BMATags_PixelFormat, PIXF_A8R8G8B8,
+        //BMATags_Clear, TRUE,
         TAG_DONE);
 }
 
@@ -164,7 +165,7 @@ OS4_GetBitMapSize(SDL_Renderer * renderer, struct BitMap * bitmap, int * w, int 
 
     if (bitmap) {
         if (w) {
-            *w = data->iGraphics->GetBitMapAttr(bitmap, BMA_WIDTH);
+            *w = data->iGraphics->GetBitMapAttr(bitmap, BMA_ACTUALWIDTH);
 	        //dprintf("w=%d\n", *w);
         }
         if (h) {
@@ -252,34 +253,24 @@ OS4_GetCompositeFlags(SDL_BlendMode mode)
 }
 
 static void
-OS4_SetupCompositing(SDL_Texture * src, SDL_Texture * dest, OS4_CompositingParams * params)
+OS4_SetupCompositing(SDL_Texture * dst, OS4_CompositingParams * params, SDL_ScaleMode scaleMode, SDL_BlendMode blendMode, Uint8 alpha)
 {
     params->flags = COMPFLAG_HardwareOnly;
 
-    if (src->scaleMode != SDL_ScaleModeNearest) {
+    if (scaleMode != SDL_ScaleModeNearest) {
         params->flags |= COMPFLAG_SrcFilter;
     }
 
-    if (src->blendMode == SDL_BLENDMODE_NONE) {
-        params->flags |= COMPFLAG_SrcAlphaOverride;
+    if (blendMode == SDL_BLENDMODE_NONE) {
+        if (!dst) {
+            params->flags |= COMPFLAG_SrcAlphaOverride;
+        }
         params->srcAlpha = 1.0f;
     } else {
-        params->srcAlpha = src->a / 255.0f;
+        params->srcAlpha = alpha / 255.0f;
     }
 
-    if (dest) {
-        if (dest->blendMode == SDL_BLENDMODE_NONE) {
-            params->flags |= COMPFLAG_IgnoreDestAlpha | COMPFLAG_DestAlphaOverride;
-            params->destAlpha = 1.0f;
-        } else {
-            //if (dest->modMode & SDL_TEXTUREMODULATE_ALPHA) {
-                params->destAlpha = dest->a / 255.0f;
-            //}
-        }
-    } else {
-        params->flags |= COMPFLAG_IgnoreDestAlpha;
-        params->destAlpha = 1.0f;
-    }
+    params->destAlpha = 1.0f;
 }
 
 static void
@@ -462,9 +453,12 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * points, int count,
 }
 
 static int
-OS4_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
+OS4_RenderCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd,
               const SDL_Rect * srcrect, const SDL_Rect * dstrect, struct BitMap * dst)
 {
+    SDL_Texture * texture = cmd->data.draw.texture;
+    const SDL_BlendMode mode = cmd->data.draw.blend;
+
     OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
     OS4_TextureData *texturedata = (OS4_TextureData *) texture->driverdata;
 
@@ -481,13 +475,15 @@ OS4_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
         return -1;
     }
 
-    OS4_SetupCompositing(texture, renderer->target, &params);
+    OS4_SetupCompositing(renderer->target, &params, texture->scaleMode, mode, cmd->data.draw.a);
 
     scalex = srcrect->w ? (float)dstrect->w / srcrect->w : 1.0f;
     scaley = srcrect->h ? (float)dstrect->h / srcrect->h : 1.0f;
 
+    //dprintf("scalex %f, scaley %f (source %d, dest %d)\n", scalex, scaley, srcrect->w, dstrect->w);
+
     ret_code = data->iGraphics->CompositeTags(
-        OS4_ConvertBlendMode(texture->blendMode),
+        OS4_ConvertBlendMode(mode),
         src,
         dst,
         COMPTAG_SrcAlpha,   COMP_FLOAT_TO_FIX(params.srcAlpha),
@@ -523,9 +519,12 @@ OS4_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
 }
 
 static int
-OS4_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture, const OS4_Vertex * vertices,
+OS4_RenderCopyEx(SDL_Renderer * renderer, SDL_RenderCommand * cmd, const OS4_Vertex * vertices,
     struct BitMap * dst)
 {
+    SDL_Texture * texture = cmd->data.draw.texture;
+    const SDL_BlendMode mode = cmd->data.draw.blend;
+
     OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
     OS4_TextureData *texturedata = (OS4_TextureData *) texture->driverdata;
 
@@ -539,10 +538,10 @@ OS4_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture, const OS4_Verte
         return -1;
     }
 
-    OS4_SetupCompositing(texture, renderer->target, &params);
+    OS4_SetupCompositing(renderer->target, &params, texture->scaleMode, mode, cmd->data.draw.a);
 
     ret_code = data->iGraphics->CompositeTags(
-        OS4_ConvertBlendMode(texture->blendMode),
+        OS4_ConvertBlendMode(mode),
         src,
         dst,
         COMPTAG_SrcAlpha,   COMP_FLOAT_TO_FIX(params.srcAlpha),
@@ -952,13 +951,13 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
                 const SDL_Rect *verts = (SDL_Rect *)(((Uint8 *) vertices) + cmd->data.draw.first);
                 const SDL_Rect *srcrect = verts;
                 const SDL_Rect *dstrect = verts + 1;
-                OS4_RenderCopy(renderer, cmd->data.draw.texture, srcrect, dstrect, bitmap);
+                OS4_RenderCopy(renderer, cmd, srcrect, dstrect, bitmap);
                 break;
             }
 
             case SDL_RENDERCMD_COPY_EX: {
                 const OS4_Vertex *verts = (OS4_Vertex *)(((Uint8 *) vertices) + cmd->data.draw.first);
-                OS4_RenderCopyEx(renderer, cmd->data.draw.texture, verts, bitmap);
+                OS4_RenderCopyEx(renderer, cmd, verts, bitmap);
                 break;
             }
 
