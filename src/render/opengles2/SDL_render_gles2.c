@@ -1561,6 +1561,45 @@ GLES2_TexSubImage2D(GLES2_RenderData *data, GLenum target, GLint xoffset, GLint 
         return 0;  /* nothing to do */
     }
 
+#ifdef SDL_BIG_ENDIAN
+    /* HACK: do endian conversion. Then shaders and target texture should be compatible.
+       Alpha channel must be in correct place for blending */
+
+    src_pitch = width * bpp;
+    src = (Uint8 *)pixels;
+
+    blob = (Uint8 *)SDL_malloc(src_pitch * height);
+    if (!blob) {
+        return SDL_OutOfMemory();
+    }
+    src = blob;
+    for (y = 0; y < height; ++y)
+    {
+        int x;
+
+        if (bpp == 4) {
+            Uint32* to = (Uint32 *)src;
+            Uint32* from = (Uint32 *)pixels;
+
+            for (x = 0; x < width; x++) {
+                to[x] = SDL_SwapLE32(from[x]);
+            }
+        } else {
+            Uint8* to = src;
+            Uint8* from = (Uint8 *)pixels;
+
+            for (x = 0; x < src_pitch; x += 3) {
+                to[x + 0] = from[x + 2];
+                to[x + 1] = from[x + 1];
+                to[x + 2] = from[x + 0];
+            }
+        }
+
+        src += src_pitch;
+        pixels = (Uint8 *)pixels + pitch;
+    }
+    src = blob;
+#else
     /* Reformat the texture data into a tightly packed array */
     src_pitch = width * bpp;
     src = (Uint8 *)pixels;
@@ -1578,6 +1617,7 @@ GLES2_TexSubImage2D(GLES2_RenderData *data, GLenum target, GLint xoffset, GLint 
         }
         src = blob;
     }
+#endif
 
     data->myglTexSubImage2D(target, 0, xoffset, yoffset, width, height, format, type, src);
     if (blob) {
