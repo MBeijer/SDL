@@ -1566,7 +1566,6 @@ GLES2_TexSubImage2D(GLES2_RenderData *data, GLenum target, GLint xoffset, GLint 
        Alpha channel must be in correct place for blending */
 
     src_pitch = width * bpp;
-    src = (Uint8 *)pixels;
 
     blob = (Uint8 *)SDL_malloc(src_pitch * height);
     if (!blob) {
