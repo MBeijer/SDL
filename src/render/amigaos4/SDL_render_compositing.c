@@ -301,9 +301,9 @@ OS4_FillVertexData(OS4_Vertex vertices[4], const SDL_Rect * srcrect, const SDL_R
     Uint16 left, right, top, bottom, tmp;
 
     left = srcrect->x;
-    right = left + srcrect->w - 1;
+    right = left + srcrect->w;
     top = srcrect->y;
-    bottom = top + srcrect->h - 1;
+    bottom = top + srcrect->h;
 
     if (flip & SDL_FLIP_HORIZONTAL) {
         tmp = left;
@@ -334,18 +334,18 @@ OS4_FillVertexData(OS4_Vertex vertices[4], const SDL_Rect * srcrect, const SDL_R
     vertices[0].w = 1.0f;
 
     vertices[1].x = dstrect->x;
-    vertices[1].y = dstrect->y + dstrect->h - 1;
+    vertices[1].y = dstrect->y + dstrect->h;
     vertices[1].s = left;
     vertices[1].t = bottom;
     vertices[1].w = 1.0f;
 
-    vertices[2].x = dstrect->x + dstrect->w - 1;
-    vertices[2].y = dstrect->y + dstrect->h - 1;
+    vertices[2].x = dstrect->x + dstrect->w;
+    vertices[2].y = dstrect->y + dstrect->h;
     vertices[2].s = right;
     vertices[2].t = bottom;
     vertices[2].w = 1.0f;
 
-    vertices[3].x = dstrect->x + dstrect->w - 1;
+    vertices[3].x = dstrect->x + dstrect->w;
     vertices[3].y = dstrect->y;
     vertices[3].s = right;
     vertices[3].t = top;
@@ -450,72 +450,6 @@ OS4_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * points, int count,
     //dprintf("Took %d\n", SDL_GetTicks() - s);
 
     return status;
-}
-
-static int
-OS4_RenderCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd,
-              const SDL_Rect * srcrect, const SDL_Rect * dstrect, struct BitMap * dst)
-{
-    SDL_Texture * texture = cmd->data.draw.texture;
-    const SDL_BlendMode mode = cmd->data.draw.blend;
-
-    OS4_RenderData *data = (OS4_RenderData *) renderer->driverdata;
-    OS4_TextureData *texturedata = (OS4_TextureData *) texture->driverdata;
-
-    struct BitMap *src = OS4_IsColorModEnabled(texture) ?
-        texturedata->finalbitmap : texturedata->bitmap;
-
-    OS4_CompositingParams params;
-    float scalex, scaley;
-    uint32 ret_code;
-
-    //dprintf("Called\n");
-    //Sint32 s = SDL_GetTicks();
-    if (!dst) {
-        return -1;
-    }
-
-    OS4_SetupCompositing(renderer->target, &params, texture->scaleMode, mode, cmd->data.draw.a);
-
-    scalex = srcrect->w ? (float)dstrect->w / srcrect->w : 1.0f;
-    scaley = srcrect->h ? (float)dstrect->h / srcrect->h : 1.0f;
-
-    //dprintf("scalex %f, scaley %f (source %d, dest %d)\n", scalex, scaley, srcrect->w, dstrect->w);
-
-    ret_code = data->iGraphics->CompositeTags(
-        OS4_ConvertBlendMode(mode),
-        src,
-        dst,
-        COMPTAG_SrcAlpha,   COMP_FLOAT_TO_FIX(params.srcAlpha),
-        COMPTAG_SrcX,       srcrect->x,
-        COMPTAG_SrcY,       srcrect->y,
-        COMPTAG_SrcWidth,   srcrect->w,
-        COMPTAG_SrcHeight,  srcrect->h,
-        COMPTAG_OffsetX,    dstrect->x,
-        COMPTAG_OffsetY,    dstrect->y,
-        COMPTAG_ScaleX,     COMP_FLOAT_TO_FIX(scalex),
-        COMPTAG_ScaleY,     COMP_FLOAT_TO_FIX(scaley),
-        COMPTAG_DestAlpha,  COMP_FLOAT_TO_FIX(params.destAlpha),
-        COMPTAG_DestX,      data->cliprect.x,
-        COMPTAG_DestY,      data->cliprect.y,
-        COMPTAG_DestWidth,  data->cliprect.w,
-        COMPTAG_DestHeight, data->cliprect.h,
-        COMPTAG_Flags,      params.flags,
-        TAG_END);
-
-    if (ret_code) {
-        static Uint32 counter;
-
-        if ((counter++ % 100) == 0) {
-            dprintf("CompositeTags: %d (fails: %u)\n", ret_code, counter);
-        }
-
-        return SDL_SetError("CompositeTags failed");
-    }
-
-    //dprintf("Took %d\n", SDL_GetTicks() - s);
-
-    return 0;
 }
 
 static int
@@ -794,36 +728,6 @@ OS4_QueueFillRects(SDL_Renderer * renderer, SDL_RenderCommand *cmd, const SDL_FR
 }
 
 static int
-OS4_QueueCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd, SDL_Texture * texture,
-    const SDL_Rect * srcrect, const SDL_FRect *dstrect)
-{
-    SDL_Rect *verts = (SDL_Rect *) SDL_AllocateRenderVertices(renderer,
-        2 * sizeof(SDL_Rect), 0, &cmd->data.draw.first);
-
-    if (!verts) {
-        return -1;
-    }
-
-    cmd->data.draw.count = 1;
-
-    SDL_memcpy(verts, srcrect, sizeof(SDL_Rect));
-    verts++;
-
-    if (renderer->viewport.x || renderer->viewport.y) {
-        verts->x = (int)(renderer->viewport.x + dstrect->x);
-        verts->y = (int)(renderer->viewport.y + dstrect->y);
-    } else {
-        verts->x = (int)dstrect->x;
-        verts->y = (int)dstrect->y;
-    }
-
-    verts->w = (int)dstrect->w;
-    verts->h = (int)dstrect->h;
-
-    return OS4_SetTextureColorMod(renderer, texture);
-}
-
-static int
 OS4_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * texture,
                const SDL_Rect * srcrect, const SDL_FRect * dstrect,
                const double angle, const SDL_FPoint *center, const SDL_RendererFlip flip)
@@ -857,6 +761,14 @@ OS4_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * t
     OS4_FillVertexData(verts, srcrect, &final_rect, angle, &final_center, flip);
 
     return OS4_SetTextureColorMod(renderer, texture);
+}
+
+static int
+OS4_QueueCopy(SDL_Renderer * renderer, SDL_RenderCommand * cmd, SDL_Texture * texture,
+    const SDL_Rect * srcrect, const SDL_FRect *dstrect)
+{
+    const SDL_FPoint center = { 0.0, 0.0 };
+    return OS4_QueueCopyEx(renderer, cmd, texture, srcrect, dstrect, 0.0, &center, SDL_FLIP_NONE);
 }
 
 static int
@@ -959,10 +871,8 @@ OS4_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand * cmd, void * ver
             }
 
             case SDL_RENDERCMD_COPY: {
-                const SDL_Rect *verts = (SDL_Rect *)(((Uint8 *) vertices) + cmd->data.draw.first);
-                const SDL_Rect *srcrect = verts;
-                const SDL_Rect *dstrect = verts + 1;
-                OS4_RenderCopy(renderer, cmd, srcrect, dstrect, bitmap);
+                const OS4_Vertex *verts = (OS4_Vertex *)(((Uint8 *) vertices) + cmd->data.draw.first);
+                OS4_RenderCopyEx(renderer, cmd, verts, bitmap);
                 break;
             }
 
