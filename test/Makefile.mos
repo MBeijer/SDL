@@ -1,7 +1,7 @@
 # Makefile to build the MorphOS SDL tests
 
 AR = ppc-morphos-ar
-CC	= ppc-morphos-gcc
+CC	= ppc-morphos-gcc-9
 CFLAGS	= -noixemul -O2 -Wall -g -I../include -DHAVE_OPENGL
 LIBS	= -L. -lSDL2test -L../src/core/morphos/devenv/lib/ -lSDL2 -noixemul -lm
 
