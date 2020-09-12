@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2019 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -54,12 +54,6 @@ static void OS4_VideoQuit(_THIS);
 
 SDL_bool (*OS4_ResizeGlContext)(_THIS, SDL_Window * window) = NULL;
 void (*OS4_UpdateGlWindowPointer)(_THIS, SDL_Window * window) = NULL;
-
-static int
-OS4_Available(void)
-{
-    return (1);
-}
 
 #define MIN_LIB_VERSION 51
 
@@ -499,7 +493,7 @@ OS4_CreateDevice(int devindex)
 
 VideoBootStrap OS4_bootstrap = {
     OS4VID_DRIVER_NAME, "SDL AmigaOS 4 video driver",
-    OS4_Available, OS4_CreateDevice
+    OS4_CreateDevice
 };
 
 int
