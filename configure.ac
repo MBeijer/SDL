@@ -1229,7 +1229,7 @@ AS_HELP_STRING([--enable-fusionsound], [use FusionSound audio driver [[default=n
             AC_DEFINE(SDL_AUDIO_DRIVER_FUSIONSOUND, 1, [ ])
             SOURCES="$SOURCES $srcdir/src/audio/fusionsound/*.c"
             EXTRA_CFLAGS="$EXTRA_CFLAGS $FUSIONSOUND_CFLAGS"
-            
+
             AC_ARG_ENABLE(fusionsound-shared,
 AS_HELP_STRING([--enable-fusionsound-shared], [dynamically load fusionsound audio support [[default=yes]]]),
                           , enable_fusionsound_shared=yes)
@@ -1249,7 +1249,7 @@ AS_HELP_STRING([--enable-fusionsound-shared], [dynamically load fusionsound audi
                 SUMMARY_audio="${SUMMARY_audio} fusionsound"
             fi
             AC_MSG_RESULT($fusionsound_shared)
-            
+
             have_audio=yes
         fi
     fi
@@ -1319,13 +1319,13 @@ dnl Check for ARM instruction support using gas syntax
 CheckARM()
 {
     AC_ARG_ENABLE(arm-simd,
-AC_HELP_STRING([--enable-arm-simd], [use SIMD assembly blitters on ARM [[default=yes]]]),
+AC_HELP_STRING([--enable-arm-simd], [use SIMD assembly blitters on ARM [[default=no]]]),
                   enable_arm_simd=$enableval, enable_arm_simd=no)
     if test x$enable_video = xyes -a x$enable_assembly = xyes -a x$enable_arm_simd = xyes; then
         save_CFLAGS="$CFLAGS"
         have_arm_simd=no
         CFLAGS="-x assembler-with-cpp $CFLAGS"
-        
+
         AC_MSG_CHECKING(for ARM SIMD)
         AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
         .text
@@ -1340,9 +1340,9 @@ AC_HELP_STRING([--enable-arm-simd], [use SIMD assembly blitters on ARM [[default
         uqadd8 r0, r0, r0
         ]])], have_arm_simd=yes)
         AC_MSG_RESULT($have_arm_simd)
-        
+
         CFLAGS="$save_CFLAGS"
-        
+
         if test x$have_arm_simd = xyes; then
             AC_DEFINE(SDL_ARM_SIMD_BLITTERS, 1, [ ])
 dnl            SOURCES="$SOURCES $srcdir/src/video/arm/pixman-arm-simd*.c"
@@ -1362,7 +1362,7 @@ AC_HELP_STRING([--enable-arm-neon], [use NEON assembly blitters on ARM [[default
         save_CFLAGS="$CFLAGS"
         have_arm_neon=no
         CFLAGS="-x assembler-with-cpp $CFLAGS"
-        
+
         AC_MSG_CHECKING(for ARM NEON)
         AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
         .text
@@ -1379,9 +1379,9 @@ AC_HELP_STRING([--enable-arm-neon], [use NEON assembly blitters on ARM [[default
         vmovn.u16 d0, q0
         ]])], have_arm_neon=yes)
         AC_MSG_RESULT($have_arm_neon)
-        
+
         CFLAGS="$save_CFLAGS"
-        
+
         if test x$have_arm_neon = xyes; then
             AC_DEFINE(SDL_ARM_NEON_BLITTERS, 1, [ ])
 dnl            SOURCES="$SOURCES $srcdir/src/video/arm/pixman-arm-neon*.c"
@@ -1673,7 +1673,7 @@ AS_HELP_STRING([--enable-video-rpi], [use Raspberry Pi video driver [[default=ye
 
         # Restore the compiler flags and libraries
         CFLAGS="$ac_save_cflags"; LIBS="$ac_save_libs"
-        
+
         if test x$have_video_rpi = xyes; then
             CFLAGS="$CFLAGS $RPI_CFLAGS"
             SDL_CFLAGS="$SDL_CFLAGS $RPI_CFLAGS"
@@ -2169,7 +2169,7 @@ AS_HELP_STRING([--enable-render-metal], [enable the Metal render driver [[defaul
           #import <Metal/Metal.h>
           #import <QuartzCore/CAMetalLayer.h>
 
-          #if !TARGET_CPU_X86_64
+          #if TARGET_CPU_X86
           #error Metal doesn't work on this configuration
           #endif
         ],[
@@ -2395,7 +2395,7 @@ CheckOpenGLESX11()
         if test x$video_opengl_egl = xyes; then
             AC_DEFINE(SDL_VIDEO_OPENGL_EGL, 1, [ ])
         fi
-        
+
         if test x$enable_video_opengles1 = xyes; then
             AC_MSG_CHECKING(for OpenGL ES v1 headers)
             video_opengles_v1=no
@@ -2413,7 +2413,7 @@ CheckOpenGLESX11()
                 SUMMARY_video="${SUMMARY_video} opengl_es1"
             fi
         fi
-        
+
         if test x$enable_video_opengles2 = xyes; then
             AC_MSG_CHECKING(for OpenGL ES v2 headers)
             video_opengles_v2=no
@@ -2464,7 +2464,7 @@ CheckWINDOWSGLES()
             AC_DEFINE(SDL_VIDEO_OPENGL_EGL, 1, [ ])
             SUMMARY_video="${SUMMARY_video} opengl_es1"
         fi
-       
+
         AC_MSG_CHECKING(for OpenGL ES v2 headers)
         video_opengles_v2=no
         AC_TRY_COMPILE([
@@ -2618,7 +2618,7 @@ CheckVulkan()
                   #include <Metal/Metal.h>
                   #include <QuartzCore/CAMetalLayer.h>
 
-                  #if !TARGET_CPU_X86_64
+                  #if TARGET_CPU_X86
                   #error Vulkan doesn't work on this configuration
                   #endif
                 ],[
@@ -3203,7 +3203,7 @@ CheckUSBHID()
                     AC_CHECK_HEADER(libusb.h, [USB_CFLAGS="-DHAVE_LIBUSB_H"])
                     AC_CHECK_LIB(usb, hid_init, [USB_LIBS="$USB_LIBS -lusb"])
                 fi
-                
+
                 save_CFLAGS="$CFLAGS"
                 CFLAGS="$CFLAGS $USB_CFLAGS"
 
@@ -3269,7 +3269,7 @@ CheckUSBHID()
                         USB_CFLAGS="$USB_CFLAGS -DUSBHID_UCR_DATA"
                     fi
                     AC_MSG_RESULT($have_usbhid_ucr_data)
-                    
+
                     AC_MSG_CHECKING(for new usbhid API)
                     have_usbhid_new=no
                     AC_TRY_COMPILE([
@@ -3335,7 +3335,7 @@ CheckHIDAPI()
     # so we'll just use libusb when it's available.
     case "$host" in
         # libusb does not support iOS
-        arm*-apple-darwin* | *-ios-* )
+        *-ios-* )
             skiplibusb=yes
             ;;
         # On the other hand, *BSD specifically uses libusb only
@@ -3696,12 +3696,12 @@ case "$host" in
         fi
         # Set up files for udev hotplugging support
         if test x$enable_libudev = xyes && test x$have_libudev_h_hdr = xyes; then
-            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_udev.c"               
+            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_udev.c"
         fi
         # Set up files for evdev input
         if test x$use_input_events = xyes; then
             SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev*.c"
-        fi       
+        fi
         # Set up other core UNIX files
         SOURCES="$SOURCES $srcdir/src/core/linux/SDL_threadprio.c"
         SOURCES="$SOURCES $srcdir/src/core/unix/*.c"
@@ -3978,7 +3978,7 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
         EXTRA_LDFLAGS=""
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mstrict-align"
         ;;
-    arm*-apple-darwin*|*-ios-*)
+    *-ios-*)
         ARCH=ios
 
         CheckVisibilityHidden
@@ -4171,7 +4171,7 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
             SOURCES="$SOURCES $srcdir/src/timer/unix/*.c"
             have_timers=yes
         fi
-        
+
         if test x$enable_filesystem = xyes; then
             AC_DEFINE(SDL_FILESYSTEM_NACL, 1, [ ])
             SOURCES="$SOURCES $srcdir/src/filesystem/nacl/*.c"
@@ -4208,7 +4208,7 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
             SOURCES="$SOURCES $srcdir/src/power/emscripten/*.c"
             have_power=yes
         fi
-        
+
         # Set up files for the power library
         if test x$enable_joystick = xyes; then
             AC_DEFINE(SDL_JOYSTICK_EMSCRIPTEN, 1, [ ])
@@ -4413,7 +4413,7 @@ fi
 
 SDL_STATIC_LIBS="$EXTRA_LDFLAGS"
 
-# AmigaOS4 hack! This is only to pass "-use-dynld" for sdl2-config 
+# AmigaOS4 hack! This is only to pass "-use-dynld" for sdl2-config
 SDL_LIBS="-use-dynld $SDL_LIBS"
 
 dnl Expand the cflags and libraries needed by apps using SDL
@@ -4486,7 +4486,7 @@ if test x$enable_static = xyes; then
     SUMMARY="${SUMMARY}Building Static Libraries\n"
 fi
 SUMMARY="${SUMMARY}Enabled modules :${SUMMARY_modules}\n"
-SUMMARY="${SUMMARY}Assembly Math   :${SUMMARY_math}\n" 
+SUMMARY="${SUMMARY}Assembly Math   :${SUMMARY_math}\n"
 SUMMARY="${SUMMARY}Audio drivers   :${SUMMARY_audio}\n"
 SUMMARY="${SUMMARY}Video drivers   :${SUMMARY_video}\n"
 if test x$have_x = xyes; then

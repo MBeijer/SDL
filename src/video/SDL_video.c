@@ -501,19 +501,15 @@ SDL_VideoInit(const char *driver_name)
     if (driver_name != NULL) {
         for (i = 0; bootstrap[i]; ++i) {
             if (SDL_strncasecmp(bootstrap[i]->name, driver_name, SDL_strlen(driver_name)) == 0) {
-                if (bootstrap[i]->available()) {
-                    video = bootstrap[i]->create(index);
-                    break;
-                }
+                video = bootstrap[i]->create(index);
+                break;
             }
         }
     } else {
         for (i = 0; bootstrap[i]; ++i) {
-            if (bootstrap[i]->available()) {
-                video = bootstrap[i]->create(index);
-                if (video != NULL) {
-                    break;
-                }
+            video = bootstrap[i]->create(index);
+            if (video != NULL) {
+                break;
             }
         }
     }
@@ -3188,29 +3184,29 @@ SDL_GL_ResetAttributes()
     _this->gl_config.retained_backing = 1;
     _this->gl_config.accelerated = -1;  /* accelerated or not, both are fine */
 
+#if SDL_VIDEO_OPENGL
+#ifdef __AMIGAOS4__
+    _this->gl_config.major_version = 1; /* MiniGL */
+    _this->gl_config.minor_version = 3;
+#else
+    _this->gl_config.major_version = 2;
+    _this->gl_config.minor_version = 1;
+#endif
+    _this->gl_config.profile_mask = 0;
+#elif SDL_VIDEO_OPENGL_ES2
+    _this->gl_config.major_version = 2;
+    _this->gl_config.minor_version = 0;
+    _this->gl_config.profile_mask = SDL_GL_CONTEXT_PROFILE_ES;
+#elif SDL_VIDEO_OPENGL_ES
+    _this->gl_config.major_version = 1;
+    _this->gl_config.minor_version = 1;
+    _this->gl_config.profile_mask = SDL_GL_CONTEXT_PROFILE_ES;
+#endif
+
     if (_this->GL_DefaultProfileConfig) {
         _this->GL_DefaultProfileConfig(_this, &_this->gl_config.profile_mask,
                                        &_this->gl_config.major_version,
                                        &_this->gl_config.minor_version);
-    } else {
-#if SDL_VIDEO_OPENGL
-#ifdef __AMIGAOS4__
-        _this->gl_config.major_version = 1; /* MiniGL */
-        _this->gl_config.minor_version = 3;
-#else
-        _this->gl_config.major_version = 2;
-        _this->gl_config.minor_version = 1;
-#endif
-        _this->gl_config.profile_mask = 0;
-#elif SDL_VIDEO_OPENGL_ES2
-        _this->gl_config.major_version = 2;
-        _this->gl_config.minor_version = 0;
-        _this->gl_config.profile_mask = SDL_GL_CONTEXT_PROFILE_ES;
-#elif SDL_VIDEO_OPENGL_ES
-        _this->gl_config.major_version = 1;
-        _this->gl_config.minor_version = 1;
-        _this->gl_config.profile_mask = SDL_GL_CONTEXT_PROFILE_ES;
-#endif
     }
 
     _this->gl_config.flags = 0;
