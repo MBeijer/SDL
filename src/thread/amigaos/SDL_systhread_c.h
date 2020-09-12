@@ -24,20 +24,37 @@
 #include <exec/exec.h>
 #include <dos/dos.h>
 #include <dos/dostags.h>
-#if defined (__SASC) || defined(STORMC4_WOS)
+
+#if defined (__SASC) || defined(WARPOS) || defined(AROS)
 #include <proto/dos.h>
 #include <proto/exec.h>
 #else
+#ifdef MORPHOS
+#include <ppcinline/dos.h>
+#include <ppcinline/exec.h>
+#else
+
 #include <inline/dos.h>
 #include <inline/exec.h>
+
+#endif
 #endif
 
-#include "mydebug.h"
+#include <stdio.h>
+
+#ifndef AROS
+
+#include <stdlib.h>
+
+#endif
+
+#include <string.h>
+#include "SDL_os3debug.h"
 
 extern struct ExecBase *SysBase;
 extern struct DosLibrary *DOSBase;
 
-#ifdef STORMC4_WOS
+#ifdef WARPOS
 #include <proto/powerpc.h>
 
 /* use powerpc.library functions instead og exec */
@@ -57,5 +74,4 @@ extern struct DosLibrary *DOSBase;
 #else
 
 #define SYS_ThreadHandle struct Task *
-#endif /*STORMC4_WOS*/
-
+#endif /* WARPOS */

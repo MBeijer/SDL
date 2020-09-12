@@ -37,9 +37,20 @@
 #include <setjmp.h>
 #endif
 
-#ifdef __amigaos4__
+#if defined(WARPUP)
+#include <stdlib.h>
+
+#pragma pack(2)
+#include <exec/execbase.h>
+#endif
+#if defined(__amigaos4__)
 #include <proto/exec.h>
 #include <exec/exectags.h>
+#elif defined(WARPUP)
+#include <proto/exec.h>
+#include <powerpc/powerpc.h>
+#include <powerpc/powerpc_protos.h>
+#pragma pack()
 #endif
 
 #define CPU_HAS_RDTSC	0x00000001
@@ -370,7 +381,10 @@ static __inline__ int CPU_haveSSE2(void)
 
 static __inline__ int CPU_haveAltiVec(void)
 {
+#ifndef WARPUP
 	volatile int altivec = 0;
+#endif
+
 #if (defined(__MACOSX__) && (defined(__ppc__) || defined(__ppc64__))) || (defined(__OpenBSD__) && defined(__powerpc__))
 # ifdef __OpenBSD__
 	int selectors[2] = { CTL_MACHDEP, CPU_ALTIVEC };
@@ -381,13 +395,24 @@ static __inline__ int CPU_haveAltiVec(void)
 	size_t length = sizeof(hasVectorUnit); 
 	int error = sysctl(selectors, 2, &hasVectorUnit, &length, NULL, 0); 
 	if( 0 == error )
-		altivec = (hasVectorUnit != 0); 
-#elif defined __amigaos4__
+		altivec = (hasVectorUnit != 0);
+#elif defined(__amigaos4__)
 	{
 		uint32 vec_unit;
 
 		IExec->GetCPUInfoTags(GCIT_VectorUnit, &vec_unit, TAG_DONE);
 		altivec = (vec_unit == VECTORTYPE_ALTIVEC);
+	}
+#elif defined(WARPUP)
+	int altivec = 0;
+	if (PowerPCBase->lib_Version >= 17)
+	{
+		struct TagItem cputags[2] = { {GETINFO_CPU, 0}, {TAG_END,0} };
+		GetInfo(cputags);
+		if (cputags[0].ti_Data & CPUF_G4)
+		{
+			altivec = 1;
+		}
 	}
 #elif SDL_ALTIVEC_BLITTERS && HAVE_SETJMP
 	void (*handler)(int sig);

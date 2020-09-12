@@ -17,16 +17,16 @@
 
 SHELL	= /bin/sh
 CC      = ppc-amigaos-gcc
-INCLUDE = -I./include
+INCLUDE = -I./include -Iamiga/makefile-support
 CFLAGS  = -gstabs -O2 -Wall
-LDFLAGS = 
+LDFLAGS =
 AR	= ppc-amigaos-ar
 RANLIB	= ppc-amigaos-ranlib
 PIC_CFLAGS = -fPIC -DPIC
 DEBUG_CFLAGS = -DDEBUG
 AMIGADATE = $(shell date +"%-d.%-m.%Y")
 
-### Sources and objects files, build directories ###
+###ï¿½Sources and objects files, build directories ###
 
 SOURCES = $(wildcard src/*.c src/audio/*.c src/cdrom/*.c src/cpuinfo/*.c src/events/*.c src/file/*.c src/stdlib/*.c  \
 	src/video/*.c src/joystick/*.c src/video/dummy/*.c src/audio/disk/*.c src/audio/dummy/*.c src/video/amigaos4/*.c src/audio/amigaos4/*.c \
@@ -51,7 +51,7 @@ SHARED_TESTS := $(patsubst %.c,%, $(addprefix $(SHARED_OBJDIR)/,$(TESTS_SOURCES)
 
 $(STATIC_OBJDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(INCLUDE) $(CFLAGS) $(DEBUG_CFLAGS) -o $@ -c $<
+	$(CC) $(INCLUDE) $(CFLAGS) $(DEBUG_CFLAGS) -D__AMIGADATE__=\"$(AMIGADATE)\"  -o $@ -c $<
 
 $(STATIC_OBJDIR)/test/%: $(STATIC_OBJDIR)/test/%.o
 	@echo Link test $@

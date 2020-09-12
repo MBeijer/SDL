@@ -2785,6 +2785,10 @@ SDL_loblit SDL_CalculateAlphaBlit(SDL_Surface *surface, int blit_index)
     SDL_PixelFormat *sf = surface->format;
     SDL_PixelFormat *df = surface->map->dst->format;
 
+#if defined(APOLLO_BLITDBG)
+    printf("SDL_CalculateAlphaBlit amask %d sBPP %d dBPP %d\n",sf->Amask,sf->BytesPerPixel,df->BytesPerPixel);
+#endif
+
     if(sf->Amask == 0) {
 	if((surface->flags & SDL_SRCCOLORKEY) == SDL_SRCCOLORKEY) {
 	    if(df->BytesPerPixel == 1)

@@ -1,4 +1,4 @@
-#include "SDL/SDL.h"
+#include "SDL.h"
 #include <stdio.h>
 
 static SDL_Surface *screen;
@@ -16,7 +16,7 @@ static void draw(Uint32 t, SDL_Surface *s)
 		SDL_Rect r;
 		r.x = rand() % width;
 		r.y = rand() % height;
-		
+
 		SDL_BlitSurface(s, NULL, screen, &r);
 
 		SDL_Flip(screen);
@@ -63,8 +63,8 @@ int main(void)
 		screen = SDL_SetVideoMode(width, height, depth, flags | SDL_FULLSCREEN);
 
 		SDL_Surface *s = makeSurface();
-	
-		draw(time, s);		
+
+		draw(time, s);
 
 #if 1
 		screen = SDL_SetVideoMode(width, height, depth, flags);

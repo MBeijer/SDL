@@ -26,24 +26,35 @@
 /* This is the system specific header for the SDL joystick API */
 
 #include <libraries/lowlevel.h>
-#if defined(__SASC) || defined(STORMC4_WOS)
+#if defined(__SASC) || defined(WARPOS) || defined(AROS)
 #include <proto/exec.h>
 #include <proto/lowlevel.h>
 #include <proto/graphics.h>
 #else
+#ifdef MORPHOS
+#include <ppcinline/exec.h>
+#include <ppcinline/lowlevel.h>
+#include <ppcinline/graphics.h>
+#else
+#include <proto/dos.h>
+#include <inline/dos.h>
 #include <inline/exec.h>
 #include <inline/lowlevel.h>
 #include <inline/graphics.h>
 #endif
-#include "mydebug.h"
+#endif
+#include "SDL_os3debug.h"
 
 extern struct ExecBase *SysBase;
 extern struct GfxBase *GfxBase;
 
-#include "SDL_joystick.h"
-#include "../SDL_sysjoystick.h"
-#include "../SDL_joystick_c.h"
+#include <stdlib.h>
 
+#include "SDL_error.h"
+#include "SDL_joystick.h"
+#include "SDL_sysjoystick.h"
+#include "SDL_joystick_c.h"
+#include <SDL_events.h>
 /* Function to scan the system for joysticks.
  * This function should set SDL_numjoysticks to the number of available
  * joysticks.  Joystick 0 should be the system default joystick.
@@ -92,9 +103,9 @@ const char *SDL_SYS_JoystickName(int index)
 	{
 		switch(index)
 		{
-			case 0:
-				return "Port 1 Amiga Joystick/Joypad";
 			case 1:
+				return "Port 1 Amiga Joystick/Joypad";
+			case 0:
 				return "Port 2 Amiga Joystick/Joypad";
 		}
 	}
@@ -118,11 +129,13 @@ int SDL_SYS_JoystickOpen(SDL_Joystick *joystick)
 		return -1;
 
 /* This loop is to check if the controller is a joypad */
-
 	for(i=0;i<20;i++)
 	{
-		temp=ReadJoyPort(joystick->index^1); // fix to invert amiga joyports
-		WaitTOF();
+		int index;
+		if (joystick->index == 0)index = 1;  // include Port 0 should be amiga Port 2
+		else index = 0;
+		temp=ReadJoyPort(index);
+		Delay(1);
 	}
 
 	if((temp&JP_TYPE_MASK)==JP_TYPE_GAMECTLR)
@@ -150,45 +163,101 @@ void SDL_SYS_JoystickUpdate(SDL_Joystick *joystick)
 
 	if(joystick->index<2)
 	{
-		data=ReadJoyPort(joystick->index);
+		int index;
+		if (joystick->index == 0)index = 1;
+		else index = 0;
+		data=ReadJoyPort(index);
+#if 1
+		if(data&JP_DIRECTION_MASK)
+		{
 
+			if( data & (JPF_JOY_UP|JPF_JOY_DOWN) )
+			{
+
+				if(data&JPF_JOY_DOWN)
+				{
+					if(!(joystick->hwdata->joystate&JPF_JOY_DOWN))
+						SDL_PrivateJoystickAxis(joystick,1,257);
+				}
+				else
+				{
+					if(!(joystick->hwdata->joystate&JPF_JOY_UP))
+						SDL_PrivateJoystickAxis(joystick,1,-257);
+				}
+			}
+			else
+			 if(joystick->hwdata->joystate&(JPF_JOY_UP|JPF_JOY_DOWN))
+				SDL_PrivateJoystickAxis(joystick,1,0);
+
+			if( data & (JPF_JOY_LEFT|JPF_JOY_RIGHT) )
+			{
+
+				if(data&JPF_JOY_LEFT)
+				{
+					if(!(joystick->hwdata->joystate&JPF_JOY_LEFT))
+						SDL_PrivateJoystickAxis(joystick,0,-257);
+				}
+				else
+				{
+					if(!(joystick->hwdata->joystate&JPF_JOY_RIGHT))
+						SDL_PrivateJoystickAxis(joystick,0,257);
+				}
+			}
+			else
+			 if(joystick->hwdata->joystate&(JPF_JOY_LEFT|JPF_JOY_RIGHT))
+				SDL_PrivateJoystickAxis(joystick,0,0);
+
+		}
+		else
+		{
+			if(joystick->hwdata->joystate&(JPF_JOY_LEFT|JPF_JOY_RIGHT))
+			{
+				SDL_PrivateJoystickAxis(joystick,0,0);
+			}
+			if(joystick->hwdata->joystate&(JPF_JOY_UP|JPF_JOY_DOWN))
+			{
+				SDL_PrivateJoystickAxis(joystick,1,0);
+			}
+		}
+#else
 		if(data&JP_DIRECTION_MASK)
 		{
 			if(data&JPF_JOY_DOWN)
 			{
+
 				if(!(joystick->hwdata->joystate&JPF_JOY_DOWN))
-					SDL_PrivateJoystickAxis(joystick,0,127);
+					SDL_PrivateJoystickAxis(joystick,1,257);
 			}
 			else if(data&JPF_JOY_UP)
 			{
 				if(!(joystick->hwdata->joystate&JPF_JOY_UP))
-					SDL_PrivateJoystickAxis(joystick,0,-127);
+					SDL_PrivateJoystickAxis(joystick,1,-257);
 			}
 			else if(joystick->hwdata->joystate&(JPF_JOY_UP|JPF_JOY_DOWN))
-				SDL_PrivateJoystickAxis(joystick,0,0);
+				SDL_PrivateJoystickAxis(joystick,1,0);
 
 			if(data&JPF_JOY_LEFT)
 			{
 				if(!(joystick->hwdata->joystate&JPF_JOY_LEFT))
-					SDL_PrivateJoystickAxis(joystick,1,-127);
+					SDL_PrivateJoystickAxis(joystick,0,-257);
 			}
 			else if(data&JPF_JOY_RIGHT)
 			{
 				if(!(joystick->hwdata->joystate&JPF_JOY_RIGHT))
-					SDL_PrivateJoystickAxis(joystick,1,127);
+					SDL_PrivateJoystickAxis(joystick,0,257);
 			}
 			else if(joystick->hwdata->joystate&(JPF_JOY_LEFT|JPF_JOY_RIGHT))
-				SDL_PrivateJoystickAxis(joystick,1,0);
+				SDL_PrivateJoystickAxis(joystick,0,0);
 		}
 		else if(joystick->hwdata->joystate&(JPF_JOY_LEFT|JPF_JOY_RIGHT))
 		{
-				SDL_PrivateJoystickAxis(joystick,1,0);
+				SDL_PrivateJoystickAxis(joystick,0,0);
 		}
 		else if(joystick->hwdata->joystate&(JPF_JOY_UP|JPF_JOY_DOWN))
 		{
-				SDL_PrivateJoystickAxis(joystick,0,0);
+				SDL_PrivateJoystickAxis(joystick,1,0);
 		}
-
+ #endif
 		for(i=0;i<joystick->nbuttons;i++)
 		{
 			if( (data&joybut[i]) )

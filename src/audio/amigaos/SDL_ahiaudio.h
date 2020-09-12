@@ -26,35 +26,56 @@
 
 #include <exec/exec.h>
 #include <dos/dos.h>
-#ifdef __SASC
+
+#if defined(__SASC) || defined(WARPOS)
 #include <proto/exec.h>
 #else
+#ifdef MORPHOS
+#include <ppcinline/exec.h>
+#else
+
 #include <inline/exec.h>
+#include <proto/dos.h>
+#include <inline/dos.h>
+
+#endif
 #endif
 
+#include <stdlib.h>
+#include <string.h>
+
 #include <devices/ahi.h>
-#include "mydebug.h"
+#include "SDL_os3debug.h"
 
 #include "../SDL_sysaudio.h"
 
 /* Hidden "this" pointer for the audio functions */
-#define _THIS	SDL_AudioDevice *this
+#define _THIS   SDL_AudioDevice *this
 
-struct SDL_PrivateAudioData {
-	/* The handle for the audio device */
-	struct AHIRequest *audio_req[2];
-	struct MsgPort *audio_port;
-	Sint32 freq,type,bytespersample,size;
-	Uint8 *mixbuf[2];           /* The app mixing buffer */
-	int current_buffer;
-	Uint32 playing;
+struct SDL_PrivateAudioData
+{
+    struct MsgPort       *ahi_ReplyPort;
+    struct AHIRequest    *ahi_IORequest[2];
+
+    struct AHIAudioCtrl  *ahi_AudioCtrl;
+    Uint32                ahi_Type;
+    int                   currentBuffer; // buffer number to fill
+    struct AHIRequest    *link;          // point to previous I/O request sent
+
+    int                   audio_IsOpen;
+    Uint32                audio_MixBufferSize;
+    Uint8                *audio_MixBuffer[2];
+
+    APTR                  audio_Mutex;
 };
 
 /* Old variable names */
-#define audio_port		(this->hidden->audio_port)
-#define audio_req		(this->hidden->audio_req)
-#define mixbuf			(this->hidden->mixbuf)
-#define current_buffer		(this->hidden->current_buffer)
-#define playing			(this->hidden->playing)
+#define audio_port		(data->ahi_ReplyPort)
+#define audio_req		(data->ahi_IORequest)
+#define mixbuf			(data->audio_MixBuffer)
+#define current_buffer	(data->current_buffer)
+#define playing			(data->playing)
+
+typedef struct SDL_PrivateAudioData OS3AudioData;
 
 #endif /* _SDL_ahiaudio_h */

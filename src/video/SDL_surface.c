@@ -57,6 +57,7 @@ SDL_Surface * SDL_CreateRGBSurface (Uint32 flags,
 	} else {
 		screen = NULL;
 	}
+
 	if ( screen && ((screen->flags&SDL_HWSURFACE) == SDL_HWSURFACE) ) {
 		if ( (flags&(SDL_SRCCOLORKEY|SDL_SRCALPHA)) != 0 ) {
 			flags |= SDL_HWSURFACE;
@@ -394,13 +395,26 @@ void SDL_GetClipRect(SDL_Surface *surface, SDL_Rect *rect)
 		*rect = surface->clip_rect;
 	}
 }
+
+/* see SDL_video.h */
+void SDLA_SetQuickLazyBlit(SDL_Surface *surface, Uint32 yesno )
+{
+	if( surface )
+	{
+		if( yesno )
+			surface->flags |= SDLA_QUICKLAZY;
+		else
+			surface->flags &= ~SDLA_QUICKLAZY;
+	}
+}
+
 /* 
  * Set up a blit between two surfaces -- split into three parts:
- * The upper part, SDL_UpperBlit(), performs clipping and rectangle 
+ * The upper part, SDL_UpperBlit(), performs clipping and rectangle
  * verification.  The lower part is a pointer to a low level
  * accelerated blitting function.
  *
- * These parts are separated out and each used internally by this 
+ * These parts are separated out and each used internally by this
  * library in the optimimum places.  They are exported so that if
  * you know exactly what you are doing, you can optimize your code
  * by calling the one(s) you need.
@@ -411,14 +425,34 @@ int SDL_LowerBlit (SDL_Surface *src, SDL_Rect *srcrect,
 	SDL_blit do_blit;
 	SDL_Rect hw_srcrect;
 	SDL_Rect hw_dstrect;
+#if defined(__AMIGA__) && !defined(__amigaos4__)
+	int skipflag = 0;
 
-	/* Check to make sure the blit mapping is valid */
-	if ( (src->map->dst != dst) ||
-             (src->map->dst->format_version != src->map->format_version) ) {
-		if ( SDL_MapSurface(src, dst) < 0 ) {
-			return(-1);
+	/* applies to software blitting only */
+	if( src->flags & SDLA_QUICKLAZY )
+	{
+		if( src->map->sw_blit )
+		{
+		 if( src->map->sw_data->blit )
+		 {
+			skipflag = 1;
+		 }
 		}
 	}
+
+	if( !skipflag )
+	{
+#endif
+		/* Check to make sure the blit mapping is valid */
+		if ( (src->map->dst != dst) ||
+                     (src->map->dst->format_version != src->map->format_version) ) {
+			if ( SDL_MapSurface(src, dst) < 0 ) {
+				return(-1);
+			}
+		}
+#if defined(__AMIGA__) && !defined(__amigaos4__)
+	}
+#endif
 
 	/* Figure out which blitter to use */
 	if ( (src->flags & SDL_HWACCEL) == SDL_HWACCEL ) {
@@ -447,7 +481,9 @@ int SDL_UpperBlit (SDL_Surface *src, SDL_Rect *srcrect,
 {
         SDL_Rect fulldst;
 	int srcx, srcy, w, h;
-
+#if defined(__AMIGA__) && !defined(__amigaos4__)
+	extern int toggle,skipframe;
+#endif
 	/* Make sure the surfaces aren't locked */
 	if ( ! src || ! dst ) {
 		SDL_SetError("SDL_UpperBlit: passed a NULL surface");
@@ -467,7 +503,7 @@ int SDL_UpperBlit (SDL_Surface *src, SDL_Rect *srcrect,
 	/* clip the source rectangle to the source surface */
 	if(srcrect) {
 	        int maxw, maxh;
-	
+
 		srcx = srcrect->x;
 		w = srcrect->w;
 		if(srcx < 0) {
@@ -489,7 +525,7 @@ int SDL_UpperBlit (SDL_Surface *src, SDL_Rect *srcrect,
 		maxh = src->h - srcy;
 		if(maxh < h)
 			h = maxh;
-	    
+
 	} else {
 	        srcx = srcy = 0;
 		w = src->w;
@@ -548,7 +584,7 @@ static int SDL_FillRect4(SDL_Surface *dst, SDL_Rect *dstrect, Uint32 color)
 	return -1;
 }
 
-/* 
+/*
  * This function performs a fast fill of the given rectangle with 'color'
  */
 int SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, Uint32 color)
@@ -828,7 +864,7 @@ void SDL_UnlockSurface (SDL_Surface *surface)
 	}
 }
 
-/* 
+/*
  * Convert a surface into the specified pixel format.
  */
 SDL_Surface * SDL_ConvertSurface (SDL_Surface *surface,

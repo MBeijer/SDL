@@ -4,7 +4,7 @@ gcc alphablit.c -Isdk:local/common/include/SDL -use-dynld -lSDL -lauto -g -Wall 
 
 */
 
-#include "SDL/SDL.h"
+#include "SDL.h"
 
 #include <stdio.h>
 #ifdef __amigaos4__

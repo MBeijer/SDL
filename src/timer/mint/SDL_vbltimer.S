@@ -119,7 +119,7 @@ bcl_search_place:
 	/* Then install ourselves */
 place_found:
 	movel	a0,(a1)
-	moveq	#0,d0	
+	moveq	#0,d0
 
 exit_vbl_queue:
 	/* Restart interrupts */
@@ -133,7 +133,7 @@ _SDL_AtariVblUninstall:
 	movel	sp@(4),d0
 	cmpl	my_vector,d0
 	bnes	badvector
-	
+
 	movel	#_my_vbl,d0
 
 	/* Stop interrupts */

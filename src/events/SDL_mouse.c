@@ -117,6 +117,11 @@ int SDL_PrivateMouseMotion(Uint8 buttonstate, int relative, Sint16 x, Sint16 y)
 	Sint16 Xrel;
 	Sint16 Yrel;
 
+	/* Don't handle mouse motion if there's no cursor surface */
+	if ( SDL_VideoSurface == NULL ) {
+		return(0);
+	}
+
 	/* Default buttonstate is the current one */
 	if ( ! buttonstate ) {
 		buttonstate = SDL_ButtonState;

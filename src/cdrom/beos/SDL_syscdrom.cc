@@ -59,7 +59,7 @@ extern "C" {
 #define POS_REL_F(pos)	pos.position[15]
 
 /* The maximum number of CD-ROM drives we'll detect */
-#define MAX_DRIVES	16	
+#define MAX_DRIVES	16
 
 /* A list of available CD-ROM drives */
 static char *SDL_cdlist[MAX_DRIVES];
@@ -194,7 +194,7 @@ int  SDL_SYS_CDInit(void)
 			return(0);
 		}
 	}
-	
+
 	/* Scan the system for CD-ROM drives */
 	try_dir("/dev/disk");
 	return 0;
@@ -202,43 +202,43 @@ int  SDL_SYS_CDInit(void)
 
 
 int try_dir(const char *directory)
-{ 
-	BDirectory dir; 
-	dir.SetTo(directory); 
-	if(dir.InitCheck() != B_NO_ERROR) { 
-		return false; 
-	} 
-	dir.Rewind(); 
-	BEntry entry; 
-	while(dir.GetNextEntry(&entry) >= 0) { 
-		BPath path; 
-		const char *name; 
-		entry_ref e; 
-		
-		if(entry.GetPath(&path) != B_NO_ERROR) 
-			continue; 
-		name = path.Path(); 
-		
-		if(entry.GetRef(&e) != B_NO_ERROR) 
-			continue; 
+{
+	BDirectory dir;
+	dir.SetTo(directory);
+	if(dir.InitCheck() != B_NO_ERROR) {
+		return false;
+	}
+	dir.Rewind();
+	BEntry entry;
+	while(dir.GetNextEntry(&entry) >= 0) {
+		BPath path;
+		const char *name;
+		entry_ref e;
 
-		if(entry.IsDirectory()) { 
-			if(SDL_strcmp(e.name, "floppy") == 0) 
+		if(entry.GetPath(&path) != B_NO_ERROR)
+			continue;
+		name = path.Path();
+
+		if(entry.GetRef(&e) != B_NO_ERROR)
+			continue;
+
+		if(entry.IsDirectory()) {
+			if(SDL_strcmp(e.name, "floppy") == 0)
 				continue; /* ignore floppy (it is not silent)  */
 			int devfd = try_dir(name);
 			if(devfd >= 0)
 				return devfd;
-		} 
-		else { 
-			int devfd; 
-			device_geometry g; 
+		}
+		else {
+			int devfd;
+			device_geometry g;
 
-			if(SDL_strcmp(e.name, "raw") != 0) 
+			if(SDL_strcmp(e.name, "raw") != 0)
 				continue; /* ignore partitions */
 
-			devfd = open(name, O_RDONLY); 
-			if(devfd < 0) 
-				continue; 
+			devfd = open(name, O_RDONLY);
+			if(devfd < 0)
+				continue;
 
 			if(ioctl(devfd, B_GET_GEOMETRY, &g, sizeof(g)) >= 0) {
 				if(g.device_type == B_CD)
@@ -247,7 +247,7 @@ int try_dir(const char *directory)
 				}
 			}
 			close(devfd);
-		} 
+		}
 	}
 	return B_ERROR;
 }
@@ -273,7 +273,7 @@ static int SDL_SYS_CDioctl(int index, int command, void *arg)
 static const char *SDL_SYS_CDName(int drive)
 {
 	return(SDL_cdlist[drive]);
-} 
+}
 
 static int SDL_SYS_CDOpen(int drive)
 {

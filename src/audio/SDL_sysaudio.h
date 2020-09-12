@@ -27,6 +27,29 @@
 #include "SDL_mutex.h"
 #include "SDL_thread.h"
 
+#if defined(__AMIGA__) && !defined(__amigaos4__)
+#include <exec/exec.h>
+#include <dos/dos.h>
+#if defined(__SASC) || defined(WARPOS)
+#include <proto/exec.h>
+#else
+#ifdef MORPHOS
+#include <ppcinline/exec.h>
+#else
+#include <inline/exec.h>
+#include <proto/dos.h>
+#include <inline/dos.h>
+#endif
+#endif
+
+#ifdef SDL_AUDIO_DRIVER_AHI
+#include <devices/ahi.h>
+#endif
+#include "SDL_os3debug.h"
+
+extern struct ExecBase *SysBase;
+#endif
+
 /* The SDL audio driver */
 typedef struct SDL_AudioDevice SDL_AudioDevice;
 
@@ -183,7 +206,7 @@ extern AudioBootStrap MMEAUDIO_bootstrap;
 extern AudioBootStrap DART_bootstrap;
 #endif
 #if SDL_AUDIO_DRIVER_EPOCAUDIO
-extern AudioBootStrap EPOCAudio_bootstrap; 
+extern AudioBootStrap EPOCAudio_bootstrap;
 #endif
 #if SDL_AUDIO_DRIVER_AMIGAOS4
 extern AudioBootStrap AmigaOS4_bootstrap;

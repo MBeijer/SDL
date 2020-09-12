@@ -34,9 +34,9 @@ AmigaMesaContext glcont=NULL;
 int CGX_GL_Init(_THIS)
 {
 #if SDL_VIDEO_OPENGL
-   int i = 0;
+	int i = 0;
 	struct TagItem attributes [ 14 ]; /* 14 should be more than enough :) */
-   struct Window *win = (struct Window *)SDL_Window;
+	struct Window *win = (struct Window *)SDL_Window;
 
 	// default config. Always used...
 	attributes[i].ti_Tag = AMA_Window;	attributes[i++].ti_Data = (unsigned long)win;
@@ -47,7 +47,7 @@ int CGX_GL_Init(_THIS)
 	attributes[i].ti_Tag = AMA_DirectRender; attributes[i++].ti_Data = GL_TRUE;
 
 	// double buffer ?
-	attributes[i].ti_Tag = AMA_DoubleBuf;
+	//attributes[i].ti_Tag = AMA_DoubleBuf;attributes[i++].ti_Data = GL_TRUE;
 	if ( this->gl_config.double_buffer ) {
 		attributes[i++].ti_Data = GL_TRUE;
 	}

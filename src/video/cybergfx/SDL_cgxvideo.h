@@ -24,90 +24,123 @@
 #ifndef _SDL_cgxvideo_h
 #define _SDL_cgxvideo_h
 
+#include <stdio.h>
+
+#ifndef AROS
+#include <stdlib.h>
+#endif
+
+#include <string.h>
 
 #include <exec/exec.h>
 #include <cybergraphx/cybergraphics.h>
 #include <graphics/scale.h>
 #include <graphics/gfx.h>
 #include <intuition/intuition.h>
-#if defined(__SASC) || defined(STORMC4_WOS)
+
+#if defined(__SASC) || defined(WARPOS) || defined(AROS)
 #include <proto/exec.h>
 #include <proto/cybergraphics.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/console.h>
 #else
+#ifdef MORPHOS
+#include <ppcinline/exec.h>
+#include <ppcinline/cybergraphics.h>
+#include <ppcinline/graphics.h>
+#include <ppcinline/intuition.h>
+#include <ppcinline/console.h>
+#else
+
 #include <inline/exec.h>
 #include <inline/cybergraphics.h>
 #include <inline/graphics.h>
 #include <inline/intuition.h>
 #include <inline/console.h>
+
+#endif
 #endif
 
 #include "SDL_mouse.h"
 #include "../SDL_sysvideo.h"
-#include "mydebug.h"
+#include "SDL_os3debug.h"
 
 #define USE_CGX_WRITELUTPIXEL
 
 /* Hidden "this" pointer for the video functions */
-#define _THIS	SDL_VideoDevice *this
+#define _THIS    SDL_VideoDevice *this
 
 /* Private display data */
 struct SDL_PrivateVideoData {
-    struct Screen *Public_Display; /* Used for events and window management */
-    struct Screen *GFX_Display;	/* Used for graphics and colormap stuff */
-    Uint32 SDL_VisualUnused;		/* The visual used by our window */
-    struct Window *SDL_Window;	/* Shared by both displays (no X security?) */
-    unsigned char *BlankCursor;	/* The invisible cursor */
+	struct Screen *Public_Display;	/* Used for events and window management */
+	struct Screen *GFX_Display;	/* Used for graphics and colormap stuff */
+	Uint32 SDL_VisualUnused;	/* The visual used by our window */
+	struct Window *SDL_Window;	/* Shared by both displays (no X security?) */
+	unsigned char *BlankCursor;	/* The invisible cursor */
 
-    char *SDL_windowid;		/* Flag: true if we have been passed a window */
+	char *SDL_windowid;		/* Flag: true if we have been passed a window */
 
-    /* The variables used for displaying graphics */
-    Uint8 *Ximage;		/* The X image for our window */
-    int swap_pixels;		/* Flag: true if display is swapped endian */
+	/* The variables used for displaying graphics */
+	Uint8 *Ximage;			/* The X image for our window */
+	int swap_pixels;		/* Flag: true if display is swapped endian */
 
-    /* Support for internal mouse warping */
-    struct {
-        int x;
-        int y;
-    } mouse_last;
-    struct {
-        int numerator;
-        int denominator;
-        int threshold;
-    } mouse_accel;
-    int mouse_relative;
+	/* The current width and height of the fullscreen mode */
+	int current_w;
+	int current_h;
 
-    /* The current list of available video modes */
-    SDL_Rect **modelist;
+	/* Support for internal mouse warping */
+	struct {
+		int x;
+		int y;
+	} mouse_last;
+	struct {
+		int numerator;
+		int denominator;
+		int threshold;
+	} mouse_accel;
+	int mouse_relative;
 
-    /* available visuals of interest to us, sorted deepest first */
-    struct {
+	/* The current list of available video modes */
+	SDL_Rect **modelist;
+
+	/* available visuals of interest to us, sorted deepest first */
+	struct {
 		Uint32 visual;
-		int depth;		/* number of significant bits/pixel */
-		int bpp;		/* pixel quantum in bits */
-    } visuals[5];		/* at most entries for 8, 15, 16, 24 */
-    int nvisuals;
+		int depth;	/* number of significant bits/pixel */
+		int bpp;	/* pixel quantum in bits */
+	} visuals[5];		/* at most entries for 8, 15, 16, 24 32 */
+	int nvisuals;
 
-    Uint32 vis;		/* current visual in use */
-    int depth;			/* current visual depth (not bpp) */
-    int BytesPerPixel;
-    int currently_fullscreen,same_format,dbuffer;
+	Uint32 vis;		/* current visual in use */
+	int depth;		/* current visual depth (not bpp) */
+	int BytesPerPixel;
+	int currently_fullscreen, same_format, dbuffer;
 
-    /* Automatic mode switching support (entering/leaving fullscreen) */
-    Uint32 switch_waiting;
-    Uint32 switch_time;
+	/* Automatic mode switching support (entering/leaving fullscreen) */
+	Uint32 switch_waiting;
+	Uint32 switch_time;
 
-    /* Prevent too many XSync() calls */
-    int blit_queued;
+	/* Prevent too many XSync() calls */
+	int blit_queued;
 
-    /* Colormap handling */
-    LONG Pens;
-    Sint32 *XPixels;		/* A list of pixels that have been allocated, the size depends on the screen format */
+	/* Colormap handling */
+	LONG Pens;
+	Sint32 *XPixels;	/* A list of pixels that have been allocated, the size depends on the screen format */
 	struct ScreenBuffer *SB[2];
 	struct RastPort *RP;
-    short *iconcolors;		/* List of colors used by the icon */
+	short *iconcolors;	/* List of colors used by the icon */
+	int swap_bytes;
+	struct Window *SDL_Window_Background;
+	struct BitMap *bmap;
+	Uint32 oldqual, oldkey;
+	UBYTE window_active;
+
+	/* additions for AMMX version */
+	UBYTE dbscrollscreen;	/* use scrolling screen instead of screen buffer swap (Vampire/Apollo) */
+	UWORD dbpos;		/* current screen position (vertical, scrolled) */
+	UWORD dbheight;		/* height of double buffer (half of total screen height) */
+	struct BitMap dbitmap;	/* custom bitmap for double buffering */
 };
 
 /* Old variable names */
@@ -122,12 +155,16 @@ struct SDL_PrivateVideoData {
 #define WMwindow		(this->hidden->WMwindow)
 #define FSwindow		(this->hidden->FSwindow)
 #define SDL_Window		(this->hidden->SDL_Window)
+#define SDL_Window_Background	(this->hidden->SDL_Window_Background)
+
 #define WM_DELETE_WINDOW	(this->hidden->WM_DELETE_WINDOW)
 #define SDL_BlankCursor		(this->hidden->BlankCursor)
 #define SDL_windowid		(this->hidden->SDL_windowid)
 #define SDL_Ximage		(this->hidden->Ximage)
 #define SDL_GC			(this->hidden->gc)
 #define swap_pixels		(this->hidden->swap_pixels)
+#define current_w		(this->hidden->current_w)
+#define current_h		(this->hidden->current_h)
 #define mouse_last		(this->hidden->mouse_last)
 #define mouse_accel		(this->hidden->mouse_accel)
 #define mouse_relative		(this->hidden->mouse_relative)
@@ -144,10 +181,8 @@ struct SDL_PrivateVideoData {
 /* Used to get the X cursor from a window-manager specific cursor */
 // extern Cursor SDL_GetWMXCursor(WMcursor *cursor);
 
-extern int CGX_CreateWindow(_THIS, SDL_Surface *screen,
-			    int w, int h, int bpp, Uint32 flags);
-extern int CGX_ResizeWindow(_THIS,
-			SDL_Surface *screen, int w, int h, Uint32 flags);
+extern int CGX_CreateWindow(_THIS, SDL_Surface *screen, int w, int h, int bpp, Uint32 flags);
+extern int CGX_ResizeWindow(_THIS, SDL_Surface *screen, int w, int h, Uint32 flags);
 
 extern void CGX_DestroyWindow(_THIS, SDL_Surface *screen);
 
@@ -157,16 +192,17 @@ extern struct GfxBase *GfxBase;
 extern struct ExecBase *SysBase;
 extern struct DosLibrary *DOSBase;
 
-struct private_hwdata
-{
+struct private_hwdata {
 	struct BitMap *bmap;
 	APTR lock;
 	struct SDL_VideoDevice *videodata;
 	APTR mask;
 	int allocated;
+	struct Window *amigawindow;
 };
 
-int CGX_CheckHWBlit(_THIS,SDL_Surface *src,SDL_Surface *dst);
-int CGX_FillHWRect(_THIS,SDL_Surface *dst,SDL_Rect *dstrect,Uint32 color);
-int CGX_SetHWColorKey(_THIS,SDL_Surface *surface, Uint32 key);
+int CGX_CheckHWBlit(_THIS, SDL_Surface *src, SDL_Surface *dst);
+int CGX_FillHWRect(_THIS, SDL_Surface *dst, SDL_Rect *dstrect, Uint32 color);
+int CGX_SetHWColorKey(_THIS, SDL_Surface *surface, Uint32 key);
+
 #endif /* _SDL_x11video_h */

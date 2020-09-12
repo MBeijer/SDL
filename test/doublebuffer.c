@@ -1,4 +1,4 @@
-#include "SDL/SDL.h"
+#include "SDL.h"
 #include <stdio.h>
 
 static SDL_Surface *screen;
@@ -32,9 +32,9 @@ static void draw(Uint32 t)
 		r.y = 0;
 		r.w = width;
 		r.h = height;
-		
+
 		SDL_FillRect(screen, &r, black);
-		
+
 		r.y = height / 2;
 		r.h = height / 2;
 
@@ -59,10 +59,10 @@ int main(void)
 
 		screen = SDL_SetVideoMode(width, height, depth, flags);
 		draw(time);
-		
+
 		SDL_SetVideoMode(100, 100, 32, 0);
 
-		puts("Testing double-buffer HW surface - expecting NO flickering");	
+		puts("Testing double-buffer HW surface - expecting NO flickering");
 		countdown(3);
 
 		screen = SDL_SetVideoMode(width, height, depth, flags | SDL_DOUBLEBUF);

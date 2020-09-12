@@ -40,6 +40,7 @@ struct SDL_PrivateGLData {
 extern int CGX_GL_Init(_THIS);
 extern void CGX_GL_Quit(_THIS);
 extern int CGX_GL_Update(_THIS);
+
 #if SDL_VIDEO_OPENGL
 extern int CGX_GL_MakeCurrent(_THIS);
 extern int CGX_GL_GetAttribute(_THIS, SDL_GLattr attrib, int* value);
