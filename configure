@@ -1634,7 +1634,7 @@ Optional Features:
                           [[default=yes]]
   --enable-libsamplerate-shared
                           dynamically load libsamplerate [[default=yes]]
-  --enable-arm-simd       use SIMD assembly blitters on ARM [[default=yes]]
+  --enable-arm-simd       use SIMD assembly blitters on ARM [[default=no]]
   --enable-arm-neon       use NEON assembly blitters on ARM [[default=no]]
   --enable-video-wayland  use Wayland video driver [[default=yes]]
   --enable-video-wayland-qt-touch
@@ -21789,7 +21789,7 @@ $as_echo_n "checking for Metal framework... " >&6; }
           #import <Metal/Metal.h>
           #import <QuartzCore/CAMetalLayer.h>
 
-          #if !TARGET_CPU_X86_64
+          #if TARGET_CPU_X86
           #error Metal doesn't work on this configuration
           #endif
 
@@ -22752,7 +22752,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
                   #include <Metal/Metal.h>
                   #include <QuartzCore/CAMetalLayer.h>
 
-                  #if !TARGET_CPU_X86_64
+                  #if TARGET_CPU_X86
                   #error Vulkan doesn't work on this configuration
                   #endif
 
@@ -24328,7 +24328,7 @@ CheckHIDAPI()
     # so we'll just use libusb when it's available.
     case "$host" in
         # libusb does not support iOS
-        arm*-apple-darwin* | *-ios-* )
+        *-ios-* )
             skiplibusb=yes
             ;;
         # On the other hand, *BSD specifically uses libusb only
@@ -25302,7 +25302,7 @@ $as_echo "#define SDL_LOADSO_AMIGAOS4 1" >>confdefs.h
 
         EXTRA_CFLAGS="$EXTRA_CFLAGS -mstrict-align"
         ;;
-    arm*-apple-darwin*|*-ios-*)
+    *-ios-*)
         ARCH=ios
 
         CheckVisibilityHidden
