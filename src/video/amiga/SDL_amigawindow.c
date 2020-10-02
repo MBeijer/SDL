@@ -545,7 +545,7 @@ AMIGA_RaiseWindow(_THIS, SDL_Window * window)
 
 	if (data->win)
 	{
-		//AMIGA_WindowToFront(data->win);
+		AMIGA_WindowToFront(data->win);
 	}
 }
 
