@@ -40,7 +40,9 @@
 #include <rexx/errors.h>
 #include <rexx/storage.h>
 #include <workbench/workbench.h>
+#include <workbench/startup.h>
 
+#include <proto/dos.h>
 #include <proto/alib.h>
 #include <proto/commodities.h>
 #include <proto/exec.h>
@@ -352,15 +354,37 @@ AMIGA_CheckWBEvents(_THIS)
 {
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	struct AppMessage *msg;
-
+	char filename[1024];
 	while ((msg = (struct AppMessage *)GetMsg(&data->WBPort)) != NULL)
 	{
 		D("[%s] check AppMessage\n", __FUNCTION__);
-
-		if (msg->am_NumArgs == 0 && msg->am_ArgList == NULL)
-			AMIGA_ShowApp(_this);
-
-#warning object dragn drop
+	
+		switch (msg->am_Type) {	
+			case AMTYPE_APPWINDOW:
+				{
+				    SDL_Window *window = (SDL_Window *)msg->am_UserData;
+					struct WBArg *argptr = msg->am_ArgList;
+				    for (int i = 0; i < msg->am_NumArgs; i++) {
+						if (argptr->wa_Lock) {
+							NameFromLock(argptr->wa_Lock, filename, 1024);
+							AddPart(filename, argptr->wa_Name, 1024);
+						
+							D("[%s] SDL_SendDropfile : '%s'\n", __FUNCTION__, filename);
+							SDL_SendDropFile(window, filename);
+							argptr++;
+						}
+					}
+					SDL_SendDropComplete(window);
+				}
+				break;			
+			case AMTYPE_APPICON:
+				AMIGA_ShowApp(_this);
+				break;
+			default:
+				//D("[%s] Unknown AppMsg %d %p\n", __FUNCTION__, msg->am_Type, (APTR)msg->am_UserData);
+				break;
+		}
+		
 	}
 }
 
@@ -393,6 +417,3 @@ AMIGA_PumpEvents(_THIS)
 	if (sigs & SIGBREAKF_CTRL_C)
 		SDL_SendAppEvent(SDL_QUIT);
 }
-
-
-/* vi: set ts=4 sw=4 expandtab: */

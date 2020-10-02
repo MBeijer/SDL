@@ -73,7 +73,14 @@ static void CloseWindowSafely(SDL_Window *sdlwin, struct Window *win)
 		win->UserPort = NULL;
 		ModifyIDCMP(win, 0);
 		#endif
-
+		
+		SDL_WindowData *data = (SDL_WindowData *) sdlwin->driverdata;
+		if (data->appmsg) {
+			if (RemoveAppWindow(data->appmsg)) {
+				data->appmsg = NULL;
+			}
+		}
+		
 		CloseWindow(win);
 		Permit();
 	}
@@ -136,6 +143,7 @@ AMIGA_SetupWindowData(_THIS, SDL_Window *window, struct Window *win)
 		wd->videodata = data;
 		wd->first_deltamove = 0;
 		wd->winflags = 0;
+		wd->appmsg = NULL;
 
 		if (win)
 		{
@@ -495,6 +503,14 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 
 			data->win->UserData = (APTR)data;
 
+			
+			if (!data->appmsg) {
+				data->appmsg = AddAppWindow(0, (ULONG)window, data->win, &vd->WBPort, TAG_DONE);
+				if (!data->appmsg) {
+					D("[%s] ERROR AddAppWindow \n", __FUNCTION__);
+				}
+			}
+			
 			if (data->grabbed > 0)
 				DoMethod((Object *)data->win, WM_ObtainEvents);
 		}
@@ -718,6 +734,12 @@ static void AMIGA_CloseWindow(SDL_Window *window)
 
 	if (data->win)
 	{
+		if (data->appmsg) {
+			if (RemoveAppWindow(data->appmsg)) {
+				data->appmsg = NULL;
+			}
+		}
+	
 		struct Window *win = data->win;
 		CloseWindow(win);
 		data->win = NULL;	

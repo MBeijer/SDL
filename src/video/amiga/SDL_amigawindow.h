@@ -42,6 +42,7 @@ typedef struct
 
 	SDL_Window *window;
 	struct Window *win;
+	struct AppWindow *appmsg;
 
 	// Localized window title, use SDL_free() to deallocate
 	char *window_title;
