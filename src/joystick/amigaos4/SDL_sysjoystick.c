@@ -569,6 +569,12 @@ AMIGAINPUT_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, 
     return 0;
 }
 
+static SDL_bool
+AMIGAINPUT_GetGamepadMapping(int device_index, SDL_GamepadMapping * out)
+{
+    return SDL_FALSE;
+}
+
 SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
 {
     AMIGAINPUT_JoystickInit,
@@ -584,6 +590,7 @@ SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
     AMIGAINPUT_JoystickUpdate,
     AMIGAINPUT_JoystickClose,
     AMIGAINPUT_JoystickQuit,
+    AMIGAINPUT_GetGamepadMapping
 };
 
 #endif /* SDL_JOYSTICK_AMIGAINPUT || SDL_JOYSTICK_DISABLED */
