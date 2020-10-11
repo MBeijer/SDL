@@ -109,6 +109,7 @@ KMSDRM_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
     uint32_t bo_stride, pixel;
     uint32_t *buffer = NULL;
     size_t bufsize;
+    unsigned int i, j;
 
     /* All code below assumes ARGB8888 format for the cursor surface, like other backends do.
        Also, the GBM BO pixels have to be alpha-premultiplied, but the SDL surface we receive has
@@ -140,7 +141,7 @@ KMSDRM_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
             goto cleanup;
     }
 
-    if (usable_cursor_w == 0 || usable_cursor_w == 0) {
+    if (usable_cursor_w == 0 || usable_cursor_h == 0) {
             SDL_SetError("Could not get an usable GBM cursor size");
             goto cleanup;
     }
@@ -183,8 +184,8 @@ KMSDRM_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
     SDL_memset(buffer, 0x00, bo_stride * curdata->h);
 
     /* Copy from SDL surface to buffer, pre-multiplying by alpha each pixel as we go. */
-    for (int i = 0; i < surface->h; i++) {
-        for (int j = 0; j < surface->w; j++) {
+    for (i = 0; i < surface->h; i++) {
+        for (j = 0; j < surface->w; j++) {
             pixel = ((uint32_t*)surface->pixels)[i * surface->w + j];
             alpha_premultiply_ARGB8888 (&pixel);
 	    SDL_memcpy(buffer + (i * curdata->w)  + j, &pixel, 4);
@@ -258,29 +259,22 @@ KMSDRM_ShowCursor(SDL_Cursor * cursor)
     /**********************************/
     if (!cursor) {
         /* Hide CURRENT cursor, a cursor that is already on screen
-           and SDL stores in mouse->cur_cursor. */
+           and SDL is stored in mouse->cur_cursor. */
         if (mouse->cur_cursor && mouse->cur_cursor->driverdata) {
-            if (dispdata && dispdata->cursor_plane) {
-                info.plane = dispdata->cursor_plane; /* The rest of the members are zeroed. */
-                if (drm_atomic_set_plane_props(&info)) {
-                    return SDL_SetError("Failed to set CURSOR PLANE props in KMSDRM_ShowCursor.");
+                if (dispdata && dispdata->cursor_plane) {
+                    info.plane = dispdata->cursor_plane; /* The rest of the members are zeroed. */
+                    drm_atomic_set_plane_props(&info);
+                    if (drm_atomic_commit(display->device, SDL_TRUE))
+                        return SDL_SetError("Failed atomic commit in KMSDRM_ShowCursor.");
                 }
-                if (drm_atomic_commit(display->device, SDL_TRUE)) {
-                    return SDL_SetError("Failed atomic commit in KMSDRM_ShowCursor.");
-                }
-
                 return 0;
-
-            }
         }
-
         return SDL_SetError("Couldn't find cursor to hide.");
     }
 
     /************************************************/
     /* If cursor != NULL, DO show cursor on display */
     /************************************************/
-
     if (!display) {
         return SDL_SetError("Could not get display for mouse.");
     }
@@ -313,14 +307,11 @@ KMSDRM_ShowCursor(SDL_Cursor * cursor)
     info.crtc_w = curdata->w;
     info.crtc_h = curdata->h; 
 
-    if (drm_atomic_set_plane_props(&info)) {
-        return SDL_SetError("Failed to set CURSOR PLANE props in KMSDRM_ShowCursor.");
-    }
+    drm_atomic_set_plane_props(&info);
 
     if (drm_atomic_commit(display->device, SDL_TRUE)) {
         return SDL_SetError("Failed atomic commit in KMSDRM_ShowCursor.");
     }
-
     return 0;
 }
 
@@ -338,22 +329,24 @@ static void
 KMSDRM_FreeCursor(SDL_Cursor * cursor)
 {
     KMSDRM_CursorData *curdata = NULL;
-    SDL_VideoDevice *video = NULL;
+    SDL_VideoDevice *video_device = SDL_GetVideoDevice();
     KMSDRM_PlaneInfo info = {0};
-
     if (cursor) {
         curdata = (KMSDRM_CursorData *) cursor->driverdata;
-        if (video && curdata->bo && curdata->plane) {
+        if (video_device && curdata->bo && curdata->plane) {
             info.plane = curdata->plane; /* The other members are zeroed. */
 	    drm_atomic_set_plane_props(&info);
             /* Wait until the cursor is unset from the cursor plane before destroying it's BO. */
-            drm_atomic_commit(video, SDL_TRUE);
+            if (drm_atomic_commit(video_device, SDL_TRUE)) {
+                SDL_SetError("Failed atomic commit in KMSDRM_FreeCursor.");
+            }
 	    KMSDRM_gbm_bo_destroy(curdata->bo);
 	    curdata->bo = NULL;
-
-	    SDL_free(cursor->driverdata);
-	    SDL_free(cursor);
         }
+
+	/* Even if the cursor is not ours, free it. */
+	SDL_free(cursor->driverdata);
+	SDL_free(cursor);
     }
 }
 

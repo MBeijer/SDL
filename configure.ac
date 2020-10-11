@@ -413,6 +413,7 @@ SOURCES="$SOURCES $srcdir/src/file/*.c"
 SOURCES="$SOURCES $srcdir/src/haptic/*.c"
 SOURCES="$SOURCES $srcdir/src/joystick/*.c"
 SOURCES="$SOURCES $srcdir/src/libm/*.c"
+SOURCES="$SOURCES $srcdir/src/misc/*.c"
 SOURCES="$SOURCES $srcdir/src/power/*.c"
 #SOURCES="$SOURCES $srcdir/src/filesystem/*.c"
 SOURCES="$SOURCES $srcdir/src/render/*.c"
@@ -2257,8 +2258,8 @@ AS_HELP_STRING([--enable-video-kmsdrm], [use KMSDRM video driver [[default=no]]]
     if test x$enable_video = xyes -a x$enable_video_kmsdrm = xyes; then
         video_kmsdrm=no
 
-        PKG_CHECK_MODULES([LIBDRM], [libdrm >= 2.4.46], libdrm_avail=yes, libdrm_avail=no)
-        PKG_CHECK_MODULES([LIBGBM], [gbm >= 9.0.0], libgbm_avail=yes, libgbm_avail=no)
+        PKG_CHECK_MODULES([LIBDRM], [libdrm >= 2.4.82], libdrm_avail=yes, libdrm_avail=no)
+        PKG_CHECK_MODULES([LIBGBM], [gbm >= 17.1.0], libgbm_avail=yes, libgbm_avail=no)
 
         if test x$libdrm_avail = xyes -a x$libgbm_avail = xyes; then
             video_kmsdrm=yes
@@ -3579,6 +3580,9 @@ case "$host" in
         CheckRPATH
         CheckVivanteVideo
 
+        SOURCES="$SOURCES $srcdir/src/misc/unix/*.c"
+        have_misc=yes
+
         SOURCES="$SOURCES $srcdir/src/locale/unix/*.c"
         have_locale=yes
 
@@ -3730,6 +3734,9 @@ case "$host" in
 
         # Set up the core platform files
         SOURCES="$SOURCES $srcdir/src/core/windows/*.c"
+
+        SOURCES="$SOURCES $srcdir/src/misc/windows/*.c"
+        have_misc=yes
 
         # Use the Windows locale APIs.
         SOURCES="$SOURCES $srcdir/src/locale/windows/*.c"
@@ -3907,6 +3914,9 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
             have_filesystem=yes
         fi
 
+        SOURCES="$SOURCES $srcdir/src/misc/haiku/*.cc"
+        have_misc=yes
+
         # Set up files for the locale library
         SOURCES="$SOURCES $srcdir/src/locale/haiku/*.cc"
         have_locale=yes
@@ -3990,6 +4000,9 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
         CheckMETAL
         CheckVulkan
         CheckPTHREAD
+
+        SOURCES="$SOURCES $srcdir/src/misc/ios/*.m"
+        have_misc=yes
 
         # Set up files for the locale library
         SOURCES="$SOURCES $srcdir/src/locale/macosx/*.m"
@@ -4096,6 +4109,9 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
         CheckVulkan
         CheckPTHREAD
         CheckHIDAPI
+
+        SOURCES="$SOURCES $srcdir/src/misc/macosx/*.m"
+        have_misc=yes
 
         # Set up files for the locale library
         SOURCES="$SOURCES $srcdir/src/locale/macosx/*.m"
@@ -4279,6 +4295,9 @@ AC_SUBST([INSTALL_SDL2_CONFIG], [$enable_sdl2_config])
 
 # Verify that we have all the platform specific files we need
 
+if test x$have_misc != xyes; then
+    SOURCES="$SOURCES $srcdir/src/misc/dummy/*.c"
+fi
 if test x$have_locale != xyes; then
     SOURCES="$SOURCES $srcdir/src/locale/dummy/*.c"
 fi

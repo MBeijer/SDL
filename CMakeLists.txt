@@ -410,6 +410,7 @@ file(GLOB SOURCE_FILES
   ${SDL2_SOURCE_DIR}/src/haptic/*.c
   ${SDL2_SOURCE_DIR}/src/libm/*.c
   ${SDL2_SOURCE_DIR}/src/locale/*.c
+  ${SDL2_SOURCE_DIR}/src/misc/*.c
   ${SDL2_SOURCE_DIR}/src/power/*.c
   ${SDL2_SOURCE_DIR}/src/render/*.c
   ${SDL2_SOURCE_DIR}/src/render/*/*.c
@@ -952,6 +953,10 @@ if(ANDROID)
   file(GLOB ANDROID_CORE_SOURCES ${SDL2_SOURCE_DIR}/src/core/android/*.c)
   set(SOURCE_FILES ${SOURCE_FILES} ${ANDROID_CORE_SOURCES} ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
 
+  file(GLOB ANDROID_MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/android/*.c)
+  set(SOURCE_FILES ${SOURCE_FILES} ${ANDROID_MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
+
   # SDL_spinlock.c Needs to be compiled in ARM mode.
   # There seems to be no better way currently to set the ARM mode.
   # see: https://issuetracker.google.com/issues/62264618
@@ -1312,6 +1317,10 @@ elseif(UNIX AND NOT APPLE AND NOT ANDROID AND NOT RISCOS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_VERSION_H")
   endif()
 
+  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/unix/*.c)
+  set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
+
   if(SDL_POWER)
     if(LINUX)
       set(SDL_POWER_LINUX 1)
@@ -1376,6 +1385,10 @@ elseif(WINDOWS)
       set_property(DIRECTORY . APPEND PROPERTY COMPILE_OPTIONS "/arch:SSE")
     endif()
   endif()
+
+  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/windows/*.c)
+  set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
 
   # Check for DirectX
   if(DIRECTX)
@@ -1616,6 +1629,10 @@ elseif(APPLE)
   else()
     message_error("SDL_FILE must be enabled to build on MacOS X")
   endif()
+
+  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/macosx/*.m)
+  set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
 
   if(SDL_AUDIO)
     set(SDL_AUDIO_DRIVER_COREAUDIO 1)
@@ -1871,6 +1888,10 @@ elseif(APPLE)
   CheckPTHREAD()
 
 elseif(HAIKU)
+  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/haiku/*.cc)
+  set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
+
   if(SDL_VIDEO)
     set(SDL_VIDEO_DRIVER_HAIKU 1)
     file(GLOB HAIKUVIDEO_SOURCES ${SDL2_SOURCE_DIR}/src/video/haiku/*.c)
@@ -2021,6 +2042,11 @@ endif()
 if(NOT HAVE_SDL_LOCALE)
   set(SDL_LOCALE_DISABLED 1)
   file(GLOB LOCALE_SOURCES ${SDL2_SOURCE_DIR}/src/locale/dummy/*.c)
+  set(SOURCE_FILES ${SOURCE_FILES} ${LOCALE_SOURCES})
+endif()
+if(NOT HAVE_SDL_MISC)
+  set(SDL_MISC_DISABLED 1)
+  file(GLOB LOCALE_SOURCES ${SDL2_SOURCE_DIR}/src/misc/dummy/*.c)
   set(SOURCE_FILES ${SOURCE_FILES} ${LOCALE_SOURCES})
 endif()
 

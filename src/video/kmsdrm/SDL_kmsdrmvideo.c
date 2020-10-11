@@ -55,6 +55,7 @@ check_modesetting(int devindex)
 {
     SDL_bool available = SDL_FALSE;
     char device[512];
+    unsigned int i;
     int drm_fd;
 
     SDL_snprintf(device, sizeof (device), "%scard%d", KMSDRM_DRI_PATH, devindex);
@@ -70,7 +71,7 @@ check_modesetting(int devindex)
                              resources->count_connectors, resources->count_encoders, resources->count_crtcs);
 
                 if (resources->count_connectors > 0 && resources->count_encoders > 0 && resources->count_crtcs > 0) {
-                    for (unsigned int i = 0; i < resources->count_connectors; i++) {
+                    for (i = 0; i < resources->count_connectors; i++) {
                         drmModeConnector *conn = KMSDRM_drmModeGetConnector(drm_fd, resources->connectors[i]);
 
                         if (!conn) {
@@ -244,9 +245,10 @@ KMSDRM_DestroyDumbBuffer(_THIS, dumb_buffer *buffer)
 static void
 KMSDRM_FillDumbBuffer(dumb_buffer *buffer)
 {
-    for (unsigned int y = 0; y < buffer->height; y++) {
+    unsigned int x, y;
+    for (y = 0; y < buffer->height; y++) {
 	uint32_t *pix = (uint32_t *) ((uint8_t *) buffer->dumb.mem + (y * buffer->pitches[0]));
-	for (unsigned int x = 0; x < buffer->width; x++) {
+	for (x = 0; x < buffer->width; x++) {
 	    *pix++ = (0x00000000);
 	}
     }
@@ -536,7 +538,7 @@ setup_plane(_THIS, struct plane **plane, uint32_t plane_type)
     uint32_t plane_id;
     SDL_VideoData *viddata = ((SDL_VideoData *)_this->driverdata);
 
-    *plane = SDL_calloc(1, sizeof(*plane));
+    *plane = SDL_calloc(1, sizeof(**plane));
 
     /* Get plane ID. */
     plane_id = get_plane_id(_this, plane_type);
@@ -550,13 +552,14 @@ setup_plane(_THIS, struct plane **plane, uint32_t plane_type)
 
     /* Get the DRM plane properties. */
     if ((*plane)->plane) {
+        unsigned int i;
         (*plane)->props = KMSDRM_drmModeObjectGetProperties(viddata->drm_fd,
 	    (*plane)->plane->plane_id, DRM_MODE_OBJECT_PLANE);	
 
         (*plane)->props_info = SDL_calloc((*plane)->props->count_props,
-            sizeof((*plane)->props_info));	
+            sizeof(*(*plane)->props_info));
 
-        for (unsigned int i = 0; i < (*plane)->props->count_props; i++) {
+        for (i = 0; i < (*plane)->props->count_props; i++) {
             (*plane)->props_info[i] = KMSDRM_drmModeGetProperty(viddata->drm_fd,
                 (*plane)->props->props[i]);
         }
@@ -606,7 +609,7 @@ free_plane(struct plane **plane)
 /*   first, move the plane away from those buffers and ONLY THEN destroy the      */
 /*   buffers and/or the GBM surface containig them.                               */
 /**********************************************************************************/
-int
+void
 drm_atomic_set_plane_props(struct KMSDRM_PlaneInfo *info)
 {
     SDL_DisplayData *dispdata = (SDL_DisplayData *)SDL_GetDisplayDriverData(0);
@@ -615,28 +618,16 @@ drm_atomic_set_plane_props(struct KMSDRM_PlaneInfo *info)
     if (!dispdata->atomic_req)
         dispdata->atomic_req = KMSDRM_drmModeAtomicAlloc();
    
-    if (add_plane_property(dispdata->atomic_req, info->plane, "FB_ID", info->fb_id) < 0)
-        return SDL_SetError("Failed to set plane FB_ID prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "CRTC_ID", info->crtc_id) < 0)
-        return SDL_SetError("Failed to set plane CRTC_ID prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "SRC_W", info->src_w << 16) < 0)
-        return SDL_SetError("Failed to set plane SRC_W prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "SRC_H", info->src_h << 16) < 0)
-        return SDL_SetError("Failed to set plane SRC_H prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "SRC_X", info->src_x) < 0)
-        return SDL_SetError("Failed to set plane SRC_X prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "SRC_Y", info->src_y) < 0)
-        return SDL_SetError("Failed to set plane SRC_Y prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "CRTC_W", info->crtc_w) < 0)
-        return SDL_SetError("Failed to set plane CRTC_W prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "CRTC_H", info->crtc_h) < 0)
-        return SDL_SetError("Failed to set plane CRTC_H prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "CRTC_X", info->crtc_x) < 0)
-        return SDL_SetError("Failed to set plane CRTC_X prop");
-    if (add_plane_property(dispdata->atomic_req, info->plane, "CRTC_Y", info->crtc_y) < 0)
-        return SDL_SetError("Failed to set plane CRTC_Y prop");
-
-    return 0;
+    add_plane_property(dispdata->atomic_req, info->plane, "FB_ID", info->fb_id);
+    add_plane_property(dispdata->atomic_req, info->plane, "CRTC_ID", info->crtc_id);
+    add_plane_property(dispdata->atomic_req, info->plane, "SRC_W", info->src_w << 16);
+    add_plane_property(dispdata->atomic_req, info->plane, "SRC_H", info->src_h << 16);
+    add_plane_property(dispdata->atomic_req, info->plane, "SRC_X", info->src_x);
+    add_plane_property(dispdata->atomic_req, info->plane, "SRC_Y", info->src_y);
+    add_plane_property(dispdata->atomic_req, info->plane, "CRTC_W", info->crtc_w);
+    add_plane_property(dispdata->atomic_req, info->plane, "CRTC_H", info->crtc_h);
+    add_plane_property(dispdata->atomic_req, info->plane, "CRTC_X", info->crtc_x);
+    add_plane_property(dispdata->atomic_req, info->plane, "CRTC_Y", info->crtc_y);
 }
 
 int drm_atomic_commit(_THIS, SDL_bool blocking)
@@ -655,7 +646,7 @@ int drm_atomic_commit(_THIS, SDL_bool blocking)
     if (ret) {
         SDL_SetError("Atomic commit failed, returned %d.", ret);
         /* Uncomment this for fast-debugging */
-        //printf("ATOMIC COMMIT FAILED: %d.\n", ret);
+        // printf("ATOMIC COMMIT FAILED: %d.\n", ret);
 	goto out;
     }
 
@@ -833,6 +824,7 @@ KMSDRM_FBFromBO(_THIS, struct gbm_bo *bo)
     unsigned width, height;
     uint32_t format, strides[4] = {0}, handles[4] = {0}, offsets[4] = {0};
     const int num_planes = KMSDRM_gbm_bo_get_plane_count(bo);
+    unsigned int i;
     int ret;
 
     /* Check for an existing framebuffer */
@@ -857,7 +849,7 @@ KMSDRM_FBFromBO(_THIS, struct gbm_bo *bo)
     height = KMSDRM_gbm_bo_get_height(bo);
     format = KMSDRM_gbm_bo_get_format(bo);
 
-    for (int i = 0; i < num_planes; i++) {
+    for (i = 0; i < num_planes; i++) {
 	strides[i] = KMSDRM_gbm_bo_get_stride_for_plane(bo, i);
 	handles[i] = KMSDRM_gbm_bo_get_handle(bo).u32;
 	offsets[i] = KMSDRM_gbm_bo_get_offset(bo, i);
@@ -919,7 +911,7 @@ KMSDRM_DestroySurfaces(_THIS, SDL_Window *window)
 
     /* Issue blocking atomic commit. */    
     if (drm_atomic_commit(_this, SDL_TRUE)) {
-        SDL_SetError("Failed to issue atomic commit on DestroyWindow().");
+        SDL_SetError("Failed to issue atomic commit on window destruction.");
     }
 
     /****************************************************************************/
@@ -1023,6 +1015,7 @@ KMSDRM_DestroyWindow(_THIS, SDL_Window *window)
 {
     SDL_WindowData *windata = (SDL_WindowData *) window->driverdata;
     SDL_VideoData *viddata;
+    unsigned int i, j;
 
     if (!windata) {
         return;
@@ -1035,11 +1028,11 @@ KMSDRM_DestroyWindow(_THIS, SDL_Window *window)
     /********************************************/
     viddata = windata->viddata;
 
-    for (unsigned int i = 0; i < viddata->num_windows; i++) {
+    for (i = 0; i < viddata->num_windows; i++) {
         if (viddata->windows[i] == window) {
             viddata->num_windows--;
 
-            for (unsigned int j = i; j < viddata->num_windows; j++) {
+            for (j = i; j < viddata->num_windows; j++) {
                 viddata->windows[j] = viddata->windows[j + 1];
             }
 
@@ -1097,6 +1090,7 @@ KMSDRM_ReconfigureWindow( _THIS, SDL_Window * window) {
 int
 KMSDRM_VideoInit(_THIS)
 {
+    unsigned int i, j;
     int ret = 0;
     SDL_VideoData *viddata = ((SDL_VideoData *)_this->driverdata);
     SDL_DisplayData *dispdata = NULL;
@@ -1151,7 +1145,7 @@ KMSDRM_VideoInit(_THIS)
     }
 
     /* Iterate on the available connectors to find a connected connector. */
-    for (unsigned int i = 0; i < resources->count_connectors; i++) {
+    for (i = 0; i < resources->count_connectors; i++) {
         drmModeConnector *conn = KMSDRM_drmModeGetConnector(viddata->drm_fd, resources->connectors[i]);
 
         if (!conn) {
@@ -1174,7 +1168,7 @@ KMSDRM_VideoInit(_THIS)
     }
 
     /* Try to find the connector's current encoder */
-    for (unsigned int i = 0; i < resources->count_encoders; i++) {
+    for (i = 0; i < resources->count_encoders; i++) {
         encoder = KMSDRM_drmModeGetEncoder(viddata->drm_fd, resources->encoders[i]);
 
         if (!encoder) {
@@ -1192,7 +1186,7 @@ KMSDRM_VideoInit(_THIS)
 
     if (!encoder) {
         /* No encoder was connected, find the first supported one */
-        for (unsigned int i = 0, j; i < resources->count_encoders; i++) {
+        for (i = 0; i < resources->count_encoders; i++) {
             encoder = KMSDRM_drmModeGetEncoder(viddata->drm_fd, resources->encoders[i]);
 
             if (!encoder) {
@@ -1226,7 +1220,7 @@ KMSDRM_VideoInit(_THIS)
 
     /* If no CRTC was connected to the encoder, find the first CRTC that is supported by the encoder, and use that. */
     if (!dispdata->crtc->crtc) {
-        for (unsigned int i = 0; i < resources->count_crtcs; i++) {
+        for (i = 0; i < resources->count_crtcs; i++) {
             if (encoder->possible_crtcs & (1 << i)) {
                 encoder->crtc_id = resources->crtcs[i];
                 dispdata->crtc->crtc = KMSDRM_drmModeGetCrtc(viddata->drm_fd, encoder->crtc_id);
@@ -1268,7 +1262,7 @@ KMSDRM_VideoInit(_THIS)
 
     display.current_mode = display.desktop_mode;
     display.driverdata = dispdata;
-    SDL_AddVideoDisplay(&display);
+    SDL_AddVideoDisplay(&display, SDL_FALSE);
 
     /****************/
     /* Atomic block */
@@ -1303,9 +1297,9 @@ KMSDRM_VideoInit(_THIS)
         dispdata->crtc->crtc->crtc_id, DRM_MODE_OBJECT_CRTC);	
 
     dispdata->crtc->props_info = SDL_calloc(dispdata->crtc->props->count_props,
-        sizeof(dispdata->crtc->props_info));	
+        sizeof(*dispdata->crtc->props_info));
 
-    for (unsigned int i = 0; i < dispdata->crtc->props->count_props; i++) {
+    for (i = 0; i < dispdata->crtc->props->count_props; i++) {
 	dispdata->crtc->props_info[i] = KMSDRM_drmModeGetProperty(viddata->drm_fd,
         dispdata->crtc->props->props[i]);
     }
@@ -1315,9 +1309,9 @@ KMSDRM_VideoInit(_THIS)
         dispdata->connector->connector->connector_id, DRM_MODE_OBJECT_CONNECTOR);	
 
     dispdata->connector->props_info = SDL_calloc(dispdata->connector->props->count_props,
-        sizeof(dispdata->connector->props_info));	
+        sizeof(*dispdata->connector->props_info));
 
-    for (unsigned int i = 0; i < dispdata->connector->props->count_props; i++) {
+    for (i = 0; i < dispdata->connector->props->count_props; i++) {
 	dispdata->connector->props_info[i] = KMSDRM_drmModeGetProperty(viddata->drm_fd,
         dispdata->connector->props->props[i]);
     }
@@ -1428,11 +1422,8 @@ KMSDRM_VideoQuit(_THIS)
 
 #else
 
-    if (add_connector_property(dispdata->atomic_req, dispdata->connector , "CRTC_ID", 0) < 0)
-        SDL_SetError("Failed to set CONNECTOR prop CRTC_ID to zero before buffer destruction");
-
-    if (add_crtc_property(dispdata->atomic_req, dispdata->crtc , "ACTIVE", 0) < 0)
-        SDL_SetError("Failed to set CRTC prop ACTIVE to zero before buffer destruction");
+    add_connector_property(dispdata->atomic_req, dispdata->connector , "CRTC_ID", 0);
+    add_crtc_property(dispdata->atomic_req, dispdata->crtc , "ACTIVE", 0);
 
     /* Since we initialize plane_info to all zeros,  ALL PRIMARY PLANE props are set to 0 with this,
        including FB_ID and CRTC_ID. Not all drivers like FB_ID and CRTC_ID to 0 yet. */
@@ -1451,7 +1442,7 @@ KMSDRM_VideoQuit(_THIS)
 
     /* Issue blocking atomic commit. */    
     if (drm_atomic_commit(_this, SDL_TRUE)) {
-        SDL_SetError("Failed to issue atomic commit on DestroyWindow().");
+        SDL_SetError("Failed to issue atomic commit on video quitting.");
     }
 
     /* Destroy the DUMB buffer if it exists, now that it's not being
@@ -1544,8 +1535,9 @@ KMSDRM_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
     SDL_DisplayData *dispdata = display->driverdata;
     drmModeConnector *conn = dispdata->connector->connector;
     SDL_DisplayMode mode;
+    int i;
 
-    for (int i = 0; i < conn->count_modes; i++) {
+    for (i = 0; i < conn->count_modes; i++) {
         SDL_DisplayModeData *modedata = SDL_calloc(1, sizeof(SDL_DisplayModeData));
 
         if (modedata) {
@@ -1575,6 +1567,7 @@ KMSDRM_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
     SDL_DisplayData *dispdata = (SDL_DisplayData *)display->driverdata;
     SDL_DisplayModeData *modedata = (SDL_DisplayModeData *)mode->driverdata;
     drmModeConnector *conn = dispdata->connector->connector;
+    int i;
 
     if (!modedata) {
         return SDL_SetError("Mode doesn't have an associated index");
@@ -1586,7 +1579,7 @@ KMSDRM_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
 
     dispdata->modeset_pending = SDL_TRUE;
 
-    for (int i = 0; i < viddata->num_windows; i++) {
+    for (i = 0; i < viddata->num_windows; i++) {
         SDL_Window *window = viddata->windows[i];
 
 	if (KMSDRM_CreateSurfaces(_this, window)) {
