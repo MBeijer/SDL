@@ -160,7 +160,7 @@ OS4_InitModes(_THIS)
     display.driverdata = displaydata;
     displaydata->screen = NULL;
 
-    SDL_AddVideoDisplay(&display);
+    SDL_AddVideoDisplay(&display, SDL_FALSE);
 
     return 0;
 }
