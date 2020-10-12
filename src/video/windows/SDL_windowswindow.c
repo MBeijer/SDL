@@ -285,7 +285,7 @@ SetupWindowData(_THIS, SDL_Window * window, HWND hwnd, HWND parent, SDL_bool cre
         SDL_SetKeyboardFocus(data->window);
 
         if (window->flags & SDL_WINDOW_INPUT_GRABBED) {
-            RECT rect;
+            RECT rect = {};
             GetClientRect(hwnd, &rect);
             ClientToScreen(hwnd, (LPPOINT) & rect);
             ClientToScreen(hwnd, (LPPOINT) & rect + 1);
