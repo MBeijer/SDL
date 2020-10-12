@@ -460,7 +460,7 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     case WM_ACTIVATE:
         {
-            POINT cursorPos;
+            POINT cursorPos = {};
             BOOL minimized;
 
             minimized = HIWORD(wParam);
@@ -632,7 +632,7 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     WIN_CheckRawMouseButtons(rawmouse->usButtonFlags, data);
                 } else if (isCapture) {
                     /* we check for where Windows thinks the system cursor lives in this case, so we don't really lose mouse accel, etc. */
-                    POINT pt;
+                    POINT pt = {};
                     RECT hwndRect;
                     HWND currentHnd;
 
@@ -674,7 +674,7 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (SDL_GetMouseFocus() == data->window && !SDL_GetMouse()->relative_mode && !(data->window->flags & SDL_WINDOW_MOUSE_CAPTURE)) {
             if (!IsIconic(hwnd)) {
                 SDL_Mouse *mouse;
-                POINT cursorPos;
+                POINT cursorPos = {};
                 GetCursorPos(&cursorPos);
                 ScreenToClient(hwnd, &cursorPos);
                 mouse = SDL_GetMouse();
@@ -868,7 +868,7 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     case WM_WINDOWPOSCHANGED:
         {
-            RECT rect;
+            RECT rect = {};
             int x, y;
             int w, h;
 
@@ -982,7 +982,7 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SDL_bool isstack;
             PTOUCHINPUT inputs = SDL_small_alloc(TOUCHINPUT, num_inputs, &isstack);
             if (data->videodata->GetTouchInputInfo((HTOUCHINPUT)lParam, num_inputs, inputs, sizeof(TOUCHINPUT))) {
-                RECT rect;
+                RECT rect = {};
                 float x, y;
 
                 if (!GetClientRect(hwnd, &rect) ||
