@@ -511,7 +511,6 @@ Uint32 SDL_GetMouseState(int *x, int *y);
 Uint32 SDL_GetRelativeMouseState(int *x, int *y);
 void SDL_WarpMouseInWindow(SDL_Window * window, int x, int y);
 int SDL_SetRelativeMouseMode(SDL_bool enabled);
-SDL_bool SDL_GetRelativeMouseMode(voiud)
 SDL_bool SDL_GetRelativeMouseMode(void);
 SDL_Cursor *SDL_CreateCursor(const Uint8 * data, const Uint8 * mask, int w, int h, int hot_x, int hot_y);
 SDL_Cursor *SDL_CreateColorCursor(SDL_Surface *surface, int hot_x, int hot_y);
