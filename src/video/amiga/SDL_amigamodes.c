@@ -194,7 +194,7 @@ AMIGA_InitModes(_THIS)
 			display.driverdata = modedata;
 			display.name = (char *)getv(mon, MA_MonitorName);
 
-			SDL_AddVideoDisplay(&display);
+			SDL_AddVideoDisplay(&display, SDL_FALSE);
 			dispcount++;
 
 			mode.driverdata = NULL;
@@ -240,7 +240,7 @@ AMIGA_InitModes(_THIS)
 
 					D("[%s] Add video display '%s'\n", __FUNCTION__, display.name);
 
-					SDL_AddVideoDisplay(&display);
+					SDL_AddVideoDisplay(&display, SDL_FALSE);
 					dispcount++;
 				}
 			}
