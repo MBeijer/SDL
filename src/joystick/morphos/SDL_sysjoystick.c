@@ -473,6 +473,12 @@ SDL_SYS_JoystickSetDevicePlayerIndex(int device_index, int player_index)
 {
 }
 
+static SDL_bool
+SDL_SYS_GetGamepadMapping(int device_index, SDL_GamepadMapping * out)
+{
+    return SDL_FALSE;
+}
+
 SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
 {
     SDL_SYS_JoystickInit,
@@ -488,6 +494,7 @@ SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
     SDL_SYS_JoystickUpdate,
     SDL_SYS_JoystickClose,
     SDL_SYS_JoystickQuit,
+	SDL_SYS_GetGamepadMapping
 };
 
 #endif

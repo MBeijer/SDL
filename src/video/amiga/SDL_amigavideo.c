@@ -128,14 +128,6 @@ AMIGA_ShowApp(_THIS)
 	AMIGA_GL_ResizeContext(_this, _this->current_glwin);
 }
 
-/* Amiga driver bootstrap functions */
-
-static int
-AMIGA_Available(void)
-{
-	return 1;
-}
-
 static int
 AMIGA_VideoInit(_THIS)
 {
@@ -417,7 +409,7 @@ AMIGA_CreateDevice(int devindex)
 
 VideoBootStrap AMIGA_bootstrap = {
 	"amiga", "SDL Amiga video driver",
-	AMIGA_Available, AMIGA_CreateDevice
+	AMIGA_CreateDevice
 };
 
 /* vim: set ts=4 sw=4 expandtab: */
