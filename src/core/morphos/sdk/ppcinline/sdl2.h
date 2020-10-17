@@ -4049,12 +4049,11 @@
 		(((int (*)(SDL_bool ))*(void**)(__base - 2620))(__t__p0));\
 	})
 
-#define SDL_GetRelativeMouseMode(__p0) \
+#define SDL_GetRelativeMouseMode() \
 	({ \
-		voiud  __t__p0 = __p0;\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((SDL_bool (*)(voiud ) SDL_bool SDL_GetRelativeMouseMode(void))*(void**)(__base - 2626))(__t__p0));\
+		(((SDL_bool (*)(void))*(void**)(__base - 2626))());\
 	})
 
 #define SDL_CreateCursor(__p0, __p1, __p2, __p3, __p4, __p5) \
