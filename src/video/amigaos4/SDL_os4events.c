@@ -544,8 +544,15 @@ OS4_HandleAppWindow(_THIS, struct AppMessage * msg)
 
     int i;
     for (i = 0; i < msg->am_NumArgs; i++) {
-        dprintf("%s\n", msg->am_ArgList[i].wa_Name);
-        SDL_SendDropFile(window, msg->am_ArgList[i].wa_Name);
+        const size_t maxPathLen = 255;
+        char buf[maxPathLen];
+
+        if (IDOS->NameFromLock(msg->am_ArgList[i].wa_Lock, buf, sizeof(buf))) {
+            if (IDOS->AddPart(buf, msg->am_ArgList[i].wa_Name, sizeof(buf))) {
+                dprintf("%s\n", buf);
+                SDL_SendDropFile(window, buf);
+            }
+        }
     }
 
     SDL_SendDropComplete(window);
