@@ -259,10 +259,26 @@ extern "C"
         return SDL_Unsupported();
     }
 
+
+    static int HAIKU_JoystickRumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
+    {
+        return SDL_Unsupported();
+    }
+
     static SDL_bool
     HAIKU_JoystickGetGamepadMapping(int device_index, SDL_GamepadMapping *out)
     {
         return SDL_FALSE;
+    }
+
+    static SDL_bool HAIKU_JoystickHasLED(SDL_Joystick * joystick)
+    {
+        return SDL_FALSE;
+    }
+
+    static int HAIKU_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+    {
+        return SDL_Unsupported();
     }
 
     SDL_JoystickDriver SDL_HAIKU_JoystickDriver =
@@ -277,6 +293,9 @@ extern "C"
         HAIKU_JoystickGetDeviceInstanceID,
         HAIKU_JoystickOpen,
         HAIKU_JoystickRumble,
+        HAIKU_JoystickRumbleTriggers,
+        HAIKU_JoystickHasLED,
+        HAIKU_JoystickSetLED,
         HAIKU_JoystickUpdate,
         HAIKU_JoystickClose,
         HAIKU_JoystickQuit,

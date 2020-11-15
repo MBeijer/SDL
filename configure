@@ -22001,12 +22001,12 @@ if test -n "$LIBDRM_CFLAGS"; then
     pkg_cv_LIBDRM_CFLAGS="$LIBDRM_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libdrm >= 2.4.82\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libdrm >= 2.4.82") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libdrm >= 1.4.82\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libdrm >= 1.4.82") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBDRM_CFLAGS=`$PKG_CONFIG --cflags "libdrm >= 2.4.82" 2>/dev/null`
+  pkg_cv_LIBDRM_CFLAGS=`$PKG_CONFIG --cflags "libdrm >= 1.4.82" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22017,12 +22017,12 @@ if test -n "$LIBDRM_LIBS"; then
     pkg_cv_LIBDRM_LIBS="$LIBDRM_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libdrm >= 2.4.82\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libdrm >= 2.4.82") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libdrm >= 1.4.82\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libdrm >= 1.4.82") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBDRM_LIBS=`$PKG_CONFIG --libs "libdrm >= 2.4.82" 2>/dev/null`
+  pkg_cv_LIBDRM_LIBS=`$PKG_CONFIG --libs "libdrm >= 1.4.82" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22042,9 +22042,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBDRM_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libdrm >= 2.4.82" 2>&1`
+	        LIBDRM_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libdrm >= 1.4.82" 2>&1`
         else
-	        LIBDRM_PKG_ERRORS=`$PKG_CONFIG --print-errors "libdrm >= 2.4.82" 2>&1`
+	        LIBDRM_PKG_ERRORS=`$PKG_CONFIG --print-errors "libdrm >= 1.4.82" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBDRM_PKG_ERRORS" >&5
@@ -22070,12 +22070,12 @@ if test -n "$LIBGBM_CFLAGS"; then
     pkg_cv_LIBGBM_CFLAGS="$LIBGBM_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gbm >= 17.1.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gbm >= 17.1.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gbm >= 11.1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gbm >= 11.1.0") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBGBM_CFLAGS=`$PKG_CONFIG --cflags "gbm >= 17.1.0" 2>/dev/null`
+  pkg_cv_LIBGBM_CFLAGS=`$PKG_CONFIG --cflags "gbm >= 11.1.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22086,12 +22086,12 @@ if test -n "$LIBGBM_LIBS"; then
     pkg_cv_LIBGBM_LIBS="$LIBGBM_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gbm >= 17.1.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gbm >= 17.1.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gbm >= 11.1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gbm >= 11.1.0") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBGBM_LIBS=`$PKG_CONFIG --libs "gbm >= 17.1.0" 2>/dev/null`
+  pkg_cv_LIBGBM_LIBS=`$PKG_CONFIG --libs "gbm >= 11.1.0" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22111,9 +22111,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBGBM_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gbm >= 17.1.0" 2>&1`
+	        LIBGBM_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gbm >= 11.1.0" 2>&1`
         else
-	        LIBGBM_PKG_ERRORS=`$PKG_CONFIG --print-errors "gbm >= 17.1.0" 2>&1`
+	        LIBGBM_PKG_ERRORS=`$PKG_CONFIG --print-errors "gbm >= 11.1.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBGBM_PKG_ERRORS" >&5
@@ -22321,6 +22321,7 @@ $as_echo_n "checking for EGL support... " >&6; }
           #define LINUX
           #define EGL_API_FB
           #define MESA_EGL_NO_X11_HEADERS
+          #define EGL_NO_X11
           #include <EGL/egl.h>
           #include <EGL/eglext.h>
 
@@ -22870,6 +22871,45 @@ $as_echo "$use_input_kd" >&6; }
 $as_echo "#define SDL_INPUT_LINUXKD 1" >>confdefs.h
 
         SUMMARY_input="${SUMMARY_input} linuxkd"
+    fi
+}
+
+
+CheckInputKBIO()
+{
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FreeBSD kbio.h" >&5
+$as_echo_n "checking for FreeBSD kbio.h... " >&6; }
+    use_input_kbio=no
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <sys/kbio.h>
+      #include <sys/ioctl.h>
+
+int
+main ()
+{
+
+    	accentmap_t accTable;
+        ioctl(0, KDENABIO, 1);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+    use_input_kbio=yes
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $use_input_kbio" >&5
+$as_echo "$use_input_kbio" >&6; }
+    if test x$use_input_kbio = xyes; then
+
+$as_echo "#define SDL_INPUT_FBSDKBIO 1" >>confdefs.h
+
+        SUMMARY_input="${SUMMARY_input} fbsdkbio"
     fi
 }
 
@@ -24750,6 +24790,9 @@ case "$host" in
           linux)
               CheckInputKD
           ;;
+          freebsd)
+              CheckInputKBIO
+          ;;
         esac
         CheckTslib
         CheckUSBHID
@@ -24912,9 +24955,12 @@ $as_echo "#define SDL_TIMER_UNIX 1" >>confdefs.h
         fi
         # Set up files for evdev input
         if test x$use_input_events = xyes; then
-            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev*.c"
+            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev.c"
+            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_kbd.c"
+            SOURCES="$SOURCES $srcdir/src/core/freebsd/SDL_evdev_kbd_freebsd.c"
         fi
         # Set up other core UNIX files
+        SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_capabilities.c"
         SOURCES="$SOURCES $srcdir/src/core/linux/SDL_threadprio.c"
         SOURCES="$SOURCES $srcdir/src/core/unix/*.c"
         ;;
@@ -25039,7 +25085,20 @@ $as_echo "#define SDL_HAPTIC_DINPUT 1" >>confdefs.h
             fi
         fi
         # Set up files for the sensor library
-        if test x$enable_sensor = xyes; then
+        ac_fn_c_check_header_mongrel "$LINENO" "sensorsapi.h" "ac_cv_header_sensorsapi_h" "$ac_includes_default"
+if test "x$ac_cv_header_sensorsapi_h" = xyes; then :
+  have_winsensors=yes
+else
+  have_winsensors=no
+fi
+
+
+        if test x$have_winsensors = xyes; then
+
+$as_echo "#define HAVE_SENSORSAPI_H 1" >>confdefs.h
+
+        fi
+        if test x$enable_sensor = xyes -a x$have_winsensors = xyes; then
 
 $as_echo "#define SDL_SENSOR_WINDOWS 1" >>confdefs.h
 
@@ -25633,6 +25692,9 @@ $as_echo "#define SDL_TIMER_UNIX 1" >>confdefs.h
         CheckOSS
         CheckPTHREAD
         CheckClockGettime
+
+        SOURCES="$SOURCES $srcdir/src/misc/riscos/*.c"
+        have_misc=yes
 
         # Set up files for the timer library
         if test x$enable_timers = xyes; then

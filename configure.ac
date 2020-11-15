@@ -2258,8 +2258,8 @@ AS_HELP_STRING([--enable-video-kmsdrm], [use KMSDRM video driver [[default=no]]]
     if test x$enable_video = xyes -a x$enable_video_kmsdrm = xyes; then
         video_kmsdrm=no
 
-        PKG_CHECK_MODULES([LIBDRM], [libdrm >= 2.4.82], libdrm_avail=yes, libdrm_avail=no)
-        PKG_CHECK_MODULES([LIBGBM], [gbm >= 17.1.0], libgbm_avail=yes, libgbm_avail=no)
+        PKG_CHECK_MODULES([LIBDRM], [libdrm >= 1.4.82], libdrm_avail=yes, libdrm_avail=no)
+        PKG_CHECK_MODULES([LIBGBM], [gbm >= 11.1.0], libgbm_avail=yes, libgbm_avail=no)
 
         if test x$libdrm_avail = xyes -a x$libgbm_avail = xyes; then
             video_kmsdrm=yes
@@ -2386,6 +2386,7 @@ CheckOpenGLESX11()
           #define LINUX
           #define EGL_API_FB
           #define MESA_EGL_NO_X11_HEADERS
+          #define EGL_NO_X11
           #include <EGL/egl.h>
           #include <EGL/eglext.h>
         ],[
@@ -2686,6 +2687,28 @@ CheckInputKD()
     if test x$use_input_kd = xyes; then
         AC_DEFINE(SDL_INPUT_LINUXKD, 1, [ ])
         SUMMARY_input="${SUMMARY_input} linuxkd"
+    fi
+}
+
+
+dnl See if we can use the FreeBSD kernel kbio.h header
+CheckInputKBIO()
+{
+    AC_MSG_CHECKING(for FreeBSD kbio.h)
+    use_input_kbio=no
+    AC_TRY_COMPILE([
+      #include <sys/kbio.h>
+      #include <sys/ioctl.h>
+    ],[
+    	accentmap_t accTable;
+        ioctl(0, KDENABIO, 1);
+    ],[
+    use_input_kbio=yes
+    ])
+    AC_MSG_RESULT($use_input_kbio)
+    if test x$use_input_kbio = xyes; then
+        AC_DEFINE(SDL_INPUT_FBSDKBIO, 1, [ ])
+        SUMMARY_input="${SUMMARY_input} fbsdkbio"
     fi
 }
 
@@ -3570,6 +3593,9 @@ case "$host" in
           linux)
               CheckInputKD
           ;;
+          freebsd)
+              CheckInputKBIO
+          ;;
         esac
         CheckTslib
         CheckUSBHID
@@ -3621,7 +3647,7 @@ case "$host" in
         # Set up files for the joystick library
         if test x$enable_joystick = xyes; then
           case $ARCH in
-            linux)
+            linux|freebsd)
                 AC_DEFINE(SDL_JOYSTICK_LINUX, 1, [ ])
                 SOURCES="$SOURCES $srcdir/src/joystick/linux/*.c"
                 SOURCES="$SOURCES $srcdir/src/joystick/steam/*.c"
@@ -3638,7 +3664,7 @@ case "$host" in
         # Set up files for the haptic library
         if test x$enable_haptic = xyes; then
           case $ARCH in
-            linux)
+            linux|freebsd)
                 if test x$use_input_events = xyes; then
                     AC_DEFINE(SDL_HAPTIC_LINUX, 1, [ ])
                     SOURCES="$SOURCES $srcdir/src/haptic/linux/*.c"
@@ -3704,9 +3730,12 @@ case "$host" in
         fi
         # Set up files for evdev input
         if test x$use_input_events = xyes; then
-            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev*.c"
-        fi
+            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev.c"
+            SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_kbd.c"
+            SOURCES="$SOURCES $srcdir/src/core/freebsd/SDL_evdev_kbd_freebsd.c"
+        fi       
         # Set up other core UNIX files
+        SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_capabilities.c"
         SOURCES="$SOURCES $srcdir/src/core/linux/SDL_threadprio.c"
         SOURCES="$SOURCES $srcdir/src/core/unix/*.c"
         ;;
@@ -3805,7 +3834,11 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
             fi
         fi
         # Set up files for the sensor library
-        if test x$enable_sensor = xyes; then
+        AC_CHECK_HEADER(sensorsapi.h,have_winsensors=yes,have_winsensors=no)
+        if test x$have_winsensors = xyes; then
+            AC_DEFINE(HAVE_SENSORSAPI_H, 1, [ ])
+        fi
+        if test x$enable_sensor = xyes -a x$have_winsensors = xyes; then
             AC_DEFINE(SDL_SENSOR_WINDOWS, 1, [ ])
             SOURCES="$SOURCES $srcdir/src/sensor/windows/*.c"
             have_sensor=yes
@@ -4259,6 +4292,9 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
         CheckOSS
         CheckPTHREAD
         CheckClockGettime
+
+        SOURCES="$SOURCES $srcdir/src/misc/riscos/*.c"
+        have_misc=yes
 
         # Set up files for the timer library
         if test x$enable_timers = xyes; then

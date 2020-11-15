@@ -41,7 +41,15 @@ typedef enum
 {
     k_EPS4ReportIdUsbState = 1,
     k_EPS4ReportIdUsbEffects = 5,
-    k_EPS4ReportIdBluetoothState = 17,
+    k_EPS4ReportIdBluetoothState1 = 17,
+    k_EPS4ReportIdBluetoothState2 = 18,
+    k_EPS4ReportIdBluetoothState3 = 19,
+    k_EPS4ReportIdBluetoothState4 = 20,
+    k_EPS4ReportIdBluetoothState5 = 21,
+    k_EPS4ReportIdBluetoothState6 = 22,
+    k_EPS4ReportIdBluetoothState7 = 23,
+    k_EPS4ReportIdBluetoothState8 = 24,
+    k_EPS4ReportIdBluetoothState9 = 25,
     k_EPS4ReportIdBluetoothEffects = 17,
     k_EPS4ReportIdDisconnectMessage = 226,
 } EPS4ReportId;
@@ -72,10 +80,10 @@ typedef struct
     Uint8 _rgucPad1[ 5 ];
     Uint8 ucBatteryLevel;
     Uint8 _rgucPad2[ 4 ];
-    Uint8 ucTrackpadCounter1;
-    Uint8 rgucTrackpadData1[ 3 ];
-    Uint8 ucTrackpadCounter2;
-    Uint8 rgucTrackpadData2[ 3 ];
+    Uint8 ucTouchpadCounter1;
+    Uint8 rgucTouchpadData1[ 3 ];
+    Uint8 ucTouchpadCounter2;
+    Uint8 rgucTouchpadData2[ 3 ];
 } PS4StatePacket_t;
 
 typedef struct
@@ -100,6 +108,12 @@ typedef struct {
     SDL_bool audio_supported;
     SDL_bool rumble_supported;
     int player_index;
+    Uint16 rumble_left;
+    Uint16 rumble_right;
+    SDL_bool color_set;
+    Uint8 led_red;
+    Uint8 led_green;
+    Uint8 led_blue;
     Uint8 volume;
     Uint32 last_volume_check;
     PS4StatePacket_t last_state;
@@ -296,6 +310,8 @@ HIDAPI_DriverPS4_OpenJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystick)
     joystick->naxes = SDL_CONTROLLER_AXIS_MAX;
     joystick->epowerlevel = SDL_JOYSTICK_POWER_WIRED;
 
+    SDL_PrivateJoystickAddTouchpad(joystick, 2);
+
     return SDL_TRUE;
 }
 
@@ -330,11 +346,19 @@ HIDAPI_DriverPS4_RumbleJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystic
     }
     effects = (DS4EffectsState_t *)&data[offset];
 
+    ctx->rumble_left = low_frequency_rumble;
+    ctx->rumble_right = high_frequency_rumble;
     effects->ucRumbleLeft = (low_frequency_rumble >> 8);
     effects->ucRumbleRight = (high_frequency_rumble >> 8);
 
     /* Populate the LED state with the appropriate color from our lookup table */
-    SetLedsForPlayerIndex(effects, ctx->player_index);
+    if (ctx->color_set) {
+        effects->ucLedRed = ctx->led_red;
+        effects->ucLedGreen = ctx->led_green;
+        effects->ucLedBlue = ctx->led_blue;
+    } else {
+        SetLedsForPlayerIndex(effects, ctx->player_index);
+    }
 
     if (ctx->is_bluetooth) {
         /* Bluetooth reports need a CRC at the end of the packet (at least on Linux) */
@@ -351,10 +375,40 @@ HIDAPI_DriverPS4_RumbleJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystic
     return 0;
 }
 
+static int
+HIDAPI_DriverPS4_RumbleJoystickTriggers(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, Uint16 left_rumble, Uint16 right_rumble)
+{
+    return SDL_Unsupported();
+}
+
+static SDL_bool
+HIDAPI_DriverPS4_HasJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joystick)
+{
+    return SDL_TRUE;
+}
+
+static int
+HIDAPI_DriverPS4_SetJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    SDL_DriverPS4_Context *ctx = (SDL_DriverPS4_Context *)device->context;
+
+    ctx->color_set = SDL_TRUE;
+    ctx->led_red = red;
+    ctx->led_green = green;
+    ctx->led_blue = blue;
+
+    /* FIXME: Is there a better way to send this without sending another rumble packet? */
+    return HIDAPI_DriverPS4_RumbleJoystick(device, joystick, ctx->rumble_left, ctx->rumble_right);
+}
+
 static void
 HIDAPI_DriverPS4_HandleStatePacket(SDL_Joystick *joystick, hid_device *dev, SDL_DriverPS4_Context *ctx, PS4StatePacket_t *packet)
 {
+    static const float TOUCHPAD_SCALEX = 1.0f / 1920;
+    static const float TOUCHPAD_SCALEY = 1.0f / 920;    /* This is noted as being 944 resolution, but 920 feels better */
     Sint16 axis;
+    Uint8 touchpad_state;
+    int touchpad_x, touchpad_y;
 
     if (ctx->last_state.rgucButtonsHatAndCounter[0] != packet->rgucButtonsHatAndCounter[0]) {
         {
@@ -467,6 +521,16 @@ HIDAPI_DriverPS4_HandleStatePacket(SDL_Joystick *joystick, hid_device *dev, SDL_
         }
     }
 
+    touchpad_state = ((packet->ucTouchpadCounter1 & 0x80) == 0) ? SDL_PRESSED : SDL_RELEASED;
+    touchpad_x = packet->rgucTouchpadData1[0] | (((int)packet->rgucTouchpadData1[1] & 0x0F) << 8);
+    touchpad_y = (packet->rgucTouchpadData1[1] >> 4) | ((int)packet->rgucTouchpadData1[2] << 4);
+    SDL_PrivateJoystickTouchpad(joystick, 0, 0, touchpad_state, touchpad_x * TOUCHPAD_SCALEX, touchpad_y * TOUCHPAD_SCALEY, touchpad_state ? 1.0f : 0.0f);
+
+    touchpad_state = ((packet->ucTouchpadCounter2 & 0x80) == 0) ? SDL_PRESSED : SDL_RELEASED;
+    touchpad_x = packet->rgucTouchpadData2[0] | (((int)packet->rgucTouchpadData2[1] & 0x0F) << 8);
+    touchpad_y = (packet->rgucTouchpadData2[1] >> 4) | ((int)packet->rgucTouchpadData2[2] << 4);
+    SDL_PrivateJoystickTouchpad(joystick, 0, 1, touchpad_state, touchpad_x * TOUCHPAD_SCALEX, touchpad_y * TOUCHPAD_SCALEY, touchpad_state ? 1.0f : 0.0f);
+
     SDL_memcpy(&ctx->last_state, packet, sizeof(ctx->last_state));
 }
 
@@ -490,9 +554,19 @@ HIDAPI_DriverPS4_UpdateDevice(SDL_HIDAPI_Device *device)
         case k_EPS4ReportIdUsbState:
             HIDAPI_DriverPS4_HandleStatePacket(joystick, device->dev, ctx, (PS4StatePacket_t *)&data[1]);
             break;
-        case k_EPS4ReportIdBluetoothState:
-            /* Bluetooth state packets have two additional bytes at the beginning */
-            HIDAPI_DriverPS4_HandleStatePacket(joystick, device->dev, ctx, (PS4StatePacket_t *)&data[3]);
+        case k_EPS4ReportIdBluetoothState1:
+        case k_EPS4ReportIdBluetoothState2:
+        case k_EPS4ReportIdBluetoothState3:
+        case k_EPS4ReportIdBluetoothState4:
+        case k_EPS4ReportIdBluetoothState5:
+        case k_EPS4ReportIdBluetoothState6:
+        case k_EPS4ReportIdBluetoothState7:
+        case k_EPS4ReportIdBluetoothState8:
+        case k_EPS4ReportIdBluetoothState9:
+            /* Bluetooth state packets have two additional bytes at the beginning, the first notes if HID is present */
+            if (data[1] & 0x80) {
+                HIDAPI_DriverPS4_HandleStatePacket(joystick, device->dev, ctx, (PS4StatePacket_t*)&data[3]);
+            }
             break;
         default:
 #ifdef DEBUG_JOYSTICK
@@ -536,6 +610,9 @@ SDL_HIDAPI_DeviceDriver SDL_HIDAPI_DriverPS4 =
     HIDAPI_DriverPS4_UpdateDevice,
     HIDAPI_DriverPS4_OpenJoystick,
     HIDAPI_DriverPS4_RumbleJoystick,
+    HIDAPI_DriverPS4_RumbleJoystickTriggers,
+    HIDAPI_DriverPS4_HasJoystickLED,
+    HIDAPI_DriverPS4_SetJoystickLED,
     HIDAPI_DriverPS4_CloseJoystick,
     HIDAPI_DriverPS4_FreeDevice,
     NULL

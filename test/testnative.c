@@ -35,6 +35,9 @@ static NativeWindowFactory *factories[] = {
 #ifdef TEST_NATIVE_AMIGAOS4
     &AmigaOS4WindowFactory,
 #endif
+#ifdef TEST_NATIVE_OS2
+    &OS2WindowFactory,
+#endif
     NULL
 };
 static NativeWindowFactory *factory = NULL;

@@ -420,7 +420,7 @@ extern DECLSPEC Uint8 SDLCALL SDL_JoystickGetButton(SDL_Joystick * joystick,
                                                     int button);
 
 /**
- *  Trigger a rumble effect
+ *  Start a rumble effect
  *  Each call to this function cancels any previous rumble effect, and calling it with 0 intensity stops any rumbling.
  *
  *  \param joystick The joystick to vibrate
@@ -431,6 +431,40 @@ extern DECLSPEC Uint8 SDLCALL SDL_JoystickGetButton(SDL_Joystick * joystick,
  *  \return 0, or -1 if rumble isn't supported on this joystick
  */
 extern DECLSPEC int SDLCALL SDL_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
+
+/**
+ *  Start a rumble effect in the joystick's triggers
+ *  Each call to this function cancels any previous trigger rumble effect, and calling it with 0 intensity stops any rumbling.
+ *
+ *  \param joystick The joystick to vibrate
+ *  \param left_rumble The intensity of the left trigger rumble motor, from 0 to 0xFFFF
+ *  \param right_rumble The intensity of the right trigger rumble motor, from 0 to 0xFFFF
+ *  \param duration_ms The duration of the rumble effect, in milliseconds
+ *
+ *  \return 0, or -1 if trigger rumble isn't supported on this joystick
+ */
+extern DECLSPEC int SDLCALL SDL_JoystickRumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble, Uint32 duration_ms);
+
+/**
+ *  Return whether a joystick has an LED
+ *
+ *  \param joystick The joystick to query
+ *
+ *  \return SDL_TRUE, or SDL_FALSE if this joystick does not have a modifiable LED
+ */
+extern DECLSPEC SDL_bool SDLCALL SDL_JoystickHasLED(SDL_Joystick * joystick);
+
+/**
+ *  Update a joystick's LED color.
+ *
+ *  \param joystick The joystick to update
+ *  \param red The intensity of the red LED
+ *  \param green The intensity of the green LED
+ *  \param blue The intensity of the blue LED
+ *
+ *  \return 0, or -1 if this joystick does not have a modifiable LED
+ */
+extern DECLSPEC int SDLCALL SDL_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue);
 
 /**
  *  Close a joystick previously opened with SDL_JoystickOpen().
