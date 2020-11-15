@@ -201,7 +201,7 @@ AMIGAINPUT_CloseLibrary(void)
  * It should return 0, or -1 on an unrecoverable fatal error.
  */
 static int
-AMIGAINPUT_JoystickInit(void)
+AMIGAINPUT_Init(void)
 {
     if (AMIGAINPUT_OpenLibrary()) {
 #if OLDSDK
@@ -233,37 +233,38 @@ AMIGAINPUT_JoystickInit(void)
 }
 
 static int
-AMIGAINPUT_JoystickGetCount()
+AMIGAINPUT_GetCount()
 {
     return joystickCount;
 }
 
 static void
-AMIGAINPUT_JoystickDetect()
+AMIGAINPUT_Detect()
 {
+    dprintf("Called\n");
 }
 
 /* Function to get the device-dependent name of a joystick */
 static const char *
-AMIGAINPUT_JoystickGetDeviceName(int device_index)
+AMIGAINPUT_GetDeviceName(int device_index)
 {
     return joystickList[device_index].name;
 }
 
 static int
-AMIGAINPUT_JoystickGetDevicePlayerIndex(int device_index)
+AMIGAINPUT_GetDevicePlayerIndex(int device_index)
 {
     return device_index;
 }
 
 static void
-AMIGAINPUT_JoystickSetDevicePlayerIndex(int device_index, int player_index)
+AMIGAINPUT_SetDevicePlayerIndex(int device_index, int player_index)
 {
     dprintf("Not implemented\n");
 }
 
 static SDL_JoystickID
-AMIGAINPUT_JoystickGetDeviceInstanceID(int device_index)
+AMIGAINPUT_GetDeviceInstanceID(int device_index)
 {
     return device_index;
 }
@@ -274,7 +275,7 @@ AMIGAINPUT_JoystickGetDeviceInstanceID(int device_index)
    It returns 0, or -1 if there is an error.
  */
 static int
-AMIGAINPUT_JoystickOpen(SDL_Joystick * joystick, int device_index)
+AMIGAINPUT_Open(SDL_Joystick * joystick, int device_index)
 {
     AIN_DeviceHandle *handle;
     AIN_DeviceID id = joystickList[joystick->instance_id].id;
@@ -417,7 +418,7 @@ AMIGAINPUT_JoystickOpen(SDL_Joystick * joystick, int device_index)
  * and update joystick device state.
  */
 static void
-AMIGAINPUT_JoystickUpdate(SDL_Joystick * joystick)
+AMIGAINPUT_Update(SDL_Joystick * joystick)
 {
     struct joystick_hwdata *hwdata = joystick->hwdata;
     void                   *buffer;
@@ -481,7 +482,7 @@ AMIGAINPUT_JoystickUpdate(SDL_Joystick * joystick)
 
 /* Function to close a joystick after use */
 static void
-AMIGAINPUT_JoystickClose(SDL_Joystick * joystick)
+AMIGAINPUT_Close(SDL_Joystick * joystick)
 {
     dprintf("Closing joystick #%d (AI ID=%d)\n", joystick->instance_id, joystickList[joystick->instance_id].id);
 
@@ -497,7 +498,7 @@ AMIGAINPUT_JoystickClose(SDL_Joystick * joystick)
 
 /* Function to perform any system-specific joystick related cleanup */
 static void
-AMIGAINPUT_JoystickQuit(void)
+AMIGAINPUT_Quit(void)
 {
     uint32 i;
 
@@ -553,43 +554,66 @@ AMIGAINPUT_JoystickQuit(void)
 }
 
 static SDL_JoystickGUID
-AMIGAINPUT_JoystickGetDeviceGUID(int device_index)
+AMIGAINPUT_GetDeviceGUID(int device_index)
 {
     SDL_JoystickGUID guid;
     /* the GUID is just the first 16 chars of the name for now */
-    const char *name = AMIGAINPUT_JoystickGetDeviceName(device_index);
+    const char *name = AMIGAINPUT_GetDeviceName(device_index);
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );
     return guid;
 }
 
 static int
-AMIGAINPUT_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
+AMIGAINPUT_Rumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {
+    dprintf("Called\n");
+    return 0;
+}
+
+static int AMIGAINPUT_RumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
+{
+    dprintf("Called\n");
+    return 0;
+}
+
+static SDL_bool AMIGAINPUT_HasLED(SDL_Joystick * joystick)
+{
+    dprintf("Called\n");
+    return SDL_FALSE;
+}
+
+static int AMIGAINPUT_SetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    dprintf("Called\n");
     return 0;
 }
 
 static SDL_bool
 AMIGAINPUT_GetGamepadMapping(int device_index, SDL_GamepadMapping * out)
 {
+    dprintf("Called\n");
     return SDL_FALSE;
 }
 
 SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
 {
-    AMIGAINPUT_JoystickInit,
-    AMIGAINPUT_JoystickGetCount,
-    AMIGAINPUT_JoystickDetect,
-    AMIGAINPUT_JoystickGetDeviceName,
-    AMIGAINPUT_JoystickGetDevicePlayerIndex,
-    AMIGAINPUT_JoystickSetDevicePlayerIndex,
-    AMIGAINPUT_JoystickGetDeviceGUID,
-    AMIGAINPUT_JoystickGetDeviceInstanceID,
-    AMIGAINPUT_JoystickOpen,
-    AMIGAINPUT_JoystickRumble,
-    AMIGAINPUT_JoystickUpdate,
-    AMIGAINPUT_JoystickClose,
-    AMIGAINPUT_JoystickQuit,
+    AMIGAINPUT_Init,
+    AMIGAINPUT_GetCount,
+    AMIGAINPUT_Detect,
+    AMIGAINPUT_GetDeviceName,
+    AMIGAINPUT_GetDevicePlayerIndex,
+    AMIGAINPUT_SetDevicePlayerIndex,
+    AMIGAINPUT_GetDeviceGUID,
+    AMIGAINPUT_GetDeviceInstanceID,
+    AMIGAINPUT_Open,
+    AMIGAINPUT_Rumble,
+    AMIGAINPUT_RumbleTriggers,
+    AMIGAINPUT_HasLED,
+    AMIGAINPUT_SetLED,
+    AMIGAINPUT_Update,
+    AMIGAINPUT_Close,
+    AMIGAINPUT_Quit,
     AMIGAINPUT_GetGamepadMapping
 };
 
