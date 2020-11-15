@@ -34,11 +34,9 @@
 #define SDL_VSetError(__p0, __p1) \
 	({ \
 		const char * __t__p0 = __p0;\
-		va_list  __t__p1;\
-        va_copy(__t__p1, __p1);\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((int (*)(const char *, va_list ))*(void**)(__base - 40))(__t__p0, __t__p1));\
+		(((int (*)(const char *, va_list ))*(void**)(__base - 40))(__t__p0, __p1));\
 	})
 
 #define SDL_GetPlatform() \
@@ -511,11 +509,9 @@
 	({ \
 		const char * __t__p0 = __p0;\
 		const char * __t__p1 = __p1;\
-		va_list  __t__p2; \
-        va_copy(__t__p2, __p2);\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((int (*)(const char *, const char *, va_list ))*(void**)(__base - 358))(__t__p0, __t__p1, __t__p2));\
+		(((int (*)(const char *, const char *, va_list ))*(void**)(__base - 358))(__t__p0, __t__p1, __p2));\
 	})
 
 #define SDL_vsnprintf(__p0, __p1, __p2, __p3) \
@@ -523,11 +519,9 @@
 		char * __t__p0 = __p0;\
 		size_t  __t__p1 = __p1;\
 		const char * __t__p2 = __p2;\
-		va_list  __t__p3; \
-        va_copy(__t__p3, __p3);\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((int (*)(char *, size_t , const char *, va_list ))*(void**)(__base - 364))(__t__p0, __t__p1, __t__p2, __t__p3));\
+		(((int (*)(char *, size_t , const char *, va_list ))*(void**)(__base - 364))(__t__p0, __t__p1, __t__p2, __p3));\
 	})
 
 #define SDL_acos(__p0) \
@@ -2066,11 +2060,9 @@
 		int  __t__p0 = __p0;\
 		SDL_LogPriority  __t__p1 = __p1;\
 		const char * __t__p2 = __p2;\
-		va_list  __t__p3; \
-        va_copy(__t__p3, __p3);\
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
-		(((void (*)(int , SDL_LogPriority , const char *, va_list ))*(void**)(__base - 1294))(__t__p0, __t__p1, __t__p2, __t__p3));\
+		(((void (*)(int , SDL_LogPriority , const char *, va_list ))*(void**)(__base - 1294))(__t__p0, __t__p1, __t__p2, __p3));\
 	})
 
 #define SDL_LogGetOutputFunction(__p0, __p1) \
@@ -5710,6 +5702,275 @@
 		long __base = (long)(SDL2_BASE_NAME);\
 		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
 		(((int (*)(int ))*(void**)(__base - 3934))(__t__p0));\
+	})
+
+#define SDL_JoystickAttachVirtual(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_JoystickType  __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		int  __t__p2 = __p2;\
+		int  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_JoystickType , int , int , int ))*(void**)(__base - 3940))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_JoystickDetachVirtual(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(int ))*(void**)(__base - 3946))(__t__p0));\
+	})
+
+#define SDL_JoystickIsVirtual(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(int ))*(void**)(__base - 3952))(__t__p0));\
+	})
+
+#define SDL_JoystickSetVirtualAxis(__p0, __p1, __p2) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		Sint16  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *, int , Sint16 ))*(void**)(__base - 3958))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_JoystickSetVirtualButton(__p0, __p1, __p2) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		Uint8  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *, int , Uint8 ))*(void**)(__base - 3964))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_JoystickSetVirtualHat(__p0, __p1, __p2) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		Uint8  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *, int , Uint8 ))*(void**)(__base - 3970))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_GetErrorMsg(__p0, __p1) \
+	({ \
+		char * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((char *(*)(char *, int ))*(void**)(__base - 3976))(__t__p0, __t__p1));\
+	})
+
+#define SDL_LockSensors() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(void))*(void**)(__base - 3982))());\
+	})
+
+#define SDL_UnlockSensors() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void (*)(void))*(void**)(__base - 3988))());\
+	})
+
+#define SDL_trunc(__p0) \
+	({ \
+		double  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((double (*)(double ))*(void**)(__base - 3994))(__t__p0));\
+	})
+
+#define SDL_truncf(__p0) \
+	({ \
+		float  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((float (*)(float ))*(void**)(__base - 4000))(__t__p0));\
+	})
+
+#define SDL_GetPreferredLocales() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Locale *(*)(void))*(void**)(__base - 4006))());\
+	})
+
+#define SDL_SIMDRealloc(__p0, __p1) \
+	({ \
+		void * __t__p0 = __p0;\
+		const size_t  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((void *(*)(void *, const size_t ))*(void**)(__base - 4012))(__t__p0, __t__p1));\
+	})
+
+#define SDL_OpenURL(__p0) \
+	({ \
+		const char * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(const char *))*(void**)(__base - 4018))(__t__p0));\
+	})
+
+#define SDL_HasSurfaceRLE(__p0) \
+	({ \
+		SDL_Surface * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_Surface *))*(void**)(__base - 4024))(__t__p0));\
+	})
+
+#define SDL_GameControllerHasLED(__p0) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_GameController *))*(void**)(__base - 4030))(__t__p0));\
+	})
+
+#define SDL_GameControllerSetLED(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		Uint8  __t__p1 = __p1;\
+		Uint8  __t__p2 = __p2;\
+		Uint8  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, Uint8 , Uint8 , Uint8 ))*(void**)(__base - 4036))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_JoystickHasLED(__p0) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_Joystick *))*(void**)(__base - 4042))(__t__p0));\
+	})
+
+#define SDL_JoystickSetLED(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		Uint8  __t__p1 = __p1;\
+		Uint8  __t__p2 = __p2;\
+		Uint8  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *, Uint8 , Uint8 , Uint8 ))*(void**)(__base - 4048))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_GameControllerRumbleTriggers(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		Uint16  __t__p1 = __p1;\
+		Uint16  __t__p2 = __p2;\
+		Uint32  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, Uint16 , Uint16 , Uint32 ))*(void**)(__base - 4054))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_JoystickRumbleTriggers(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		Uint16  __t__p1 = __p1;\
+		Uint16  __t__p2 = __p2;\
+		Uint32  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_Joystick *, Uint16 , Uint16 , Uint32 ))*(void**)(__base - 4060))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_GameControllerHasAxis(__p0, __p1) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_GameControllerAxis  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_GameController *, SDL_GameControllerAxis ))*(void**)(__base - 4066))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GameControllerHasButton(__p0, __p1) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_GameControllerButton  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_GameController *, SDL_GameControllerButton ))*(void**)(__base - 4072))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GameControllerGetNumTouchpads(__p0) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *))*(void**)(__base - 4078))(__t__p0));\
+	})
+
+#define SDL_GameControllerGetNumTouchpadFingers(__p0, __p1) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, int ))*(void**)(__base - 4084))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GameControllerGetTouchpadFinger(__p0, __p1, __p2, __p3, __p4, __p5, __p6) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		int  __t__p2 = __p2;\
+		Uint8 * __t__p3 = __p3;\
+		float * __t__p4 = __p4;\
+		float * __t__p5 = __p5;\
+		float * __t__p6 = __p6;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, int , int , Uint8 *, float *, float *, float *))*(void**)(__base - 4090))(__t__p0, __t__p1, __t__p2, __t__p3, __t__p4, __t__p5, __t__p6));\
+	})
+
+#define SDL_GetNumTouchDevices() \
+	({ \
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(void))*(void**)(__base - 4096))());\
+	})
+
+#define SDL_GetTouchDevice(__p0) \
+	({ \
+		int  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_TouchID (*)(int ))*(void**)(__base - 4102))(__t__p0));\
+	})
+
+#define SDL_GetNumTouchFingers(__p0) \
+	({ \
+		SDL_TouchID  __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_TouchID ))*(void**)(__base - 4108))(__t__p0));\
+	})
+
+#define SDL_GetTouchFinger(__p0, __p1) \
+	({ \
+		SDL_TouchID  __t__p0 = __p0;\
+		int  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_Finger *(*)(SDL_TouchID , int ))*(void**)(__base - 4114))(__t__p0, __t__p1));\
 	})
 
 #endif /* !_PPCINLINE_SDL2_H */

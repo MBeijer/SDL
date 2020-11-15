@@ -726,6 +726,40 @@ char *SDL_strtokr(char *s1, const char *s2, char **saveptr);
 int SDL_isupper(int x);
 int SDL_islower(int x);
 
+/* 2.0.13 */
+int SDL_JoystickAttachVirtual(SDL_JoystickType type, int naxes, int nbuttons, int nhats);
+int SDL_JoystickDetachVirtual(int device_index);
+SDL_bool SDL_JoystickIsVirtual(int device_index);
+int SDL_JoystickSetVirtualAxis(SDL_Joystick * joystick, int axis, Sint16 value);
+int SDL_JoystickSetVirtualButton(SDL_Joystick * joystick, int button, Uint8 value);
+int SDL_JoystickSetVirtualHat(SDL_Joystick * joystick, int hat, Uint8 value);
+char *SDL_GetErrorMsg(char *errstr, int maxlen);
+void SDL_LockSensors(void);
+void SDL_UnlockSensors(void);
+double SDL_trunc(double x);
+float SDL_truncf(float x);
+SDL_Locale * SDL_GetPreferredLocales(void);
+void * SDL_SIMDRealloc(void *mem, const size_t len);
+int SDL_OpenURL(const char *url);
+SDL_bool SDL_HasSurfaceRLE(SDL_Surface * surface);
+SDL_bool SDL_GameControllerHasLED(SDL_GameController *gamecontroller);
+int SDL_GameControllerSetLED(SDL_GameController *gamecontroller, Uint8 red, Uint8 green, Uint8 blue);
+SDL_bool SDL_JoystickHasLED(SDL_Joystick * joystick);
+int SDL_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue);
+int SDL_GameControllerRumbleTriggers(SDL_GameController *gamecontroller, Uint16 left_rumble, Uint16 right_rumble, Uint32 duration_ms);
+int SDL_JoystickRumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble, Uint32 duration_ms);
+SDL_bool SDL_GameControllerHasAxis(SDL_GameController *gamecontroller, SDL_GameControllerAxis axis);
+SDL_bool SDL_GameControllerHasButton(SDL_GameController *gamecontroller, SDL_GameControllerButton button);
+int SDL_GameControllerGetNumTouchpads(SDL_GameController *gamecontroller);
+int SDL_GameControllerGetNumTouchpadFingers(SDL_GameController *gamecontroller, int touchpad);
+int SDL_GameControllerGetTouchpadFinger(SDL_GameController *gamecontroller, int touchpad, int finger, Uint8 *state, float *x, float *y, float *pressure);
+/* add support TouchDevice */
+int SDL_GetNumTouchDevices(void);
+SDL_TouchID SDL_GetTouchDevice(int index);
+int SDL_GetNumTouchFingers(SDL_TouchID touchID);
+SDL_Finger * SDL_GetTouchFinger(SDL_TouchID touchID, int index);
+/*  */
+
 #endif
 
 #endif /* CLIB_SDL2_PROTOS_H */

@@ -479,6 +479,24 @@ SDL_SYS_GetGamepadMapping(int device_index, SDL_GamepadMapping * out)
     return SDL_FALSE;
 }
 
+static int
+SDL_SYS_JoystickRumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
+{
+    return SDL_Unsupported();
+}
+
+static SDL_bool
+SDL_SYS_JoystickHasLED(SDL_Joystick * joystick)
+{
+    return SDL_FALSE;
+}
+
+static int
+SDL_SYS_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    return SDL_Unsupported();
+}
+
 SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
 {
     SDL_SYS_JoystickInit,
@@ -491,6 +509,9 @@ SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
     SDL_SYS_JoystickGetDeviceInstanceID,
     SDL_SYS_JoystickOpen,
     SDL_SYS_JoystickRumble,
+    SDL_SYS_JoystickRumbleTriggers,
+    SDL_SYS_JoystickHasLED,
+    SDL_SYS_JoystickSetLED,
     SDL_SYS_JoystickUpdate,
     SDL_SYS_JoystickClose,
     SDL_SYS_JoystickQuit,

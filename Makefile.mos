@@ -56,6 +56,10 @@ SOURCES = \
 	src/video/*.c \
 	src/video/amiga/*.c \
 	src/video/yuv2rgb/*.c \
+	src/misc/*.c \
+	src/misc/dummy/*.c \
+	src/locale/*.c \
+	src/locale/dummy/*.c \
 
 CORESOURCES = src/core/morphos/*.c
 COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')
