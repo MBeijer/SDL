@@ -39,6 +39,20 @@ typedef struct _SDL_JoystickAxisInfo
     SDL_bool sent_initial_value; /* Whether we've sent the initial axis value */
 } SDL_JoystickAxisInfo;
 
+typedef struct _SDL_JoystickTouchpadFingerInfo
+{
+    Uint8 state;
+    float x;
+    float y;
+    float pressure;
+} SDL_JoystickTouchpadFingerInfo;
+
+typedef struct _SDL_JoystickTouchpadInfo
+{
+    int nfingers;
+    SDL_JoystickTouchpadFingerInfo *fingers;
+} SDL_JoystickTouchpadInfo;
+
 struct _SDL_Joystick
 {
     SDL_JoystickID instance_id; /* Device instance, monotonically increasing from 0 */
@@ -60,9 +74,20 @@ struct _SDL_Joystick
     int nbuttons;               /* Number of buttons on the joystick */
     Uint8 *buttons;             /* Current button states */
 
+    int ntouchpads;             /* Number of touchpads on the joystick */
+    SDL_JoystickTouchpadInfo *touchpads;    /* Current touchpad states */
+
     Uint16 low_frequency_rumble;
     Uint16 high_frequency_rumble;
     Uint32 rumble_expiration;
+
+    Uint16 left_trigger_rumble;
+    Uint16 right_trigger_rumble;
+    Uint32 trigger_rumble_expiration;
+
+    Uint8 led_red;
+    Uint8 led_green;
+    Uint8 led_blue;
 
     SDL_bool attached;
     SDL_bool is_game_controller;
@@ -122,6 +147,11 @@ typedef struct _SDL_JoystickDriver
 
     /* Rumble functionality */
     int (*Rumble)(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble);
+    int (*RumbleTriggers)(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble);
+
+    /* LED functionality */
+    SDL_bool (*HasLED)(SDL_Joystick * joystick);
+    int (*SetLED)(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue);
 
     /* Function to update the state of a joystick - called as a device poll.
      * This function shouldn't update the joystick structure directly,

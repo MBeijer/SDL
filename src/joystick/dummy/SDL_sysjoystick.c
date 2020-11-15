@@ -89,6 +89,24 @@ DUMMY_JoystickRumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint1
     return SDL_Unsupported();
 }
 
+static int
+DUMMY_JoystickRumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
+{
+    return SDL_Unsupported();
+}
+
+static SDL_bool
+DUMMY_JoystickHasLED(SDL_Joystick * joystick)
+{
+    return SDL_FALSE;
+}
+
+static int
+DUMMY_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    return SDL_Unsupported();
+}
+
 static void
 DUMMY_JoystickUpdate(SDL_Joystick * joystick)
 {
@@ -122,6 +140,9 @@ SDL_JoystickDriver SDL_DUMMY_JoystickDriver =
     DUMMY_JoystickGetDeviceInstanceID,
     DUMMY_JoystickOpen,
     DUMMY_JoystickRumble,
+    DUMMY_JoystickRumbleTriggers,
+    DUMMY_JoystickHasLED,
+    DUMMY_JoystickSetLED,
     DUMMY_JoystickUpdate,
     DUMMY_JoystickClose,
     DUMMY_JoystickQuit,
