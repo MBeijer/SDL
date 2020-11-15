@@ -173,7 +173,7 @@
 
 /* Maybe later */
 #ifndef SDL_VIDEO_RENDER_OGL
-#define SDL_VIDEO_RENDER_OGL    1
+//#define SDL_VIDEO_RENDER_OGL    1
 #endif
 
 /* Enable OpenGL support */
