@@ -56,6 +56,52 @@ static SDL_version version =
 #ifdef __AMIGADATE__
 static const char __attribute((used)) amiga_ver[] = "$VER: SDL1_2_16 1.4 (" __AMIGADATE__ ")\0";
 #endif
+
+//#define DEBUG
+#include "main/amigaos4/SDL_os4debug.h"
+
+void os4thread_initialize(void);
+void os4thread_quit(void);
+
+void os4timer_initialize(void);
+void os4timer_quit();
+
+void os4video_initialize(void);
+void os4video_quit();
+
+static SDL_bool initialized = SDL_FALSE;
+
+static void os4_initialize(void)
+{
+	if (!initialized) {
+		dprintf("SDL %d.%d.%d (%s)\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL, __DATE__);
+
+		// Call "constructor" functions manually
+		os4timer_initialize();
+		os4thread_initialize();
+		os4video_initialize();
+
+		initialized = SDL_TRUE;
+	} else {
+		dprintf("Already initialized\n");
+	}
+}
+
+static void os4_quit(void)
+{
+	if (initialized) {
+		// Call "destructor" functions manually
+		os4video_quit();
+		os4thread_quit();
+		os4timer_quit();
+
+		initialized = SDL_FALSE;
+	} else {
+		dprintf("Not initialized\n");
+	}
+
+	dprintf("SDL QUIT\n");
+}
 #endif
 
 /* The initialized subsystems */
@@ -70,6 +116,10 @@ int surfaces_allocated = 0;
 
 int SDL_InitSubSystem(Uint32 flags)
 {
+#ifdef __amigaos4__
+	os4_initialize();
+#endif
+
 #if !SDL_TIMERS_DISABLED
 	/* Initialize the timer subsystem */
 	if ( ! ticks_started ) {
@@ -153,61 +203,8 @@ int SDL_InitSubSystem(Uint32 flags)
 	return(0);
 }
 
-#ifdef __amigaos4__
-
-//#define DEBUG
-#include "main/amigaos4/SDL_os4debug.h"
-
-void os4thread_initialize(void);
-void os4thread_quit(void);
-
-void os4timer_initialize(void);
-void os4timer_quit();
-
-void os4video_initialize(void);
-void os4video_quit();
-
-static SDL_bool initialized = SDL_FALSE;
-
-static void os4_initialize(void)
-{
-	dprintf("SDL %d.%d.%d (%s)\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL, __DATE__);
-
-	if (!initialized) {
-		// Call "constructor" functions manually
-		os4timer_initialize();
-		os4thread_initialize();
-		os4video_initialize();
-
-		initialized = SDL_TRUE;
-	} else {
-		dprintf("Already initialized\n");
-	}
-}
-
-static void os4_quit(void)
-{
-	if (initialized) {
-		// Call "destructor" functions manually
-		os4video_quit();
-		os4thread_quit();
-		os4timer_quit();
-
-		initialized = SDL_FALSE;
-	} else {
-		dprintf("Not initialized\n");
-	}
-
-	dprintf("SDL QUIT\n");
-}
-#endif
-
 int SDL_Init(Uint32 flags)
 {
-#ifdef __amigaos4__
-	os4_initialize();
-#endif
-
 #if !SDL_THREADS_DISABLED && SDL_THREAD_PTH
 	if (!pth_init()) {
 		return -1;
