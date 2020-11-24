@@ -189,24 +189,12 @@ OS4_GLES_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
     int result = -1;
 
     if (!window || !context) {
-        dprintf("Called window=%p context=%p\n", window, context);
+        dprintf("Called (window %p, context %p)\n", window, context);
     }
 
     if (IOGLES2) {
-
-        if (window) {
-            SDL_WindowData *data = window->driverdata;
-
-            if (context != data->glContext) {
-                dprintf("Context pointer mismatch: %p<>%p\n", context, data->glContext);
-                SDL_SetError("Context pointer mismatch");
-            } else {
-                aglMakeCurrent(context);
-            }
-        }
-
+        aglMakeCurrent(context);
         result = 0;
-
     } else {
         OS4_GLES_LogLibraryError();
     }
