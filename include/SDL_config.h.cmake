@@ -100,6 +100,10 @@
 #cmakedefine HAVE_WCSSTR 1
 #cmakedefine HAVE_WCSCMP 1
 #cmakedefine HAVE_WCSNCMP 1
+#cmakedefine HAVE_WCSCASECMP 1
+#cmakedefine HAVE__WCSICMP 1
+#cmakedefine HAVE_WCSNCASECMP 1
+#cmakedefine HAVE__WCSNICMP 1
 #cmakedefine HAVE_STRLEN 1
 #cmakedefine HAVE_STRLCPY 1
 #cmakedefine HAVE_STRLCAT 1
@@ -162,8 +166,12 @@
 #cmakedefine HAVE_LOGF 1
 #cmakedefine HAVE_LOG10 1
 #cmakedefine HAVE_LOG10F 1
+#cmakedefine HAVE_LROUND 1
+#cmakedefine HAVE_LROUNDF 1
 #cmakedefine HAVE_POW 1
 #cmakedefine HAVE_POWF 1
+#cmakedefine HAVE_ROUND 1
+#cmakedefine HAVE_ROUNDF 1
 #cmakedefine HAVE_SCALBN 1
 #cmakedefine HAVE_SCALBNF 1
 #cmakedefine HAVE_SIN 1
@@ -191,6 +199,7 @@
 #cmakedefine HAVE_PTHREAD_SET_NAME_NP 1
 #cmakedefine HAVE_SEM_TIMEDWAIT 1
 #cmakedefine HAVE_GETAUXVAL 1
+#cmakedefine HAVE_ELF_AUX_INFO 1
 #cmakedefine HAVE_POLL 1
 #cmakedefine HAVE__EXIT 1
 
@@ -207,9 +216,13 @@
 #cmakedefine HAVE_DBUS_DBUS_H 1
 #cmakedefine HAVE_FCITX 1
 #cmakedefine HAVE_IBUS_IBUS_H 1
+#cmakedefine HAVE_SYS_INOTIFY_H 1
+#cmakedefine HAVE_INOTIFY_INIT 1
+#cmakedefine HAVE_INOTIFY_INIT1 1
+#cmakedefine HAVE_INOTIFY 1
 #cmakedefine HAVE_IMMINTRIN_H 1
-#cmakedefine HAVE_LIBSAMPLERATE_H 1
 #cmakedefine HAVE_LIBUDEV_H 1
+#cmakedefine HAVE_LIBSAMPLERATE_H 1
 
 #cmakedefine HAVE_D3D_H @HAVE_D3D_H@
 #cmakedefine HAVE_D3D11_H @HAVE_D3D11_H@
@@ -283,7 +296,6 @@
 /* Enable various input drivers */
 #cmakedefine SDL_INPUT_LINUXEV @SDL_INPUT_LINUXEV@
 #cmakedefine SDL_INPUT_LINUXKD @SDL_INPUT_LINUXKD@
-#cmakedefine SDL_INPUT_TSLIB @SDL_INPUT_TSLIB@
 #cmakedefine SDL_JOYSTICK_ANDROID @SDL_JOYSTICK_ANDROID@
 #cmakedefine SDL_JOYSTICK_HAIKU @SDL_JOYSTICK_HAIKU@
 #cmakedefine SDL_JOYSTICK_AMIGAINPUT @SDL_JOYSTICK_AMIGAINPUT@
@@ -346,6 +358,7 @@
 #cmakedefine SDL_VIDEO_DRIVER_DUMMY @SDL_VIDEO_DRIVER_DUMMY@
 #cmakedefine SDL_VIDEO_DRIVER_OFFSCREEN @SDL_VIDEO_DRIVER_OFFSCREEN@
 #cmakedefine SDL_VIDEO_DRIVER_WINDOWS @SDL_VIDEO_DRIVER_WINDOWS@
+#cmakedefine SDL_VIDEO_DRIVER_WINRT @SDL_VIDEO_DRIVER_WINRT@
 #cmakedefine SDL_VIDEO_DRIVER_WAYLAND @SDL_VIDEO_DRIVER_WAYLAND@
 #cmakedefine SDL_VIDEO_DRIVER_RPI @SDL_VIDEO_DRIVER_RPI@
 #cmakedefine SDL_VIDEO_DRIVER_VIVANTE @SDL_VIDEO_DRIVER_VIVANTE@
@@ -415,6 +428,7 @@
 #cmakedefine SDL_POWER_ANDROID @SDL_POWER_ANDROID@
 #cmakedefine SDL_POWER_LINUX @SDL_POWER_LINUX@
 #cmakedefine SDL_POWER_WINDOWS @SDL_POWER_WINDOWS@
+#cmakedefine SDL_POWER_WINRT @SDL_POWER_WINRT@
 #cmakedefine SDL_POWER_MACOSX @SDL_POWER_MACOSX@
 #cmakedefine SDL_POWER_UIKIT @SDL_POWER_UIKIT@
 #cmakedefine SDL_POWER_HAIKU @SDL_POWER_HAIKU@
@@ -444,7 +458,7 @@
 #cmakedefine SDL_IPHONE_KEYBOARD @SDL_IPHONE_KEYBOARD@
 #cmakedefine SDL_IPHONE_LAUNCHSCREEN @SDL_IPHONE_LAUNCHSCREEN@
 
-#if !defined(__WIN32__)
+#if !defined(__WIN32__) && !defined(__WINRT__)
 #  if !defined(_STDINT_H_) && !defined(_STDINT_H) && !defined(HAVE_STDINT_H) && !defined(_HAVE_STDINT_H)
 typedef unsigned int size_t;
 typedef signed char int8_t;

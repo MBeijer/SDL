@@ -103,6 +103,8 @@
 #define HAVE_WCSLCPY 1
 #define HAVE_WCSLCAT 1
 #define HAVE_WCSCMP 1
+#define HAVE__WCSICMP 1
+#define HAVE__WCSNICMP 1
 #define HAVE_STRLEN 1
 #define HAVE_STRLCPY 1
 #define HAVE_STRLCAT 1
@@ -170,8 +172,12 @@
 /* #undef HAVE_LOGF */
 #define HAVE_LOG10 1
 /* #undef HAVE_LOG10F */
+/* #undef HAVE_LROUND */
+/* #undef HAVE_LROUNDF */
 #define HAVE_POW 1
 /* #undef HAVE_POWF */
+/* #undef HAVE_ROUND */
+/* #undef HAVE_ROUNDF */
 #define HAVE_SIN 1
 /* #undef HAVE_SINF */
 /* #undef HAVE_SCALBN */

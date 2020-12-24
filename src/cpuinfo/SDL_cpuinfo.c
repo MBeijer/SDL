@@ -96,6 +96,10 @@
 #endif
 #endif
 
+#if defined(HAVE_ELF_AUX_INFO)
+#include <sys/auxv.h>
+#endif
+
 #ifdef __RISCOS__
 #include <kernel.h>
 #include <swis.h>
@@ -474,6 +478,11 @@ CPU_haveNEON(void)
     return 0;  /* assume anything else from Apple doesn't have NEON. */
 #elif defined(__OpenBSD__)
     return 1;  /* OpenBSD only supports ARMv7 CPUs that have NEON. */
+#elif defined(HAVE_ELF_AUX_INFO) && defined(HWCAP_NEON)
+    unsigned long hasneon = 0;
+    if (elf_aux_info(AT_HWCAP, (void *)&hasneon, (int)sizeof(hasneon)) != 0)
+        return 0;
+    return ((hasneon & HWCAP_NEON) == HWCAP_NEON);
 #elif !defined(__arm__)
     return 0;  /* not an ARM CPU at all. */
 #elif defined(__QNXNTO__)
@@ -498,7 +507,7 @@ CPU_haveNEON(void)
     /* Use the VFPSupport_Features SWI to access the MVFR registers */
     {
         _kernel_swi_regs regs;
-	regs.r[0] = 0;
+        regs.r[0] = 0;
         if (_kernel_swi(VFPSupport_Features, &regs, &regs) == NULL) {
             if ((regs.r[2] & 0xFFF000) == 0x111000) {
                 return 1;
@@ -904,7 +913,7 @@ SDL_GetSystemRAM(void)
 #endif
 #ifdef HAVE_SYSCTLBYNAME
         if (SDL_SystemRAM <= 0) {
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__DragonFly__)
 #ifdef HW_REALMEM
             int mib[2] = {CTL_HW, HW_REALMEM};
 #else
