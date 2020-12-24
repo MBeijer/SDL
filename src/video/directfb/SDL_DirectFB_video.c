@@ -27,6 +27,7 @@
  */
 #include "SDL_DirectFB_modes.h"
 #include "SDL_DirectFB_opengl.h"
+#include "SDL_DirectFB_vulkan.h"
 #include "SDL_DirectFB_window.h"
 #include "SDL_DirectFB_WM.h"
 
@@ -135,6 +136,13 @@ DirectFB_CreateDevice(int devindex)
     device->shape_driver.CreateShaper = DirectFB_CreateShaper;
     device->shape_driver.SetWindowShape = DirectFB_SetWindowShape;
     device->shape_driver.ResizeWindowShape = DirectFB_ResizeWindowShape;
+
+#if SDL_VIDEO_VULKAN
+    device->Vulkan_LoadLibrary = DirectFB_Vulkan_LoadLibrary;
+    device->Vulkan_UnloadLibrary = DirectFB_Vulkan_UnloadLibrary;
+    device->Vulkan_GetInstanceExtensions = DirectFB_Vulkan_GetInstanceExtensions;
+    device->Vulkan_CreateSurface = DirectFB_Vulkan_CreateSurface;
+#endif
 
     device->free = DirectFB_DeleteDevice;
 
@@ -314,7 +322,9 @@ static const struct {
     { DSPF_YUY2, SDL_PIXELFORMAT_YUY2 },                /* 16 bit YUV (4 byte/ 2 pixel, macropixel contains CbYCrY [31:0]) */
     { DSPF_UYVY, SDL_PIXELFORMAT_UYVY },                /* 16 bit YUV (4 byte/ 2 pixel, macropixel contains YCbYCr [31:0]) */
     { DSPF_RGB555, SDL_PIXELFORMAT_RGB555 },            /* 16 bit RGB (2 byte, nothing @15, red 5@10, green 5@5, blue 5@0) */
+#if (DFB_VERSION_ATLEAST(1,5,0))
     { DSPF_ABGR, SDL_PIXELFORMAT_ABGR8888 },            /* 32 bit ABGR (4  byte, alpha 8@24, blue 8@16, green 8@8, red 8@0) */
+#endif
 #if (ENABLE_LUT8)
     { DSPF_LUT8, SDL_PIXELFORMAT_INDEX8 },              /* 8 bit LUT (8 bit color and alpha lookup from palette) */
 #endif

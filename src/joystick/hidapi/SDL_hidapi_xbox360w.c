@@ -34,6 +34,9 @@
 
 #ifdef SDL_JOYSTICK_HIDAPI_XBOX360
 
+/* Define this if you want to log all packets from the controller */
+/*#define DEBUG_XBOX_PROTOCOL*/
+
 
 typedef struct {
     SDL_bool connected;
@@ -125,6 +128,9 @@ HIDAPI_DriverXbox360W_GetDevicePlayerIndex(SDL_HIDAPI_Device *device, SDL_Joysti
 static void
 HIDAPI_DriverXbox360W_SetDevicePlayerIndex(SDL_HIDAPI_Device *device, SDL_JoystickID instance_id, int player_index)
 {
+    if (!device->dev) {
+        return;
+    }
     SetSlotLED(device->dev, (player_index % 4));
 }
 
@@ -172,6 +178,12 @@ HIDAPI_DriverXbox360W_HasJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *jo
 
 static int
 HIDAPI_DriverXbox360W_SetJoystickLED(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    return SDL_Unsupported();
+}
+
+static int
+HIDAPI_DriverXbox360W_SetJoystickSensorsEnabled(SDL_HIDAPI_Device *device, SDL_Joystick *joystick, SDL_bool enabled)
 {
     return SDL_Unsupported();
 }
@@ -238,6 +250,9 @@ HIDAPI_DriverXbox360W_UpdateDevice(SDL_HIDAPI_Device *device)
     }
 
     while ((size = hid_read_timeout(device->dev, data, sizeof(data), 0)) > 0) {
+#ifdef DEBUG_XBOX_PROTOCOL
+        HIDAPI_DumpPacket("Xbox 360 wireless packet: size = %d", data, size);
+#endif
         if (size == 2 && data[0] == 0x08) {
             SDL_bool connected = (data[1] & 0x80) ? SDL_TRUE : SDL_FALSE;
 #ifdef DEBUG_JOYSTICK
@@ -249,10 +264,10 @@ HIDAPI_DriverXbox360W_UpdateDevice(SDL_HIDAPI_Device *device)
                 if (connected) {
                     SDL_JoystickID joystickID;
 
-                    HIDAPI_JoystickConnected(device, &joystickID, SDL_FALSE);
+                    HIDAPI_JoystickConnected(device, &joystickID);
 
                 } else if (device->num_joysticks > 0) {
-                    HIDAPI_JoystickDisconnected(device, device->joysticks[0], SDL_FALSE);
+                    HIDAPI_JoystickDisconnected(device, device->joysticks[0]);
                 }
             }
         } else if (size == 29 && data[0] == 0x00 && data[1] == 0x0f && data[2] == 0x00 && data[3] == 0xf0) {
@@ -280,7 +295,7 @@ HIDAPI_DriverXbox360W_UpdateDevice(SDL_HIDAPI_Device *device)
     if (joystick) {
         if (size < 0) {
             /* Read error, device is disconnected */
-            HIDAPI_JoystickDisconnected(device, joystick->instance_id, SDL_FALSE);
+            HIDAPI_JoystickDisconnected(device, joystick->instance_id);
         }
     }
     return (size >= 0);
@@ -316,9 +331,9 @@ SDL_HIDAPI_DeviceDriver SDL_HIDAPI_DriverXbox360W =
     HIDAPI_DriverXbox360W_RumbleJoystickTriggers,
     HIDAPI_DriverXbox360W_HasJoystickLED,
     HIDAPI_DriverXbox360W_SetJoystickLED,
+    HIDAPI_DriverXbox360W_SetJoystickSensorsEnabled,
     HIDAPI_DriverXbox360W_CloseJoystick,
     HIDAPI_DriverXbox360W_FreeDevice,
-    NULL
 };
 
 #endif /* SDL_JOYSTICK_HIDAPI_XBOX360 */

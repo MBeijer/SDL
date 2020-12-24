@@ -58,6 +58,7 @@ extern void SDL_GetJoystickGUIDInfo(SDL_JoystickGUID guid, Uint16 *vendor, Uint1
 extern char *SDL_CreateJoystickName(Uint16 vendor, Uint16 product, const char *vendor_name, const char *product_name);
 
 /* Function to return the type of a controller */
+extern SDL_GameControllerType SDL_GetJoystickGameControllerTypeFromVIDPID(Uint16 vendor, Uint16 product);
 extern SDL_GameControllerType SDL_GetJoystickGameControllerTypeFromGUID(SDL_JoystickGUID guid, const char *name);
 extern SDL_GameControllerType SDL_GetJoystickGameControllerType(const char *name, Uint16 vendor, Uint16 product, int interface_number, int interface_class, int interface_subclass, int interface_protocol);
 
@@ -109,6 +110,7 @@ extern void SDL_GameControllerHandleDelayedGuideButton(SDL_Joystick *joystick);
 
 /* Internal event queueing functions */
 extern void SDL_PrivateJoystickAddTouchpad(SDL_Joystick *joystick, int nfingers);
+extern void SDL_PrivateJoystickAddSensor(SDL_Joystick *joystick, SDL_SensorType type);
 extern void SDL_PrivateJoystickAdded(SDL_JoystickID device_instance);
 extern void SDL_PrivateJoystickRemoved(SDL_JoystickID device_instance);
 extern int SDL_PrivateJoystickAxis(SDL_Joystick *joystick,
@@ -121,6 +123,8 @@ extern int SDL_PrivateJoystickButton(SDL_Joystick *joystick,
                                      Uint8 button, Uint8 state);
 extern int SDL_PrivateJoystickTouchpad(SDL_Joystick *joystick,
                                        int touchpad, int finger, Uint8 state, float x, float y, float pressure);
+extern int SDL_PrivateJoystickSensor(SDL_Joystick *joystick,
+                                     SDL_SensorType type, const float *data, int num_values);
 extern void SDL_PrivateJoystickBatteryLevel(SDL_Joystick *joystick,
                                             SDL_JoystickPowerLevel ePowerLevel);
 

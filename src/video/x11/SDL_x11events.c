@@ -39,7 +39,6 @@
 #include "SDL_hints.h"
 #include "SDL_timer.h"
 #include "SDL_syswm.h"
-#include "SDL_assert.h"
 
 #include <stdio.h>
 
@@ -433,8 +432,12 @@ X11_DispatchFocusOut(_THIS, SDL_WindowData *data)
 static void
 X11_DispatchMapNotify(SDL_WindowData *data)
 {
-    SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESTORED, 0, 0);
-    SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
+    SDL_Window *window = data->window;
+    SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESTORED, 0, 0);
+    SDL_SendWindowEvent(window, SDL_WINDOWEVENT_SHOWN, 0, 0);
+    if (!(window->flags & SDL_WINDOW_HIDDEN) && (window->flags & SDL_WINDOW_INPUT_FOCUS)) {
+        SDL_UpdateWindowGrab(window);
+    }
 }
 
 static void

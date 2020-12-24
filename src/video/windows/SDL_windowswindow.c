@@ -24,13 +24,11 @@
 
 #include "../../core/windows/SDL_windows.h"
 
-#include "SDL_assert.h"
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "../../events/SDL_keyboard_c.h"
 #include "../../events/SDL_mouse_c.h"
 
-#include "../../joystick/windows/SDL_rawinputjoystick_c.h"
 #include "SDL_windowsvideo.h"
 #include "SDL_windowswindow.h"
 #include "SDL_hints.h"
@@ -811,18 +809,8 @@ WIN_GetWindowWMInfo(_THIS, SDL_Window * window, SDL_SysWMinfo * info)
     }
 }
 
-static LRESULT CALLBACK SDL_HelperWindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-#if SDL_JOYSTICK_RAWINPUT
-    if (RAWINPUT_WindowProc(hWnd, msg, wParam, lParam) == 0) {
-        return 0;
-    }
-#endif
-    return DefWindowProc(hWnd, msg, wParam, lParam);
-}
-
 /*
- * Creates a HelperWindow used for DirectInput and RawInput events.
+ * Creates a HelperWindow used for DirectInput.
  */
 int
 SDL_HelperWindowCreate(void)
@@ -837,7 +825,7 @@ SDL_HelperWindowCreate(void)
 
     /* Create the class. */
     SDL_zero(wce);
-    wce.lpfnWndProc = SDL_GetHintBoolean(SDL_HINT_JOYSTICK_RAWINPUT, SDL_TRUE) ? SDL_HelperWindowProc : DefWindowProc;
+    wce.lpfnWndProc = DefWindowProc;
     wce.lpszClassName = (LPCWSTR) SDL_HelperWindowClassName;
     wce.hInstance = hInstance;
 
@@ -965,9 +953,18 @@ WIN_UpdateClipCursor(SDL_Window *window)
                 }
             }
         }
-    } else if (SDL_memcmp(&clipped_rect, &data->cursor_clipped_rect, sizeof(clipped_rect)) == 0) {
-        ClipCursor(NULL);
-        SDL_zero(data->cursor_clipped_rect);
+    } else {
+        POINT first, second;
+
+        first.x = clipped_rect.left;
+        first.y = clipped_rect.top;
+        second.x = clipped_rect.right - 1;
+        second.y = clipped_rect.bottom - 1;
+        if (PtInRect(&data->cursor_clipped_rect, first) &&
+            PtInRect(&data->cursor_clipped_rect, second)) {
+            ClipCursor(NULL);
+            SDL_zero(data->cursor_clipped_rect);
+        }
     }
     data->last_updated_clipcursor = SDL_GetTicks();
 }
