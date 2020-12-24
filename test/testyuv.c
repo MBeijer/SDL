@@ -266,6 +266,10 @@ main(int argc, char **argv)
     Uint32 then, now, i, iterations = 100;
     SDL_bool should_run_automated_tests = SDL_FALSE;
 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        return 1;
+    }
+
     while (argv[arg] && *argv[arg] == '-') {
         if (SDL_strcmp(argv[arg], "--jpeg") == 0) {
             SDL_SetYUVConversionMode(SDL_YUV_CONVERSION_JPEG);
@@ -448,6 +452,15 @@ main(int argc, char **argv)
             SDL_Delay(10);
         }
     }
+
+    SDL_DestroyTexture(output[0]);
+    SDL_DestroyTexture(output[1]);
+    SDL_DestroyTexture(output[2]);
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_VideoQuit();
+
     SDL_Quit();
     return 0;
 }
