@@ -571,19 +571,29 @@ AMIGAINPUT_Rumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 h
     return 0;
 }
 
-static int AMIGAINPUT_RumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
+static int
+AMIGAINPUT_RumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
 {
     dprintf("Called\n");
     return 0;
 }
 
-static SDL_bool AMIGAINPUT_HasLED(SDL_Joystick * joystick)
+static SDL_bool
+AMIGAINPUT_HasLED(SDL_Joystick * joystick)
 {
     dprintf("Called\n");
     return SDL_FALSE;
 }
 
-static int AMIGAINPUT_SetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+static int
+AMIGAINPUT_SetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
+{
+    dprintf("Called\n");
+    return 0;
+}
+
+static int
+AMIGAINPUT_SetSensorsEnabled(SDL_Joystick * joystick, SDL_bool enabled)
 {
     dprintf("Called\n");
     return 0;
@@ -611,6 +621,7 @@ SDL_JoystickDriver SDL_AMIGAINPUT_JoystickDriver =
     AMIGAINPUT_RumbleTriggers,
     AMIGAINPUT_HasLED,
     AMIGAINPUT_SetLED,
+    AMIGAINPUT_SetSensorsEnabled,
     AMIGAINPUT_Update,
     AMIGAINPUT_Close,
     AMIGAINPUT_Quit,
