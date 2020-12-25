@@ -92,9 +92,9 @@ OS4_GL_GetProcAddress(_THIS, const char * proc)
 {
     void *func = NULL;
 
-    dprintf("Called for '%s'\n", proc);
+    dprintf("Called for '%s' (current context %p)\n", proc, mini_CurrentContext);
 
-    if (IMiniGL) {
+    if (IMiniGL && mini_CurrentContext) {
         func = AmiGetGLProc(proc);
     }
 
@@ -253,24 +253,12 @@ OS4_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
     int result = -1;
 
     if (!window || !context) {
-        dprintf("Called window=%p context=%p\n", window, context);
+        dprintf("Called (window %p, context %p)\n", window, context);
     }
 
     if (IMiniGL) {
-
-        if (window) {
-            SDL_WindowData * data = window->driverdata;
-
-            if (context != data->glContext) {
-                dprintf("Context pointer mismatch: %p<>%p\n", context, data->glContext);
-                SDL_SetError("Context pointer mismatch");
-            } else {
-                mglMakeCurrent(context);
-            }
-        }
-
+        mglMakeCurrent(context);
         result = 0;
-
     } else {
         OS4_GL_LogLibraryError();
     }

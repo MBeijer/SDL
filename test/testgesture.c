@@ -90,7 +90,7 @@ setpix(SDL_Surface *screen, float _x, float _y, unsigned int col)
     *pixmem32 = colour;
 }
 
-#if 0
+#if 0 /* unused */
 static void
 drawLine(SDL_Surface *screen, float x0, float y0, float x1, float y1, unsigned int col)
 {

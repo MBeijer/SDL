@@ -759,6 +759,25 @@ endmacro()
 
 # Requires:
 # - PkgCheckModules
+macro(CheckEGLKMSDRM)
+  if (HAVE_VIDEO_OPENGLES OR HAVE_VIDEO_OPENGL)
+    pkg_check_modules(EGL egl)
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${EGL_CFLAGS}")
+    check_c_source_compiles("
+	#define EGL_API_FB
+	#define MESA_EGL_NO_X11_HEADERS
+	#define EGL_NO_X11
+	#include <EGL/egl.h>
+	#include <EGL/eglext.h>
+	int main (int argc, char** argv) {}" HAVE_VIDEO_OPENGL_EGL)
+    if(HAVE_VIDEO_OPENGL_EGL)
+	set(SDL_VIDEO_OPENGL_EGL 1)
+    endif()
+  endif()
+endmacro()
+
+# Requires:
+# - PkgCheckModules
 macro(CheckOpenGLESX11)
   pkg_check_modules(EGL egl)
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${EGL_CFLAGS}")
@@ -994,8 +1013,8 @@ macro(CheckUSBHID)
         #include <usb.h>
         #endif
         #ifdef __DragonFly__
-        # include <bus/usb/usb.h>
-        # include <bus/usb/usbhid.h>
+        # include <bus/u4b/usb.h>
+        # include <bus/u4b/usbhid.h>
         #else
         # include <dev/usb/usb.h>
         # include <dev/usb/usbhid.h>
@@ -1020,8 +1039,8 @@ macro(CheckUSBHID)
           #include <usb.h>
           #endif
           #ifdef __DragonFly__
-          # include <bus/usb/usb.h>
-          # include <bus/usb/usbhid.h>
+          # include <bus/u4b/usb.h>
+          # include <bus/u4b/usbhid.h>
           #else
           # include <dev/usb/usb.h>
           # include <dev/usb/usbhid.h>
@@ -1048,8 +1067,8 @@ macro(CheckUSBHID)
           #include <usb.h>
           #endif
           #ifdef __DragonFly__
-          #include <bus/usb/usb.h>
-          #include <bus/usb/usbhid.h>
+          #include <bus/u4b/usb.h>
+          #include <bus/u4b/usbhid.h>
           #else
           #include <dev/usb/usb.h>
           #include <dev/usb/usbhid.h>
@@ -1098,7 +1117,7 @@ macro(CheckHIDAPI)
       set(HAVE_HIDAPI TRUE)
     else()
       set(HAVE_HIDAPI FALSE)
-      pkg_check_modules(LIBUSB libusb)
+      pkg_check_modules(LIBUSB libusb-1.0)
       if (LIBUSB_FOUND)
         check_include_file(libusb.h HAVE_LIBUSB_H ${LIBUSB_CFLAGS})
         if (HAVE_LIBUSB_H)
@@ -1173,7 +1192,7 @@ endmacro(CheckRPI)
 macro(CheckKMSDRM)
   if(VIDEO_KMSDRM)
     pkg_check_modules(KMSDRM libdrm gbm egl)
-    if(KMSDRM_FOUND)
+    if(KMSDRM_FOUND AND HAVE_VIDEO_OPENGL_EGL)
       link_directories(
         ${KMSDRM_LIBRARY_DIRS}
       )
@@ -1184,7 +1203,8 @@ macro(CheckKMSDRM)
       set(HAVE_SDL_VIDEO TRUE)
 
       file(GLOB KMSDRM_SOURCES ${SDL2_SOURCE_DIR}/src/video/kmsdrm/*.c)
-      set(SOURCE_FILES ${SOURCE_FILES} ${KMSDRM_SOURCES})
+      file(GLOB KMSDRM_LEGACY_SOURCES ${SDL2_SOURCE_DIR}/src/video/kmsdrm_legacy/*.c)
+      set(SOURCE_FILES ${SOURCE_FILES} ${KMSDRM_SOURCES} ${KMSDRM_LEGACY_SOURCES})
 
       list(APPEND EXTRA_CFLAGS ${KMSDRM_CFLAGS})
 

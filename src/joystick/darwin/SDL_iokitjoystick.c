@@ -26,7 +26,7 @@
 #include "SDL_joystick.h"
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
-#include "SDL_sysjoystick_c.h"
+#include "SDL_iokitjoystick_c.h"
 #include "../hidapi/SDL_hidapijoystick_c.h"
 #include "../../haptic/darwin/SDL_syshaptic_c.h"    /* For haptic hot plugging */
 
@@ -527,6 +527,14 @@ static SDL_bool
 JoystickAlreadyKnown(IOHIDDeviceRef ioHIDDeviceObject)
 {
     recDevice *i;
+
+#if defined(SDL_JOYSTICK_MFI)
+    extern SDL_bool IOS_SupportedHIDDevice(IOHIDDeviceRef device);
+    if (IOS_SupportedHIDDevice(ioHIDDeviceObject)) {
+        return SDL_TRUE;
+    }
+#endif
+
     for (i = gpDeviceList; i != NULL; i = i->pNext) {
         if (i->deviceRef == ioHIDDeviceObject) {
             return SDL_TRUE;
@@ -940,6 +948,12 @@ DARWIN_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blu
     return SDL_Unsupported();
 }
 
+static int
+DARWIN_JoystickSetSensorsEnabled(SDL_Joystick *joystick, SDL_bool enabled)
+{
+    return SDL_Unsupported();
+}
+
 static void
 DARWIN_JoystickUpdate(SDL_Joystick * joystick)
 {
@@ -1090,6 +1104,7 @@ SDL_JoystickDriver SDL_DARWIN_JoystickDriver =
     DARWIN_JoystickRumbleTriggers,
     DARWIN_JoystickHasLED,
     DARWIN_JoystickSetLED,
+    DARWIN_JoystickSetSensorsEnabled,
     DARWIN_JoystickUpdate,
     DARWIN_JoystickClose,
     DARWIN_JoystickQuit,

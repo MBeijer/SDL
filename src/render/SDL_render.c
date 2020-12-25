@@ -22,7 +22,6 @@
 
 /* The SDL 2D rendering system */
 
-#include "SDL_assert.h"
 #include "SDL_hints.h"
 #include "SDL_render.h"
 #include "SDL_sysrender.h"
@@ -1882,12 +1881,6 @@ SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
     if (!SDL_RenderTargetSupported(renderer)) {
         return SDL_Unsupported();
     }
-    if (texture == renderer->target) {
-        /* Nothing to do! */
-        return 0;
-    }
-
-    FlushRenderCommands(renderer);  /* time to send everything to the GPU! */
 
     /* texture == NULL is valid and means reset the target to the window */
     if (texture) {
@@ -1903,6 +1896,13 @@ SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
             texture = texture->native;
         }
     }
+
+    if (texture == renderer->target) {
+        /* Nothing to do! */
+        return 0;
+    }
+
+    FlushRenderCommands(renderer);  /* time to send everything to the GPU! */
 
     SDL_LockMutex(renderer->target_mutex);
 
