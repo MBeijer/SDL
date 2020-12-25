@@ -497,6 +497,12 @@ SDL_SYS_JoystickSetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 bl
     return SDL_Unsupported();
 }
 
+static int
+SDL_SYS_JoystickSetSensorsEnabled(SDL_Joystick *joystick, SDL_bool enabled)
+{
+    return SDL_Unsupported();
+}
+
 SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
 {
     SDL_SYS_JoystickInit,
@@ -512,6 +518,7 @@ SDL_JoystickDriver SDL_MORPHOS_JoystickDriver =
     SDL_SYS_JoystickRumbleTriggers,
     SDL_SYS_JoystickHasLED,
     SDL_SYS_JoystickSetLED,
+	SDL_SYS_JoystickSetSensorsEnabled,
     SDL_SYS_JoystickUpdate,
     SDL_SYS_JoystickClose,
     SDL_SYS_JoystickQuit,
