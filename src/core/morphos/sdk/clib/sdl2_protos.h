@@ -726,7 +726,7 @@ char *SDL_strtokr(char *s1, const char *s2, char **saveptr);
 int SDL_isupper(int x);
 int SDL_islower(int x);
 
-/* 2.0.13 */
+/* 2.0.13 - 2.0.14 */
 int SDL_JoystickAttachVirtual(SDL_JoystickType type, int naxes, int nbuttons, int nhats);
 int SDL_JoystickDetachVirtual(int device_index);
 SDL_bool SDL_JoystickIsVirtual(int device_index);
@@ -758,8 +758,15 @@ int SDL_GetNumTouchDevices(void);
 SDL_TouchID SDL_GetTouchDevice(int index);
 int SDL_GetNumTouchFingers(SDL_TouchID touchID);
 SDL_Finger * SDL_GetTouchFinger(SDL_TouchID touchID, int index);
-/*  */
-
+Uint32 SDL_crc32(Uint32 crc, const void *data, size_t len);
+const char * SDL_GameControllerGetSerial(SDL_GameController *gamecontroller);
+const char * SDL_JoystickGetSerial(SDL_Joystick *joystick);
+SDL_bool SDL_GameControllerHasSensor(SDL_GameController *gamecontroller, SDL_SensorType type);
+int SDL_GameControllerSetSensorEnabled(SDL_GameController *gamecontroller, SDL_SensorType type, SDL_bool enabled);
+SDL_bool SDL_GameControllerIsSensorEnabled(SDL_GameController *gamecontroller, SDL_SensorType type);
+int SDL_GameControllerGetSensorData(SDL_GameController *gamecontroller, SDL_SensorType type, float *data, int num_values);
+int SDL_wcscasecmp(const wchar_t *str1, const wchar_t *str2);
+int SDL_wcsncasecmp(const wchar_t *str1, const wchar_t *str2, size_t len);
 #endif
 
 #endif /* CLIB_SDL2_PROTOS_H */

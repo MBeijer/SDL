@@ -137,7 +137,7 @@ AMIGA_ShowCursor(SDL_Cursor * cursor)
 {
 	SDL_VideoDevice *video = SDL_GetVideoDevice();
 	SDL_VideoData *data = (SDL_VideoData *)video->driverdata;
-	D("[%s] 0x%08lx\n", __FUNCTION__, cursor);
+	//D("[%s] 0x%08lx\n", __FUNCTION__, cursor);
 
 	if (IS_SYSTEM_CURSOR(cursor))
 	{

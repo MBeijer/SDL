@@ -759,3 +759,12 @@
 	STUB(SDL_GetNumTouchFingers)
 	STUB(SDL_GetTouchFinger)
 	
+	STUB(SDL_crc32)
+	STUB(SDL_GameControllerGetSerial)
+	STUB(SDL_JoystickGetSerial)
+	STUB(SDL_GameControllerHasSensor)
+	STUB(SDL_GameControllerSetSensorEnabled)
+	STUB(SDL_GameControllerIsSensorEnabled)
+	STUB(SDL_GameControllerGetSensorData)
+	STUB(SDL_wcscasecmp)
+	STUB(SDL_wcsncasecmp)

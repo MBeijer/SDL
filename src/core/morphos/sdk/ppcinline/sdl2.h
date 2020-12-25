@@ -5973,4 +5973,88 @@
 		(((SDL_Finger *(*)(SDL_TouchID , int ))*(void**)(__base - 4114))(__t__p0, __t__p1));\
 	})
 
+#define SDL_crc32(__p0, __p1, __p2) \
+	({ \
+		Uint32  __t__p0 = __p0;\
+		const void * __t__p1 = __p1;\
+		size_t  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((Uint32 (*)(Uint32 , const void *, size_t ))*(void**)(__base - 4120))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_GameControllerGetSerial(__p0) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((const char *(*)(SDL_GameController *))*(void**)(__base - 4126))(__t__p0));\
+	})
+
+#define SDL_JoystickGetSerial(__p0) \
+	({ \
+		SDL_Joystick * __t__p0 = __p0;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((const char *(*)(SDL_Joystick *))*(void**)(__base - 4132))(__t__p0));\
+	})
+
+#define SDL_GameControllerHasSensor(__p0, __p1) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_SensorType  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_GameController *, SDL_SensorType ))*(void**)(__base - 4138))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GameControllerSetSensorEnabled(__p0, __p1, __p2) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_SensorType  __t__p1 = __p1;\
+		SDL_bool  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, SDL_SensorType , SDL_bool ))*(void**)(__base - 4144))(__t__p0, __t__p1, __t__p2));\
+	})
+
+#define SDL_GameControllerIsSensorEnabled(__p0, __p1) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_SensorType  __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((SDL_bool (*)(SDL_GameController *, SDL_SensorType ))*(void**)(__base - 4150))(__t__p0, __t__p1));\
+	})
+
+#define SDL_GameControllerGetSensorData(__p0, __p1, __p2, __p3) \
+	({ \
+		SDL_GameController * __t__p0 = __p0;\
+		SDL_SensorType  __t__p1 = __p1;\
+		float * __t__p2 = __p2;\
+		int  __t__p3 = __p3;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(SDL_GameController *, SDL_SensorType , float *, int ))*(void**)(__base - 4156))(__t__p0, __t__p1, __t__p2, __t__p3));\
+	})
+
+#define SDL_wcscasecmp(__p0, __p1) \
+	({ \
+		const wchar_t * __t__p0 = __p0;\
+		const wchar_t * __t__p1 = __p1;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(const wchar_t *, const wchar_t *))*(void**)(__base - 4162))(__t__p0, __t__p1));\
+	})
+
+#define SDL_wcsncasecmp(__p0, __p1, __p2) \
+	({ \
+		const wchar_t * __t__p0 = __p0;\
+		const wchar_t * __t__p1 = __p1;\
+		size_t  __t__p2 = __p2;\
+		long __base = (long)(SDL2_BASE_NAME);\
+		__asm volatile("mr 12,%0": :"r"(__base):"r12");\
+		(((int (*)(const wchar_t *, const wchar_t *, size_t ))*(void**)(__base - 4168))(__t__p0, __t__p1, __t__p2));\
+	})
+
 #endif /* !_PPCINLINE_SDL2_H */

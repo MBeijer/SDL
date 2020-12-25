@@ -1031,6 +1031,7 @@ GL_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * te
 }
 
 #if defined(__AMIGAOS4__) || defined(__MORPHOS__)
+/* Hack: this is due to missing functionnality in MinGL / Warp3D / TinyGL */
 static void
 GlBlendModeHack(GL_RenderData * data, const SDL_BlendMode mode)
 {
@@ -1098,20 +1099,7 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
 
     if (blend != data->drawstate.blend) {
 #if defined(__AMIGAOS4__) || defined(__MORPHOS__)
-        if (data->glBlendFuncSeparate && data->glBlendEquation) {
-            if (blend == SDL_BLENDMODE_NONE) {
-                data->glDisable(GL_BLEND);
-            } else {
-                data->glEnable(GL_BLEND);
-                data->glBlendFuncSeparate(GetBlendFunc(SDL_GetBlendModeSrcColorFactor(blend)),
-                                          GetBlendFunc(SDL_GetBlendModeDstColorFactor(blend)),
-                                          GetBlendFunc(SDL_GetBlendModeSrcAlphaFactor(blend)),
-                                          GetBlendFunc(SDL_GetBlendModeDstAlphaFactor(blend)));
-                data->glBlendEquation(GetBlendEquation(SDL_GetBlendModeColorOperation(blend)));
-            }
-        } else {
-            GlBlendModeHack(data, blend);
-        }
+        GlBlendModeHack(data, blend);
 #else
         if (blend == SDL_BLENDMODE_NONE) {
             data->glDisable(GL_BLEND);
