@@ -111,9 +111,22 @@ About Joysticks
 Joysticks that are compatible with AmigaInput can be used with SDL2. In addition
 to legacy joystick API, SDL supports new game controller API which uses a
 predefined database to map joystick axes and buttons. At the moment
-game controller database contains only one entry:
+game controller database contains the following entries:
 
 - Speedlink Competition Pro
+- Ewent Joypad EW3170
+- PS2 Joystick (USB adaptor)
+- SHARK 91230 Joystick
+- MAGIC-NS
+- Wireless Controller
+- 8Bitdo SN30 Pro
+- Thrustmaster dual analog 3.2
+- XEOX Gamepad SL-6556-BK
+- Strike2 Joystick
+- GeeekPi_A gamepad
+- Logitech Cordless RumblePad 2
+- Logitech RumblePad 2 USB
+- Logitech(R) Precision(TM) Gamepad
 
 Joysticks can be tested using testjoystick tool. New game controller mappings
 can be generated using controllermap tool. New mappings can be then added to
@@ -153,8 +166,6 @@ AmigaOS either.
 
 OpenGL renderer doesn't support render targets and blend modes "ADD" or "MOD".
 This is due to missing features in MiniGL.
-
-OpenGL ES 2.0 renderer is still a work in progress and has some open issues.
 
 ================================================================================
 Project page and bug tracker
