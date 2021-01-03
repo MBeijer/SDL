@@ -224,9 +224,26 @@ AMIGAINPUT_Init(void)
 #endif
             dprintf("EnumDevices returned %d\n", result);
             dprintf("Found %d joysticks\n", joystickCount);
+
+            if (result) {
+                /*
+
+                NOTE: AI doesn't seem to handle hotplugged/removed joysticks very well.
+                Report only devices detected at startup to SDL.
+
+                */
+                int i;
+
+                for (i = 0; i < joystickCount; i++) {
+                    dprintf("Add joystick %d\n", i);
+                    SDL_PrivateJoystickAdded(i);
+                }
+            }
         }
 
         return 0;
+    } else {
+        dprintf("Failed to create context\n");
     }
 
     return -1;
@@ -241,7 +258,7 @@ AMIGAINPUT_GetCount()
 static void
 AMIGAINPUT_Detect()
 {
-    dprintf("Called\n");
+    //dprintf("Called\n");
 }
 
 /* Function to get the device-dependent name of a joystick */
@@ -547,7 +564,7 @@ AMIGAINPUT_Quit(void)
 #else
         SDL_IAIN->DeleteContext(joystickContext);
 #endif
-        joystickContext = 0;
+        joystickContext = NULL;
     }
 
     AMIGAINPUT_CloseLibrary();
@@ -568,14 +585,14 @@ static int
 AMIGAINPUT_Rumble(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble)
 {
     dprintf("Called\n");
-    return 0;
+    return SDL_Unsupported();
 }
 
 static int
 AMIGAINPUT_RumbleTriggers(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble)
 {
     dprintf("Called\n");
-    return 0;
+    return SDL_Unsupported();
 }
 
 static SDL_bool
@@ -589,14 +606,14 @@ static int
 AMIGAINPUT_SetLED(SDL_Joystick * joystick, Uint8 red, Uint8 green, Uint8 blue)
 {
     dprintf("Called\n");
-    return 0;
+    return SDL_Unsupported();
 }
 
 static int
 AMIGAINPUT_SetSensorsEnabled(SDL_Joystick * joystick, SDL_bool enabled)
 {
     dprintf("Called\n");
-    return 0;
+    return SDL_Unsupported();
 }
 
 static SDL_bool
