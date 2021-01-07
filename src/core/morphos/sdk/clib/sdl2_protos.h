@@ -738,6 +738,8 @@ void SDL_LockSensors(void);
 void SDL_UnlockSensors(void);
 double SDL_trunc(double x);
 float SDL_truncf(float x);
+void *SDL_Metal_GetLayer(SDL_MetalView view);
+void SDL_Metal_GetDrawableSize(SDL_Window* window, int *w, int *h);
 SDL_Locale * SDL_GetPreferredLocales(void);
 void * SDL_SIMDRealloc(void *mem, const size_t len);
 int SDL_OpenURL(const char *url);

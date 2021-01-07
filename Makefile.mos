@@ -4,7 +4,7 @@
 
 CDEFS   = -DAROS_ALMOST_COMPATIBLE -DBUILD_SDL2_LIBRARY -D__SDL_DEBUG
 #CC      = ppc-morphos-gcc-4 -noixemul -cstd=c99
-CC      = ppc-morphos-gcc-9 -noixemul
+CC      = ppc-morphos-gcc-10 -noixemul
 INCLUDE = -I./include
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -mresident32 -Wall -Wno-pointer-sign -fno-strict-aliasing $(CDEFS)
 AR      = ppc-morphos-ar
@@ -57,9 +57,9 @@ SOURCES = \
 	src/video/amiga/*.c \
 	src/video/yuv2rgb/*.c \
 	src/misc/*.c \
-	src/misc/dummy/*.c \
+	src/misc/morphos/*.c \
 	src/locale/*.c \
-	src/locale/dummy/*.c \
+	src/locale/morphos/*.c \
 
 CORESOURCES = src/core/morphos/*.c
 COREOBJECTS = $(shell echo $(CORESOURCES) | sed -e 's,\.c,\.o,g')

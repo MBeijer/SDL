@@ -57,9 +57,10 @@ struct Library       *CharsetsBase = NULL;
 struct Library       *IConvBase = NULL;
 struct Library       *ThreadPoolBase = NULL;
 struct Library       *DynLoadBase = NULL;
+struct Library       *OpenURLBase = NULL;
 
 //SDL_JOYSTICK_AMIGA
-struct Library		*LowLevelBase = NULL;
+// struct Library		*LowLevelBase = NULL;
 
 struct timerequest   GlobalTimeReq;
 
@@ -264,12 +265,13 @@ static void UserLibClose(struct SDL_Library *LibBase, struct ExecBase *SysBase)
 	CloseLibrary(IConvBase);
 	CloseLibrary(ThreadPoolBase);
 	CloseLibrary(DynLoadBase);
-
+	CloseLibrary(OpenURLBase);
+	
 	CyberGfxBase     = LibBase->MyCyberGfxBase     = NULL;
 	KeymapBase       = LibBase->MyKeymapBase       = NULL;
 	WorkbenchBase    = LibBase->MyWorkbenchBase    = NULL;
 	IconBase         = LibBase->MyIconBase         = NULL;
-   MUIMasterBase    = LibBase->MyMUIMasterBase    = NULL;
+    MUIMasterBase    = LibBase->MyMUIMasterBase    = NULL;
 	CxBase           = LibBase->MyCxBase           = NULL;
 	ScreenNotifyBase = LibBase->MyScreenNotifyBase = NULL;
 
@@ -280,6 +282,7 @@ static void UserLibClose(struct SDL_Library *LibBase, struct ExecBase *SysBase)
 	IConvBase = NULL;
 	ThreadPoolBase = NULL;
 	DynLoadBase = NULL;
+	OpenURLBase = NULL;
 }
 
 /**********************************************************************
@@ -386,7 +389,8 @@ struct Library *LIB_Open(void)
 		 && ((CharsetsBase     =                                     OpenLibrary("charsets.library"     , 53)) != NULL)
 		 && ((IConvBase        =                                     OpenLibrary("iconv.library"        ,  0)) != NULL)
 		 && ((ThreadPoolBase   =                                     OpenLibrary("threadpool.library"   , 53)) != NULL)
-       && ((DynLoadBase      =                                     OpenLibrary("dynload.library"      ,  0)) != NULL))
+         && ((DynLoadBase      =                                     OpenLibrary("dynload.library"      ,  0)) != NULL)
+		 && ((OpenURLBase 	   = 									 OpenLibrary("openurl.library"		,  0)) != NULL))
 		{
 			LibBase->Alloc = 1;
 		}

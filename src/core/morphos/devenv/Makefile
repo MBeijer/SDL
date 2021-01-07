@@ -1,6 +1,6 @@
 # Makefile to build the SDL 2 Library
 
-CC      = ppc-morphos-gcc-9 -noixemul
+CC      = ppc-morphos-gcc-10 -noixemul
 INCLUDE = -I../../../../include -I../sdk
 CFLAGS  = -mcpu=750 -mtune=7450 -O2 $(INCLUDE) -Wall -Wno-pointer-sign -fno-strict-aliasing -D_LARGEFILE64_SOURCE
 AR	= ppc-morphos-ar
