@@ -84,6 +84,23 @@ static void AmiglAlphaFunc( GLenum func, GLclampf ref ) {
 static void AmiglBlendFunc( GLenum sfactor, GLenum dfactor ) {
     glBlendFunc(sfactor, dfactor);
  }
+ 
+/* tinygl new functions */ 
+static void AmiglBlendColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha ) {
+    glBlendColor(red, green, blue, alpha);
+}
+
+static void AmiglBlendEquation( GLenum mode ) {
+    glBlendEquation(mode);
+}
+
+static void AmiglBlendEquationSeparate( GLenum modeRGB, GLenum modeAlpha ) {
+    glBlendEquationSeparate(modeRGB, modeAlpha);
+}
+
+static void AmiglBlendFuncSeparate( GLenum sfactorRGB, GLenum sfactorAlpha, GLenum dfactorRGB, GLenum dfactorAlpha ) {
+    glBlendFuncSeparate(sfactorRGB, sfactorAlpha, dfactorRGB, dfactorAlpha);
+}
 
 static void AmiglLogicOp( GLenum opcode ) {
     glLogicOp(opcode);
@@ -118,9 +135,7 @@ static void AmiglPolygonOffset( GLfloat factor, GLfloat units ) {
  }
 
 static void AmiglPolygonStipple( const GLubyte *mask ) {
-#ifndef __MORPHOS__
     glPolygonStipple(mask);
-#endif
  }
 
 static void AmiglGetPolygonStipple( GLubyte *mask ) {
@@ -470,7 +485,7 @@ static void AmiglVertex4sv( const GLshort *v )
 #ifndef __MORPHOS__
    glVertex4sv(v);
 #else
-	glVertex4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
+   glVertex4f((GLfloat)v[0], (GLfloat)v[1], (GLfloat)v[2], (GLfloat)v[3]);
 #endif
  }
 
@@ -479,7 +494,7 @@ static void AmiglNormal3b( GLbyte nx, GLbyte ny, GLbyte nz )
 #ifndef __MORPHOS__
    glNormal3b(nx, ny, nz);
 #else
-	glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
+   glNormal3f((GLfloat)nx, (GLfloat)ny, (GLfloat)nz);
 #endif
 }
 
@@ -550,9 +565,7 @@ static void AmiglIndexf( GLfloat c )
 
 static void AmiglIndexi( GLint c )
  {
-#ifndef __MORPHOS__
    glIndexi(c);
-#endif
  }
 
 static void AmiglIndexs( GLshort c )
@@ -1622,11 +1635,11 @@ static void AmiglTexSubImage1D( GLenum target, GLint level,
                      GLint xoffset,
                      GLsizei width, GLenum format,
                      GLenum type, const GLvoid *pixels ) {
-						 #ifndef __MORPHOS__
-        glTexSubImage1D(target, level, xoffset, width, format, type, pixels);
-						 #else
-		   glTexSubImage1D(target, level, xoffset, width, format, type, (GLvoid *)pixels);				 
-						 #endif
+#ifndef __MORPHOS__
+    glTexSubImage1D(target, level, xoffset, width, format, type, pixels);
+#else
+	glTexSubImage1D(target, level, xoffset, width, format, type, (GLvoid *)pixels);				 
+#endif
  }
 
 static void AmiglTexSubImage2D( GLenum target, GLint level,
@@ -1635,10 +1648,10 @@ static void AmiglTexSubImage2D( GLenum target, GLint level,
                      GLenum format, GLenum type,
                      GLvoid *pixels ) {
 #ifndef __MORPHOS__
-        glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
-						 #else
-		  glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, (GLvoid *)pixels);				 
-						 #endif
+    glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+#else
+	glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, (GLvoid *)pixels);				 
+#endif
  }
 
 static void AmiglCopyTexImage1D( GLenum target, GLint level,
@@ -2603,6 +2616,10 @@ void *AmiGetGLProc(const char *proc)
      { "glColorMask", AmiglColorMask },
      { "glAlphaFunc", AmiglAlphaFunc },
      { "glBlendFunc", AmiglBlendFunc },
+	 { "glBlendColor", AmiglBlendColor },
+	 { "glBlendEquation", AmiglBlendEquation },
+	 { "glBlendEquationSeparate", AmiglBlendEquationSeparate },
+	 { "glBlendFuncSeparate", AmiglBlendFuncSeparate },
      { "glLogicOp", AmiglLogicOp },
      { "glCullFace", AmiglCullFace },
      { "glFrontFace", AmiglFrontFace },

@@ -44,6 +44,9 @@
 #ifdef __AMIGAOS4__
 #define RENDERER_CONTEXT_MAJOR 1
 #define RENDERER_CONTEXT_MINOR 3
+#elif __MORPHOS__
+#define RENDERER_CONTEXT_MAJOR 1
+#define RENDERER_CONTEXT_MINOR 2
 #else
 #define RENDERER_CONTEXT_MAJOR 2
 #define RENDERER_CONTEXT_MINOR 1
@@ -244,7 +247,7 @@ GL_LoadFunctions(GL_RenderData * data)
 #define SDL_PROC(ret,func,params) data->func=func;
 #else
     int retval = 0;
-#if defined(__AMIGAOS4__) || defined(__MORPHOS__)
+#if defined(__AMIGAOS4__) //|| defined(__MORPHOS__)
 #define SDL_PROC(ret,func,params) \
     do { \
         data->func = SDL_GL_GetProcAddress(#func); \
@@ -1030,7 +1033,7 @@ GL_QueueCopyEx(SDL_Renderer * renderer, SDL_RenderCommand *cmd, SDL_Texture * te
     return 0;
 }
 
-#if defined(__AMIGAOS4__) || defined(__MORPHOS__)
+#if defined(__AMIGAOS4__)  
 /* Hack: this is due to missing functionnality in MinGL / Warp3D / TinyGL */
 static void
 GlBlendModeHack(GL_RenderData * data, const SDL_BlendMode mode)
@@ -1098,7 +1101,7 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
     }
 
     if (blend != data->drawstate.blend) {
-#if defined(__AMIGAOS4__) || defined(__MORPHOS__)
+#if defined(__AMIGAOS4__) //|| defined(__MORPHOS__) 
         GlBlendModeHack(data, blend);
 #else
         if (blend == SDL_BLENDMODE_NONE) {

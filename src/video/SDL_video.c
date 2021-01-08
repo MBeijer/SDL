@@ -3251,6 +3251,9 @@ SDL_GL_ResetAttributes()
 #ifdef __AMIGAOS4__
     _this->gl_config.major_version = 1; /* MiniGL */
     _this->gl_config.minor_version = 3;
+#elif __MORPHOS__
+    _this->gl_config.major_version = 1; /* TinyGL */
+    _this->gl_config.minor_version = 2;
 #else
     _this->gl_config.major_version = 2;
     _this->gl_config.minor_version = 1;
