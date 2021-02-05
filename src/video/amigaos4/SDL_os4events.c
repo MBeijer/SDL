@@ -151,15 +151,19 @@ OS4_HandleKeyboard(_THIS, struct MyIntuiMessage * imsg)
 
         SDL_Scancode s = amiga_scancode_table[rawkey];
 
-        if (imsg->Code <= 127) {
-
+        if (imsg->Code < 0x80) {
             char text[2];
 
             text[0] = OS4_TranslateUnicode(_this, imsg->Code, imsg->Qualifier);
             text[1] = '\0';
 
             SDL_SendKeyboardKey(SDL_PRESSED, s);
-            SDL_SendKeyboardText(text);
+
+            if (text[0] && text[0] < 0x80) {
+                /* SDL wants UTF-8 strings. Filter out codes above 7-bit to avoid
+                interpretation issues later. */
+                SDL_SendKeyboardText(text);
+            }
         } else {
             SDL_SendKeyboardKey(SDL_RELEASED, s);
         }
