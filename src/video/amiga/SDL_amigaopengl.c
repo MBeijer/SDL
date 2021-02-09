@@ -54,16 +54,16 @@ int AMIGA_GL_LoadLibrary(_THIS, const char *path)
 
 	if (SDL2Base->MyTinyGLBase) {
 		if (!TinyGLBase)
-			TinyGLBase = OpenLibrary("tinygl.library", 50); // This is opened only once, closed only at final exit
+			TinyGLBase = OpenLibrary("tinygl.library", 52); // This is opened only once, closed only at final exit
 
 		if (TinyGLBase) {
-			*SDL2Base->MyTinyGLBase = TinyGLBase;
-			return 0;
+
+				*SDL2Base->MyTinyGLBase = TinyGLBase;
+				return 0;
 		}
 	}
 
-	SDL_SetError("Failed to open minigl.library");
-
+	SDL_SetError("Failed to open tinygl.library");
 	return -1;
 }
 

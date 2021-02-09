@@ -349,7 +349,7 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen, SDL_bool support3d)
 			{SA_Quiet, TRUE},
 			{SA_ShowTitle, FALSE},
 			{SA_AutoScroll, TRUE},
-			{SA_Title, (IPTR)"SDL"},
+			{SA_Title, (IPTR)"SDL2"},
 			{SA_AdaptSize, TRUE},
 			{support3d ? SA_3DSupport : TAG_IGNORE, TRUE},
 			{TAG_DONE}
