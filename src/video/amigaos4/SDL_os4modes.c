@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -252,6 +252,7 @@ OS4_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
         SA_Quiet,       TRUE,
         SA_ShowTitle,   FALSE,
         SA_ErrorCode,   &openError,
+        SA_LikeWorkbench, TRUE,
         TAG_DONE);
 
     dprintf("Opened screen id %d: %d*%d*%d (address %p)\n",
