@@ -220,7 +220,7 @@ AMIGA_SetWindowTitle(_THIS, SDL_Window * window)
 		title = AMIGA_ConvertText(window->title, MIBENUM_UTF_8, MIBENUM_SYSTEM);
 
 		D("[AMIGA_SetWindowTitle] %s to %s (0x%08lx)\n", window->title, title, data->win);
-		SetWindowTitles(data->win, title, (APTR)-1);
+		SetWindowTitles(data->win, title, title);
 	}
 
 	data->window_title = title;
@@ -374,7 +374,7 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 	if (data->win == NULL && (data->sdlflags & SDL_WINDOW_MINIMIZED) == 0)
 	{
 		struct Screen *scr;
-		size_t flags = WFLG_SIMPLE_REFRESH | WFLG_REPORTMOUSE | WFLG_ACTIVATE | WFLG_RMBTRAP;
+		size_t flags = WFLG_SIMPLE_REFRESH | WFLG_REPORTMOUSE | WFLG_ACTIVATE;
 		size_t w = window->w, h = window->h, max_w = window->max_w, max_h = window->max_h;
 		size_t min_w = window->min_w, min_h = window->min_h;
 		size_t left = window->x, top = window->y;

@@ -150,17 +150,60 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 }
 
 static void
+AMIGA_HandleActivation(_THIS, struct IntuiMessage *m, SDL_bool activated)
+{
+	SDL_WindowData *data = (SDL_WindowData *)m->IDCMPWindow->UserData;
+	if(data->window) 
+	{
+		if (activated) 
+		{
+			SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
+
+			if (SDL_GetKeyboardFocus() != data->window) 
+			{
+				SDL_SetKeyboardFocus(data->window);
+			}			
+			SDL_SetMouseFocus(data->window);
+		} 
+		else 
+		{
+			if (SDL_GetKeyboardFocus() == data->window) 
+			{
+				SDL_SetKeyboardFocus(NULL);
+			}	
+			if (SDL_GetMouseFocus() == data->window)
+			{
+				SDL_SetMouseFocus(NULL);
+			}
+		}			
+	}
+}
+
+static void
 AMIGA_MouseMove(_THIS, struct IntuiMessage *m, SDL_WindowData *data)
 {
-	//SDL_Mouse *mouse = SDL_GetMouse();
 
 	if (!SDL_GetRelativeMouseMode()) 
 	{
 		struct Screen *s = data->win->WScreen;
-		int x =(s->MouseX - data->win->LeftEdge - data->win->BorderLeft);
-		int y =(s->MouseY - data->win->TopEdge - data->win->BorderTop);
+		int mx = s->MouseX;
+		int my = s->MouseY;
+		int ws = data->win->LeftEdge + data->win->BorderLeft;
+		int wy = data->win->TopEdge + data->win->BorderTop;
+		int wx2 = data->win->LeftEdge + data->win->Width - data->win->BorderRight;
+		int wy2 = data->win->TopEdge + data->win->Height - data->win->BorderBottom;
+		int x = mx - ws;
+		int y = my - wy;
 		SDL_SendMouseMotion(data->window, 0, 0, x, y);
-
+		
+		if (mx >=ws && my >= wy && mx <= wx2 && my <=wy2) {
+			data->win->Flags |= WFLG_RMBTRAP;
+			AMIGA_HandleActivation(_this, m, SDL_TRUE);		
+		}else{
+			data->win->Flags &= ~WFLG_RMBTRAP;	
+			AMIGA_HandleActivation(_this, m, SDL_FALSE);
+		}
+		
 	}
 	else
 	{
@@ -221,34 +264,6 @@ AMIGA_AboutSDL(struct Window *window)
 	es.es_GadgetFormat = "Ok";
 
 	EasyRequest(window, &es, NULL, SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL, (ULONG)porters, (ULONG)bases);
-}
-
-static void
-AMIGA_HandleActivation(_THIS, struct IntuiMessage *m, SDL_bool activated)
-{
-	SDL_WindowData *data = (SDL_WindowData *)m->IDCMPWindow->UserData;
-	//D("[%s]\n", __FUNCTION__);
-	if(data->window) {
-		if (activated) {
-			SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
-			//OS4_SyncKeyModifiers(_this);
-			if (SDL_GetKeyboardFocus() != data->window) {
-				SDL_SetKeyboardFocus(data->window);
-			}			
-			SDL_SetMouseFocus(data->window);
-		} else {
-
-			if (SDL_GetKeyboardFocus() == data->window) {
-				SDL_SetKeyboardFocus(NULL);
-			}	
-			if (SDL_GetMouseFocus() == data->window)
-			{
-				SDL_SetMouseFocus(NULL);
-			}
-		}		
-		
-	}
-	
 }
 
 static void
