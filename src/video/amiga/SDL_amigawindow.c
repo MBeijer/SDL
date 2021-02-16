@@ -40,9 +40,12 @@
 #include <libraries/charsets.h>
 #include <proto/alib.h>
 #include <proto/exec.h>
+#include <proto/gadtools.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/wb.h>
+
+extern struct NewMenu SDL_NewMenu;
 
 static void CloseWindowSafely(SDL_Window *sdlwin, struct Window *win)
 {
@@ -81,7 +84,13 @@ static void CloseWindowSafely(SDL_Window *sdlwin, struct Window *win)
 			}
 		}
 		
+		ClearMenuStrip(win);
+		
 		CloseWindow(win);
+		if (data->menu) FreeMenus(data->menu);
+		if (data->visualinfo) FreeVisualInfo(data->visualinfo);
+		data->menu = NULL;
+		data->visualinfo = NULL;
 		Permit();
 	}
 }
@@ -123,14 +132,15 @@ void AMIGA_OpenWindows(_THIS)
 static int
 AMIGA_SetupWindowData(_THIS, SDL_Window *window, struct Window *win)
 {
+	D("[%s]\n", __FUNCTION__);
+	
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	SDL_WindowData *wd = SDL_malloc(sizeof(*wd));
-	D("[%s]\n", __FUNCTION__);
-
-	window->driverdata = wd;
-
+	
 	if (wd)
 	{
+		window->driverdata = wd;
+		
 		ADDHEAD(&data->windowlist, wd);
 
 		wd->region = NULL;
@@ -221,7 +231,7 @@ AMIGA_SetWindowTitle(_THIS, SDL_Window * window)
 void
 AMIGA_SetWindowIcon(_THIS, SDL_Window * window, SDL_Surface * icon)
 {
-	#warning convert this icon to appicon
+	//#warning convert this icon to appicon
 }
 
 void
@@ -388,19 +398,6 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 		if (vd->CustomScreen == NULL)
 			barheight = GetSkinInfoAttrA(di, SI_ScreenTitlebarHeight, NULL);
 
-		#if 0
-		if ((window->flags & SDL_WINDOW_BORDERLESS) == 0 && !fullscreen)
-		{
-			border_w = GetSkinInfoAttrA(di, SI_BorderLeft    , NULL) + GetSkinInfoAttrA(di, SI_BorderRight, NULL);
-			border_h = GetSkinInfoAttrA(di, SI_BorderTopTitle, NULL) + GetSkinInfoAttrA(di, window->flags & SDL_WINDOW_RESIZABLE ? SI_BorderBottomSize : SI_BorderBottom, NULL);
-
-			min_w += border_w;
-			max_w += border_w;
-			min_h += border_h;
-			max_h += border_h;
-		}
-		#endif
-
 		FreeScreenDrawInfo(scr, di);
 
 		maxheight = scr->Height - barheight;
@@ -436,8 +433,19 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 
 			D("[%s] maximize to %ld/%ld\n", __FUNCTION__, w, h);
 		}
+		if (!fullscreen)
+		{
+			data->visualinfo = GetVisualInfoA(vd->WScreen, NULL);
+			if (data->visualinfo) 
+			{
+				data->menu = CreateMenusA(&SDL_NewMenu, NULL);
+				if (data->menu)
+				{
+					LayoutMenusA(data->menu, data->visualinfo, NULL);
+				}
+			}
+		}
 
-#warning check this...
 		min_w = MIN(min_w, scr->Width);
 		min_h = MIN(min_h, maxheight);
 		max_w = MIN(max_w, scr->Width);
@@ -476,7 +484,7 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 			fullscreen ? TAG_IGNORE : WA_Title, data->window_title,
 			WA_UserPort, &vd->WinPort,
 			WA_AutoAdjust, TRUE,
-			WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_RAWKEY | IDCMP_MOUSEMOVE | IDCMP_DELTAMOVE | IDCMP_MOUSEBUTTONS | IDCMP_REFRESHWINDOW | IDCMP_ACTIVEWINDOW | IDCMP_INACTIVEWINDOW | IDCMP_CHANGEWINDOW | IDCMP_GADGETUP,
+			WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_RAWKEY | IDCMP_MOUSEMOVE | IDCMP_DELTAMOVE | IDCMP_MOUSEBUTTONS | IDCMP_REFRESHWINDOW | IDCMP_ACTIVEWINDOW | IDCMP_INACTIVEWINDOW | IDCMP_CHANGEWINDOW | IDCMP_GADGETUP | IDCMP_MENUPICK,
 			WA_ExtraTitlebarGadgets, ETG_ICONIFY,
 			TAG_DONE);
 
@@ -502,7 +510,11 @@ AMIGA_ShowWindow_Internal(_THIS, SDL_Window * window)
 			data->first_deltamove = TRUE;
 
 			data->win->UserData = (APTR)data;
-
+			
+			if (data->menu)
+			{
+				SetMenuStrip(data->win, data->menu);
+			}
 			
 			if (!data->appmsg) {
 				data->appmsg = AddAppWindow(0, (ULONG)window, data->win, &vd->WBPort, TAG_DONE);

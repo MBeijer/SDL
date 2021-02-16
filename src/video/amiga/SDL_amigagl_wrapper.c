@@ -79,7 +79,7 @@ static void AmiglColorMask( GLboolean red, GLboolean green, GLboolean blue, GLbo
 
 static void AmiglAlphaFunc( GLenum func, GLclampf ref ) {
     glAlphaFunc(func, ref);
- }
+}
 
 static void AmiglBlendFunc( GLenum sfactor, GLenum dfactor ) {
     glBlendFunc(sfactor, dfactor);

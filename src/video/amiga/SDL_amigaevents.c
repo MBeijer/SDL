@@ -25,6 +25,7 @@
 #include "../../events/SDL_events_c.h"
 #include "../../events/SDL_mouse_c.h"
 #include "../../events/scancodes_amiga.h"
+#include "../../core/morphos/SDL_library.h"
 
 #include "SDL_amigavideo.h"
 #include "SDL_amigawindow.h"
@@ -50,6 +51,7 @@
 #include <proto/keymap.h>
 #include <proto/locale.h>
 #include <proto/screennotify.h>
+#include <libraries/gadtools.h>
 
 static void
 AMIGA_DispatchMouseButtons(const struct IntuiMessage *m, const SDL_WindowData *data)
@@ -148,7 +150,7 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 }
 
 static void
-AMIGA_MouseMove(const struct IntuiMessage *m, SDL_WindowData *data)
+AMIGA_MouseMove(_THIS, struct IntuiMessage *m, SDL_WindowData *data)
 {
 	//SDL_Mouse *mouse = SDL_GetMouse();
 
@@ -189,9 +191,7 @@ AMIGA_ChangeWindow(_THIS, const struct IntuiMessage *m, SDL_WindowData *data)
 		data->curr_w = w->Width;
 		data->curr_h = w->Height;
 		SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_RESIZED, (data->curr_w - w->BorderLeft - w->BorderRight), (data->curr_h - w->BorderTop - w->BorderBottom));
-		/*if (data->glContext)*/ {
-			AMIGA_GL_ResizeContext(_this, data->window);
-		}
+		AMIGA_GL_ResizeContext(_this, data->window);
 	}
 }
 
@@ -205,6 +205,22 @@ static void AMIGA_GadgetEvent(_THIS, const struct IntuiMessage *m)
 			AMIGA_HideApp(_this, TRUE);
 			break;
 	}
+}
+
+static const char porters[] = "Bruno Peloille (BeWorld)\nSzilard Biro (BSzili)\n";
+static const char bases[] = "SDL 2.0.3 sources by Ilkka Lehtoranta";
+
+static void
+AMIGA_AboutSDL(struct Window *window)
+{
+	struct EasyStruct es;
+	es.es_StructSize   = sizeof(struct EasyStruct);
+	es.es_Flags        = 0;
+	es.es_Title        = "SDL2";
+	es.es_TextFormat   = "SDL %ld.%ld.%ld -MorphOS-\n\nSimple DirectMedia Layer is cross-platform development library designed to\nprovide low level access audio, keyboard, mouse, joysticks, and graphics hardware.\n\nSDL 2.0 is distributed under zlib license.\nThis license allows you to use SDL freely in any software.\n\nPorters:\n%s\nBased on %s\n\nwww.libsdl.org";
+	es.es_GadgetFormat = "Ok";
+
+	EasyRequest(window, &es, NULL, SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL, (ULONG)porters, (ULONG)bases);
 }
 
 static void
@@ -242,6 +258,28 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 
 	switch (m->Class)
 	{
+		case IDCMP_MENUPICK:
+			{
+				struct MenuItem *item = ItemAddress(data->menu, m->Code);
+				if (item) 
+				{
+					switch ((ULONG)GTMENUITEM_USERDATA(item))
+					{
+						case MID_ABOUT:
+							AMIGA_AboutSDL(data->win);
+							break;						
+						case MID_QUIT:
+							SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_CLOSE, 0, 0);
+							break;
+						case MID_HIDE:
+							AMIGA_HideApp(_this, TRUE);
+							break;
+						default:
+							break;
+					}				
+				}
+			}
+			break;
 		case IDCMP_REFRESHWINDOW:
 			BeginRefresh(m->IDCMPWindow);
 			SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_EXPOSED, 0, 0);
@@ -253,7 +291,7 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
          break;
 
 		case IDCMP_MOUSEMOVE:
-			AMIGA_MouseMove(m, data);
+			AMIGA_MouseMove(_this, m, data);
 			break;
 
 		case IDCMP_MOUSEBUTTONS:

@@ -58,6 +58,9 @@ typedef struct
 	BYTE grabbed;
 	BYTE first_deltamove;
 	BYTE winflags;
+	
+	APTR visualinfo;
+	struct Menu *menu;
 } SDL_WindowData;
 
 /* Is this window shown (not iconified) */

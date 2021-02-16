@@ -42,6 +42,14 @@
 #define __TEXTSEGMENT__ __attribute__((section(".text")))
 #endif
 
+enum
+{
+	MID_PROJECT = 0x0010,
+	MID_ABOUT,
+	MID_HIDE,
+	MID_QUIT
+};
+
 struct CTDT
 {
 	int	(*fp)(void);

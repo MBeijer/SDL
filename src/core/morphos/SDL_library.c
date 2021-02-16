@@ -22,11 +22,15 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include <libraries/gadtools.h>
+#include <proto/intuition.h>
+
 #include <devices/timer.h>
 #include <exec/execbase.h>
 #include <exec/resident.h>
 #include <exec/system.h>
 #include <proto/exec.h>
+#include <proto/gadtools.h>
 
 #include "SDL_amigaversion.h"
 #include "SDL_library.h"
@@ -58,9 +62,19 @@ struct Library       *IConvBase = NULL;
 struct Library       *ThreadPoolBase = NULL;
 struct Library       *DynLoadBase = NULL;
 struct Library       *OpenURLBase = NULL;
-
+struct Library       *GadToolsBase = NULL;
 //SDL_JOYSTICK_AMIGA
 // struct Library		*LowLevelBase = NULL;
+
+struct NewMenu SDL_NewMenu[] =
+{
+	{ NM_TITLE, (char *)"Project", 0, 0, 0, (APTR)MID_PROJECT },
+	{ NM_ITEM , (char *)"About...", (const STRPTR)"A", 0, 0, (APTR)MID_ABOUT },
+	{ NM_ITEM, NM_BARLABEL, NULL, 0, 0, NULL },
+	{ NM_ITEM , (char *)"Hide", (const STRPTR)"H",, 0, 0, (APTR)MID_HIDE },
+	{ NM_ITEM, NM_BARLABEL, NULL, 0, 0, NULL },
+	{ NM_ITEM , (char *)"Quit", (const STRPTR)"Q", 0, 0, (APTR)MID_QUIT}
+};
 
 struct timerequest   GlobalTimeReq;
 
@@ -266,6 +280,7 @@ static void UserLibClose(struct SDL_Library *LibBase, struct ExecBase *SysBase)
 	CloseLibrary(ThreadPoolBase);
 	CloseLibrary(DynLoadBase);
 	CloseLibrary(OpenURLBase);
+	CloseLibrary(GadToolsBase);
 	
 	CyberGfxBase     = LibBase->MyCyberGfxBase     = NULL;
 	KeymapBase       = LibBase->MyKeymapBase       = NULL;
@@ -283,6 +298,7 @@ static void UserLibClose(struct SDL_Library *LibBase, struct ExecBase *SysBase)
 	ThreadPoolBase = NULL;
 	DynLoadBase = NULL;
 	OpenURLBase = NULL;
+	GadToolsBase = NULL;
 }
 
 /**********************************************************************
@@ -390,6 +406,7 @@ struct Library *LIB_Open(void)
 		 && ((IConvBase        =                                     OpenLibrary("iconv.library"        ,  0)) != NULL)
 		 && ((ThreadPoolBase   =                                     OpenLibrary("threadpool.library"   , 53)) != NULL)
          && ((DynLoadBase      =                                     OpenLibrary("dynload.library"      ,  0)) != NULL)
+		 && ((GadToolsBase	   =									 OpenLibrary("gadtools.library"		,  0)) != NULL)
 		 && ((OpenURLBase 	   = 									 OpenLibrary("openurl.library"		,  0)) != NULL))
 		{
 			LibBase->Alloc = 1;
