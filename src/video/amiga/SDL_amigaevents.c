@@ -186,24 +186,9 @@ AMIGA_MouseMove(_THIS, struct IntuiMessage *m, SDL_WindowData *data)
 	if (!SDL_GetRelativeMouseMode()) 
 	{
 		struct Screen *s = data->win->WScreen;
-		int mx = s->MouseX;
-		int my = s->MouseY;
-		int ws = data->win->LeftEdge + data->win->BorderLeft;
-		int wy = data->win->TopEdge + data->win->BorderTop;
-		int wx2 = data->win->LeftEdge + data->win->Width - data->win->BorderRight;
-		int wy2 = data->win->TopEdge + data->win->Height - data->win->BorderBottom;
-		int x = mx - ws;
-		int y = my - wy;
+		int x = (s->MouseX - data->win->LeftEdge - data->win->BorderLeft);
+		int y = (s->MouseY - data->win->TopEdge - data->win->BorderTop);
 		SDL_SendMouseMotion(data->window, 0, 0, x, y);
-		
-		if (mx >=ws && my >= wy && mx <= wx2 && my <=wy2) {
-			data->win->Flags |= WFLG_RMBTRAP;
-			AMIGA_HandleActivation(_this, m, SDL_TRUE);		
-		}else{
-			data->win->Flags &= ~WFLG_RMBTRAP;	
-			AMIGA_HandleActivation(_this, m, SDL_FALSE);
-		}
-		
 	}
 	else
 	{
@@ -212,7 +197,6 @@ AMIGA_MouseMove(_THIS, struct IntuiMessage *m, SDL_WindowData *data)
 			data->first_deltamove = 0;
 			return;
 		}
-
 		SDL_SendMouseMotion(data->window, 0, 1, m->MouseX, m->MouseY);
 	}
 }
@@ -260,7 +244,7 @@ AMIGA_AboutSDL(struct Window *window)
 	es.es_StructSize   = sizeof(struct EasyStruct);
 	es.es_Flags        = 0;
 	es.es_Title        = "SDL2";
-	es.es_TextFormat   = "SDL %ld.%ld.%ld -MorphOS-\n\nSimple DirectMedia Layer is cross-platform development library designed to\nprovide low level access audio, keyboard, mouse, joysticks, and graphics hardware.\n\nSDL 2.0 is distributed under zlib license.\nThis license allows you to use SDL freely in any software.\n\nPorters:\n%s\nBased on %s\n\nwww.libsdl.org";
+	es.es_TextFormat   = "SDL %ld.%ld.%ld -MorphOS-\nCompiled on " __AMIGADATE__ "\n\nSimple DirectMedia Layer is cross-platform development library designed to\nprovide low level access audio, keyboard, mouse, joysticks, and graphics hardware.\n\nSDL 2.0 is distributed under zlib license.\nThis license allows you to use SDL freely in any software.\n\nPorters:\n%s\nBased on %s\n\nwww.libsdl.org";
 	es.es_GadgetFormat = "Ok";
 
 	EasyRequest(window, &es, NULL, SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL, (ULONG)porters, (ULONG)bases);
@@ -447,15 +431,42 @@ AMIGA_PumpEvents(_THIS)
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	struct IntuiMessage *m;
 
+	LONG check_mousecoord = 0;
 	size_t sigs = SetSignal(0, data->ScrNotifySig | data->BrokerSig | data->WBSig | data->WinSig | SIGBREAKF_CTRL_C);
 
 	if (sigs & data->WinSig)
 	{
+		SDL_WindowData *wdata;
 		while ((m = (struct IntuiMessage *)GetMsg(&data->WinPort)))
 		{
+			wdata = (SDL_WindowData *)m->IDCMPWindow->UserData;
+			BYTE fullscreen = wdata->winflags & SDL_AMIGA_WINDOW_FULLSCREEN;
+			if  (m->Class == IDCMP_MOUSEMOVE && !fullscreen && !SDL_GetRelativeMouseMode())
+			{
+				check_mousecoord = TRUE;
+			}
 			AMIGA_DispatchEvent(_this, m);
 			ReplyMsg((struct Message *)m);
 		}
+		
+		if (check_mousecoord)
+		{
+			struct Screen *s = wdata->win->WScreen;
+			LONG mx = s->MouseX;
+			LONG my = s->MouseY;
+			LONG ws = wdata->win->LeftEdge + wdata->win->BorderLeft;
+			LONG wy = wdata->win->TopEdge + wdata->win->BorderTop;
+			LONG wx2 = wdata->win->LeftEdge + wdata->win->Width - wdata->win->BorderRight;
+			LONG wy2 = wdata->win->TopEdge + wdata->win->Height - wdata->win->BorderBottom;
+			if (mx >= ws && my >= wy && mx <= wx2 && my <= wy2)
+			{
+				wdata->win->Flags |= WFLG_RMBTRAP;
+			}
+			else
+			{
+				wdata->win->Flags &= ~WFLG_RMBTRAP;	
+			}
+		}	
 	}
 
 	if (sigs & data->ScrNotifySig && data->ScreenNotifyHandle)
