@@ -34,7 +34,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/screennotify.h>
-
+#include <proto/exec.h>
 
 static Uint32
 AMIGA_SDLPixelFormatToDepth(Uint32 pixfmt)
@@ -333,7 +333,8 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen, SDL_bool support3d)
 	SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 	struct Screen *screen;
 	int use_wb_screen = 0;
-
+	ULONG openError = 0;
+	
 	D("[%s] Use monitor '%s'\n", __FUNCTION__, data->ScrMonName ? data->ScrMonName : (STRPTR)"Workbench");
 
 	if (!fullscreen && data->ScrMonName == NULL)
@@ -351,6 +352,7 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen, SDL_bool support3d)
 			{SA_AutoScroll, TRUE},
 			{SA_Title, (IPTR)"SDL2"},
 			{SA_AdaptSize, TRUE},
+			{SA_ErrorCode, &openError},
 			{support3d ? SA_3DSupport : TAG_IGNORE, TRUE},
 			{TAG_DONE}
 		};
@@ -384,9 +386,34 @@ AMIGA_GetScreen(_THIS, BYTE fullscreen, SDL_bool support3d)
 		if (data->ScrMonName != NULL)
 			screen = LockPubScreen("Workbench");
 
-		if (screen == NULL)
-			return SDL_SetError("Failed to get screen.");
-
+		if (screen == NULL) {
+			switch (openError) {
+            case OSERR_NOMONITOR:
+                SDL_SetError("Monitor for display mode not available");
+                break;
+            case OSERR_NOCHIPS:
+                SDL_SetError("Newer custom chips required");
+                break;
+            case OSERR_NOMEM:
+            case OSERR_NOCHIPMEM:
+                SDL_OutOfMemory();
+                break;
+            case OSERR_PUBNOTUNIQUE:
+                SDL_SetError("Public screen name not unique");
+                break;
+            case OSERR_UNKNOWNMODE:
+            case OSERR_TOODEEP:
+                SDL_SetError("Unknown display mode");
+                break;
+            case OSERR_ATTACHFAIL:
+                SDL_SetError("Attachment failed");
+                break;
+            default:
+				SDL_SetError("Failed to get screen.");
+				break;
+			}
+			return -1;
+		}
 		use_wb_screen = 1;
 	}
 
