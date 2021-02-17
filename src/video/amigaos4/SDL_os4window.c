@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -180,14 +180,14 @@ OS4_GetIDCMPFlags(SDL_Window * window, SDL_bool fullscreen)
 static uint32
 OS4_GetWindowFlags(SDL_Window * window, SDL_bool fullscreen)
 {
-    uint32 windowFlags = WFLG_REPORTMOUSE | WFLG_RMBTRAP;
+    uint32 windowFlags = WFLG_REPORTMOUSE | WFLG_RMBTRAP | WFLG_SMART_REFRESH | WFLG_NOCAREREFRESH;
 
     dprintf("Called\n");
 
     if (fullscreen) {
-        windowFlags |= WFLG_BORDERLESS | WFLG_SIMPLE_REFRESH | WFLG_BACKDROP;
+        windowFlags |= WFLG_BORDERLESS | WFLG_BACKDROP;
     } else {
-        windowFlags |= WFLG_SMART_REFRESH | WFLG_NOCAREREFRESH | WFLG_NEWLOOKMENUS;
+        windowFlags |= WFLG_NEWLOOKMENUS;
 
         if (window->flags & SDL_WINDOW_BORDERLESS) {
             windowFlags |= WFLG_BORDERLESS;
