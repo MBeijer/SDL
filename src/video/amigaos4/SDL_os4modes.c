@@ -230,13 +230,13 @@ OS4_CloseScreen(_THIS, struct Screen * screen)
 int
 OS4_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
 {
+    SDL_VideoData *driverdata = (SDL_VideoData *) _this->driverdata;
     SDL_DisplayData *displaydata = (SDL_DisplayData *) display->driverdata;
     SDL_DisplayModeData *data = (SDL_DisplayModeData *) mode->driverdata;
     ULONG openError = 0;
     int bpp = SDL_BITSPERPIXEL(mode->format);
 
-    if (SDL_memcmp(mode, &display->desktop_mode, sizeof(SDL_DisplayMode)) == 0)
-    {
+    if (SDL_memcmp(mode, &display->desktop_mode, sizeof(SDL_DisplayMode)) == 0) {
         // Don't create another "Workbench"
         dprintf("Desktop mode passed\n");
 
@@ -250,6 +250,7 @@ OS4_SetDisplayMode(_THIS, SDL_VideoDisplay * display, SDL_DisplayMode * mode)
         SA_Depth,       bpp,
         SA_DisplayID,   data->modeid,
         SA_Quiet,       TRUE,
+        SA_Title,       driverdata->appName,
         SA_ShowTitle,   FALSE,
         SA_ErrorCode,   &openError,
         SA_LikeWorkbench, TRUE,
