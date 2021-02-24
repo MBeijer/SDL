@@ -81,7 +81,7 @@ AMIGA_TranslateUnicode(struct IntuiMessage *m, char *buffer)
 	WCHAR keycode;
 
 	GetAttr(IMSGA_UCS4, m, (ULONG *)&keycode);
-	length = UTF8_Encode(keycode, buffer); 
+	length = UTF8_Encode(keycode, buffer);
 #else
 	struct InputEvent ie;
 
@@ -103,7 +103,7 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 	SDL_Scancode s;
 	UWORD code = m->Code;
 	UWORD rawkey = m->Code & 0x7F;
-	
+
 	switch (code)
 	{
 		case RAWKEY_NM_WHEEL_UP:
@@ -133,12 +133,12 @@ AMIGA_DispatchRawKey(struct IntuiMessage *m, const SDL_WindowData *data)
 		default:
 			if (rawkey < sizeof(amiga_scancode_table) / sizeof(amiga_scancode_table[0])) {
 				s = amiga_scancode_table[rawkey];
-				if (m->Code <= 127) {		
+				if (m->Code <= 127) {
 					char text[10];
 					int length = AMIGA_TranslateUnicode(m, text);
 					SDL_SendKeyboardKey(SDL_PRESSED, s);
 					if (length > 0) {
-						text[length] = '\0'; 
+						text[length] = '\0';
 						SDL_SendKeyboardText(text);
 					}
 				} else {
@@ -153,29 +153,29 @@ static void
 AMIGA_HandleActivation(_THIS, struct IntuiMessage *m, SDL_bool activated)
 {
 	SDL_WindowData *data = (SDL_WindowData *)m->IDCMPWindow->UserData;
-	if(data->window) 
+	if(data->window)
 	{
-		if (activated) 
+		if (activated)
 		{
 			SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_SHOWN, 0, 0);
 
-			if (SDL_GetKeyboardFocus() != data->window) 
+			if (SDL_GetKeyboardFocus() != data->window)
 			{
 				SDL_SetKeyboardFocus(data->window);
-			}			
+			}
 			SDL_SetMouseFocus(data->window);
-		} 
-		else 
+		}
+		else
 		{
-			if (SDL_GetKeyboardFocus() == data->window) 
+			if (SDL_GetKeyboardFocus() == data->window)
 			{
 				SDL_SetKeyboardFocus(NULL);
-			}	
+			}
 			if (SDL_GetMouseFocus() == data->window)
 			{
 				SDL_SetMouseFocus(NULL);
 			}
-		}			
+		}
 	}
 }
 
@@ -183,7 +183,7 @@ static void
 AMIGA_MouseMove(_THIS, struct IntuiMessage *m, SDL_WindowData *data)
 {
 
-	if (!SDL_GetRelativeMouseMode()) 
+	if (!SDL_GetRelativeMouseMode())
 	{
 		struct Screen *s = data->win->WScreen;
 		int x = (s->MouseX - data->win->LeftEdge - data->win->BorderLeft);
@@ -260,13 +260,13 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 		case IDCMP_MENUPICK:
 			{
 				struct MenuItem *item = ItemAddress(data->menu, m->Code);
-				if (item) 
+				if (item)
 				{
 					switch ((ULONG)GTMENUITEM_USERDATA(item))
 					{
 						case MID_ABOUT:
 							AMIGA_AboutSDL(data->win);
-							break;						
+							break;
 						case MID_QUIT:
 							SDL_SendWindowEvent(data->window, SDL_WINDOWEVENT_CLOSE, 0, 0);
 							break;
@@ -275,7 +275,7 @@ AMIGA_DispatchEvent(_THIS, struct IntuiMessage *m)
 							break;
 						default:
 							break;
-					}				
+					}
 				}
 			}
 			break;
@@ -395,8 +395,8 @@ AMIGA_CheckWBEvents(_THIS)
 	while ((msg = (struct AppMessage *)GetMsg(&data->WBPort)) != NULL)
 	{
 		D("[%s] check AppMessage\n", __FUNCTION__);
-	
-		switch (msg->am_Type) {	
+
+		switch (msg->am_Type) {
 			case AMTYPE_APPWINDOW:
 				{
 				    SDL_Window *window = (SDL_Window *)msg->am_UserData;
@@ -405,7 +405,7 @@ AMIGA_CheckWBEvents(_THIS)
 						if (argptr->wa_Lock) {
 							NameFromLock(argptr->wa_Lock, filename, 1024);
 							AddPart(filename, argptr->wa_Name, 1024);
-						
+
 							D("[%s] SDL_SendDropfile : '%s'\n", __FUNCTION__, filename);
 							SDL_SendDropFile(window, filename);
 							argptr++;
@@ -413,7 +413,7 @@ AMIGA_CheckWBEvents(_THIS)
 					}
 					SDL_SendDropComplete(window);
 				}
-				break;			
+				break;
 			case AMTYPE_APPICON:
 				AMIGA_ShowApp(_this);
 				break;
@@ -421,7 +421,7 @@ AMIGA_CheckWBEvents(_THIS)
 				//D("[%s] Unknown AppMsg %d %p\n", __FUNCTION__, msg->am_Type, (APTR)msg->am_UserData);
 				break;
 		}
-		
+
 	}
 }
 
@@ -448,7 +448,7 @@ AMIGA_PumpEvents(_THIS)
 			AMIGA_DispatchEvent(_this, m);
 			ReplyMsg((struct Message *)m);
 		}
-		
+
 		if (check_mousecoord)
 		{
 			struct Screen *s = wdata->win->WScreen;
@@ -464,9 +464,10 @@ AMIGA_PumpEvents(_THIS)
 			}
 			else
 			{
-				wdata->win->Flags &= ~WFLG_RMBTRAP;	
+				wdata->win->Flags &= ~WFLG_RMBTRAP;
+				SDL_ShowCursor(TRUE); // force to show system cursor
 			}
-		}	
+		}
 	}
 
 	if (sigs & data->ScrNotifySig && data->ScreenNotifyHandle)
