@@ -550,7 +550,11 @@ SDL_Surface *SDLTest_ImageBlit()
          0x00ff0000, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */
          0x000000ff, /* Blue bit mask. */
+         #if defined(__MORPHOS__) || defined(__AMIGAOS4__)
          0x00000000  /* Alpha bit mask. Our surface is 24-bit, so don't define */
+         #else
+         0x000000ff  /* Alpha bit mask. */
+         #endif
 #else
          0x000000ff, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */
@@ -1043,7 +1047,11 @@ SDL_Surface *SDLTest_ImageBlitColor()
          0x00ff0000, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */
          0x000000ff, /* Blue bit mask. */
+         #if defined(__MORPHOS__) || defined(__AMIGAOS4__)
          0x00000000  /* Alpha bit mask. Our surface is 24-bit, so don't define */
+         #else
+         0x000000ff  /* Alpha bit mask. */
+         #endif
 #else
          0x000000ff, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */
@@ -1565,7 +1573,11 @@ SDL_Surface *SDLTest_ImageBlitAlpha()
          0x00ff0000, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */
          0x000000ff, /* Blue bit mask. */
+         #if defined(__MORPHOS__) || defined(__AMIGAOS4__)
          0x00000000  /* Alpha bit mask. Our surface is 24-bit, so don't define */
+         #else
+         0x000000ff  /* Alpha bit mask. */
+         #endif
 #else
          0x000000ff, /* Red bit mask. */
          0x0000ff00, /* Green bit mask. */

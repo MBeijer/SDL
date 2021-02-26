@@ -45,7 +45,8 @@ extern "C" {
 #define SDL_RWOPS_JNIFILE   3U  /**< Android asset */
 #define SDL_RWOPS_MEMORY    4U  /**< Memory stream */
 #define SDL_RWOPS_MEMORY_RO 5U  /**< Read-Only memory stream */
-
+#define SDL_RWOPS_AMIGAFILE 6U  /**< Amiga file */
+  
 /**
  * This is the read/write operation structure -- very basic.
  */
@@ -91,6 +92,11 @@ typedef struct SDL_RWops
     int (SDLCALL * close) (struct SDL_RWops * context);
 
     Uint32 type;
+	
+    #if defined(__MORPHOS__)
+    void *r13; /* must be at offset 24 and outside union (or change fileop routine accordingly) */
+    #endif
+	
     union
     {
 #if defined(__ANDROID__)
@@ -110,6 +116,18 @@ typedef struct SDL_RWops
                 size_t left;
             } buffer;
         } windowsio;
+#elif defined(__MORPHOS__)
+        struct
+        {
+            Uint8 AppendMode : 1, NoSeek : 1, IsAtEnd : 1, autoclose : 1;
+            Uint8 Writable : 1, Readable : 1;
+
+            union
+            {
+                size_t  dos;
+                void   *libc;
+            } fp;
+        } amigaio;
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -145,7 +163,7 @@ typedef struct SDL_RWops
 extern DECLSPEC SDL_RWops *SDLCALL SDL_RWFromFile(const char *file,
                                                   const char *mode);
 
-#ifdef HAVE_STDIO_H
+#if defined(HAVE_STDIO_H) && !defined(__MORPHOS__)
 extern DECLSPEC SDL_RWops *SDLCALL SDL_RWFromFP(FILE * fp,
                                                 SDL_bool autoclose);
 #else

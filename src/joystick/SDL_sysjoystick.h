@@ -159,8 +159,12 @@ typedef struct _SDL_JoystickDriver
     int (*Open)(SDL_Joystick *joystick, int device_index);
 
     /* Rumble functionality */
-    int (*Rumble)(SDL_Joystick *joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble);
-    int (*RumbleTriggers)(SDL_Joystick *joystick, Uint16 left_rumble, Uint16 right_rumble);
+	#ifdef __MORPHOS__
+    int (*Rumble)(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble, Uint32 duration_ms);
+	#else
+    int (*Rumble)(SDL_Joystick * joystick, Uint16 low_frequency_rumble, Uint16 high_frequency_rumble);
+	#endif
+    int (*RumbleTriggers)(SDL_Joystick * joystick, Uint16 left_rumble, Uint16 right_rumble);
 
     /* LED functionality */
     SDL_bool (*HasLED)(SDL_Joystick *joystick);
@@ -205,6 +209,8 @@ extern SDL_JoystickDriver SDL_LINUX_JoystickDriver;
 extern SDL_JoystickDriver SDL_VIRTUAL_JoystickDriver;
 extern SDL_JoystickDriver SDL_WGI_JoystickDriver;
 extern SDL_JoystickDriver SDL_WINDOWS_JoystickDriver;
+extern SDL_JoystickDriver SDL_MORPHOS_JoystickDriver;
+extern SDL_JoystickDriver SDL_AMIGA_JoystickDriver;
 
 #endif /* SDL_sysjoystick_h_ */
 
