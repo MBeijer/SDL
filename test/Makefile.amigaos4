@@ -63,6 +63,7 @@ TARGETS = \
 	teststreaming \
 	testthread \
 	testtimer \
+	testurl \
 	testver \
 	testviewport \
 	testvulkan \
@@ -280,6 +281,9 @@ controllermap: controllermap.o
 	$(CC) -o $@ $^ $(LIBS)
 
 testvulkan: testvulkan.o
+	$(CC) -o $@ $^ $(LIBS)
+
+testurl: testurl.o
 	$(CC) -o $@ $^ $(LIBS)
 
 clean:
