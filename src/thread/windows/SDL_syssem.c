@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -66,11 +66,27 @@ static SDL_sem_impl_t SDL_sem_impl_active = {0};
  * Atomic + WaitOnAddress implementation
  */
 
+/* APIs not available on WinPhone 8.1 */
+/* https://www.microsoft.com/en-us/download/details.aspx?id=47328 */
+
+#if (HAVE_WINAPIFAMILY_H) && defined(WINAPI_FAMILY_PHONE_APP)
+#define SDL_WINAPI_FAMILY_PHONE (WINAPI_FAMILY==WINAPI_FAMILY_PHONE_APP)
+#else
+#define SDL_WINAPI_FAMILY_PHONE 0
+#endif
+
+#if !SDL_WINAPI_FAMILY_PHONE
+#if __WINRT__
+/* Functions are guaranteed to be available */
+#define pWaitOnAddress WaitOnAddress
+#define pWakeByAddressSingle WakeByAddressSingle
+#else
 typedef BOOL(WINAPI *pfnWaitOnAddress)(volatile VOID*, PVOID, SIZE_T, DWORD);
 typedef VOID(WINAPI *pfnWakeByAddressSingle)(PVOID);
 
 static pfnWaitOnAddress pWaitOnAddress = NULL;
 static pfnWakeByAddressSingle pWakeByAddressSingle = NULL;
+#endif
 
 typedef struct SDL_semaphore_atom
 {
@@ -235,6 +251,7 @@ static const SDL_sem_impl_t SDL_sem_impl_atom =
     &SDL_SemValue_atom,
     &SDL_SemPost_atom,
 };
+#endif /* !SDL_WINAPI_FAMILY_PHONE */
 
 
 /**
@@ -386,14 +403,19 @@ SDL_CreateSemaphore(Uint32 initial_value)
         /* Default to fallback implementation */
         const SDL_sem_impl_t * impl = &SDL_sem_impl_kern;
 
+#if !SDL_WINAPI_FAMILY_PHONE
         if (!SDL_GetHintBoolean(SDL_HINT_WINDOWS_FORCE_SEMAPHORE_KERNEL, SDL_FALSE)) {
+#if __WINRT__
+            /* Link statically on this platform */
+            impl = &SDL_sem_impl_atom;
+#else
             /* We already statically link to features from this Api
              * Set (e.g. WaitForSingleObject). Dynamically loading
              * API Sets is not explicitly documented but according to
              * Microsoft our specific use case is legal and correct:
              * https://github.com/microsoft/STL/pull/593#issuecomment-655799859
              */
-            HMODULE synch120 = GetModuleHandleW(L"api-ms-win-core-synch-l1-2-0.dll");
+            HMODULE synch120 = GetModuleHandle(TEXT("api-ms-win-core-synch-l1-2-0.dll"));
             if (synch120) {
                 /* Try to load required functions provided by Win 8 or newer */
                 pWaitOnAddress = (pfnWaitOnAddress) GetProcAddress(synch120, "WaitOnAddress");
@@ -403,7 +425,9 @@ SDL_CreateSemaphore(Uint32 initial_value)
                     impl = &SDL_sem_impl_atom;
                 }
             }
+#endif
         }
+#endif
 
         /* Copy instead of using pointer to save one level of indirection */
         SDL_memcpy(&SDL_sem_impl_active, impl, sizeof(SDL_sem_impl_active));

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,28 +18,25 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-
 #include "../../SDL_internal.h"
 
-#ifndef SDL_KMSDRM_LEGACY_mouse_h_
-#define SDL_KMSDRM_LEGACY_mouse_h_
+#include "SDL_thread.h"
 
-#include <gbm.h>
+#ifndef SDL_syscond_generic_h_
+#define SDL_syscond_generic_h_
 
-#define MAX_CURSOR_W 512
-#define MAX_CURSOR_H 512
+#if SDL_THREAD_GENERIC_COND_SUFFIX
 
-typedef struct _KMSDRM_LEGACY_CursorData
-{
-    struct gbm_bo *bo;
-    uint32_t       crtc_id;
-    int            hot_x, hot_y;
-    int            w, h;
-} KMSDRM_LEGACY_CursorData;
+SDL_cond * SDL_CreateCond_generic(void);
+void SDL_DestroyCond_generic(SDL_cond * cond);
+int SDL_CondSignal_generic(SDL_cond * cond);
+int SDL_CondBroadcast_generic(SDL_cond * cond);
+int SDL_CondWait_generic(SDL_cond * cond, SDL_mutex * mutex);
+int SDL_CondWaitTimeout_generic(SDL_cond * cond,
+                                SDL_mutex * mutex, Uint32 ms);
 
-extern void KMSDRM_LEGACY_InitMouse(_THIS);
-extern void KMSDRM_LEGACY_QuitMouse(_THIS);
+#endif /* SDL_THREAD_GENERIC_COND_SUFFIX */
 
-#endif /* SDL_KMSDRM_LEGACY_mouse_h_ */
+#endif /* SDL_syscond_generic_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
-AC_CONFIG_SRCDIR(README.txt)
+AC_CONFIG_SRCDIR([src/SDL.c])
 AC_CONFIG_HEADERS(include/SDL_config.h)
 AC_CONFIG_AUX_DIR(build-scripts)
 AC_CONFIG_MACRO_DIR([acinclude])
@@ -345,7 +345,7 @@ if test x$enable_libc = xyes; then
         AC_DEFINE(HAVE_MPROTECT, 1, [ ])
         ]),
     )
-    AC_CHECK_FUNCS(malloc calloc realloc free getenv setenv putenv unsetenv qsort abs bcopy memset memcpy memmove wcslen wcslcpy wcslcat wcsdup wcsstr wcscmp wcsncmp wcscasecmp _wcsicmp wcsncasecmp _wcsnicmp strlen strlcpy strlcat _strrev _strupr _strlwr strchr strrchr strstr strtok_r itoa _ltoa _uitoa _ultoa strtol strtoul _i64toa _ui64toa strtoll strtoull atoi atof strcmp strncmp _stricmp strcasecmp _strnicmp strncasecmp vsscanf vsnprintf fopen64 fseeko fseeko64 sigaction setjmp nanosleep sysconf sysctlbyname getauxval elf_aux_info poll _Exit)
+    AC_CHECK_FUNCS(malloc calloc realloc free getenv setenv putenv unsetenv qsort abs bcopy memset memcpy memmove wcslen wcslcpy wcslcat _wcsdup wcsdup wcsstr wcscmp wcsncmp wcscasecmp _wcsicmp wcsncasecmp _wcsnicmp strlen strlcpy strlcat _strrev _strupr _strlwr index rindex strchr strrchr strstr strtok_r itoa _ltoa _uitoa _ultoa strtol strtoul _i64toa _ui64toa strtoll strtoull atoi atof strcmp strncmp _stricmp strcasecmp _strnicmp strncasecmp vsscanf vsnprintf fopen64 fseeko fseeko64 sigaction setjmp nanosleep sysconf sysctlbyname getauxval elf_aux_info poll _Exit)
 
     AC_CHECK_LIB(m, pow, [LIBS="$LIBS -lm"; EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lm"])
     AC_CHECK_FUNCS(acos acosf asin asinf atan atanf atan2 atan2f ceil ceilf copysign copysignf cos cosf exp expf fabs fabsf floor floorf trunc truncf fmod fmodf log logf log10 log10f lround lroundf pow powf round roundf scalbn scalbnf sin sinf sqrt sqrtf tan tanf)
@@ -1539,6 +1539,9 @@ AS_HELP_STRING([--enable-video-wayland-qt-touch], [QtWayland server support for 
                 WAYLAND_CFLAGS=`$PKG_CONFIG --cflags wayland-client wayland-egl wayland-cursor xkbcommon`
                 WAYLAND_LIBS=`$PKG_CONFIG --libs wayland-client wayland-egl wayland-cursor xkbcommon`
                 WAYLAND_SCANNER=`$PKG_CONFIG --variable=wayland_scanner wayland-scanner`
+                AS_IF([$PKG_CONFIG --exists 'wayland-scanner >= 1.15'],
+                      [WAYLAND_SCANNER_CODE_MODE=private-code],
+                      [WAYLAND_SCANNER_CODE_MODE=code])
                 video_wayland=yes
             fi
         fi
@@ -2215,11 +2218,8 @@ AS_HELP_STRING([--enable-directfb-shared], [dynamically load directfb support [[
             SOURCES="$SOURCES $srcdir/src/video/directfb/*.c"
             EXTRA_CFLAGS="$EXTRA_CFLAGS $DIRECTFB_CFLAGS"
 
-            AC_MSG_CHECKING(for directfb dynamic loading support)
             directfb_shared=no
-            directfb_lib=[`find_lib "libdirectfb*.so.*" "$DIRECTFB_LIBS"`]
-            # | sed 's/.*\/\(.*\)/\1/; q'`]
-AC_MSG_WARN("directfb $directfb_lib")
+            directfb_lib=[`find_lib "libdirectfb*.so.*" "$DIRECTFB_LIBS" | sed 's/.*\/\(.*\)/\1/; q'`]
             if test x$have_loadso != xyes && \
                test x$enable_directfb_shared = xyes; then
                 AC_MSG_WARN([You must have SDL_LoadObject() support for dynamic directfb loading])
@@ -2227,14 +2227,13 @@ AC_MSG_WARN("directfb $directfb_lib")
             if test x$have_loadso = xyes && \
                test x$enable_directfb_shared = xyes && test x$directfb_lib != x; then
                 directfb_shared=yes
-                echo "-- $directfb_lib_spec -> $directfb_lib"
+                echo "-- dynamic libdirectfb -> $directfb_lib"
                 AC_DEFINE_UNQUOTED(SDL_VIDEO_DRIVER_DIRECTFB_DYNAMIC, "$directfb_lib", [ ])
                 SUMMARY_video="${SUMMARY_video} directfb(dynamic)"
             else
                 EXTRA_LDFLAGS="$EXTRA_LDFLAGS $DIRECTFB_LIBS"
                 SUMMARY_video="${SUMMARY_video} directfb"
             fi
-            AC_MSG_RESULT($directfb_shared)
             SDL_CFLAGS="$SDL_CFLAGS $DIRECTFB_CFLAGS"
             have_video=yes
         fi
@@ -2268,7 +2267,6 @@ AS_HELP_STRING([--enable-kmsdrm-shared], [dynamically load kmsdrm support [[defa
 
             AC_DEFINE(SDL_VIDEO_DRIVER_KMSDRM, 1, [ ])
             SOURCES="$SOURCES $srcdir/src/video/kmsdrm/*.c"
-            SOURCES="$SOURCES $srcdir/src/video/kmsdrm_legacy/*.c"
             EXTRA_CFLAGS="$EXTRA_CFLAGS $LIBDRM_CFLAGS $LIBGBM_CFLAGS"
 
             AC_MSG_CHECKING(for kmsdrm dynamic loading support)
@@ -2718,7 +2716,7 @@ CheckInputKBIO()
       #include <sys/kbio.h>
       #include <sys/ioctl.h>
     ],[
-    	accentmap_t accTable;
+        accentmap_t accTable;
         ioctl(0, KDENABIO, 1);
     ],[
     use_input_kbio=yes
@@ -2728,6 +2726,30 @@ CheckInputKBIO()
         AC_DEFINE(SDL_INPUT_FBSDKBIO, 1, [ ])
         SUMMARY_input="${SUMMARY_input} fbsdkbio"
     fi
+}
+
+dnl See if we can use the wscons input driver
+CheckInputWSCONS()
+{
+    AC_MSG_CHECKING(for OpenBSD wscons)
+    use_input_wscons=no
+    AC_TRY_COMPILE([
+     #include <sys/time.h>
+     #include <dev/wscons/wsconsio.h>
+     #include <dev/wscons/wsksymdef.h>
+     #include <dev/wscons/wsksymvar.h>
+     #include <sys/ioctl.h>
+     ],[
+    	struct wskbd_map_data data;
+    	ioctl(0, WSKBDIO_GETMAP, &data);
+     ],[
+     use_input_wscons=yes
+     ])
+     AC_MSG_RESULT($use_input_wscons)
+     if test x$use_input_wscons = xyes; then
+        AC_DEFINE(SDL_INPUT_WSCONS, 1, [ ])
+	SUMMARY_input="${SUMMARY_input} wscons"
+     fi
 }
 
 dnl See if the platform offers libudev for device enumeration and hotplugging.
@@ -2760,12 +2782,12 @@ AS_HELP_STRING([--enable-dbus], [enable D-Bus support [[default=yes]]]),
                         , enable_dbus=yes)
     if test x$enable_dbus = xyes; then
         PKG_CHECK_MODULES([DBUS], [dbus-1], have_dbus=yes, have_dbus=no)
-        save_CFLAGS="$CFLAGS"
-        CFLAGS="$save_CFLAGS $DBUS_CFLAGS"
+        save_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$save_CPPFLAGS $DBUS_CFLAGS"
         AC_CHECK_HEADER(dbus/dbus.h,
                         have_dbus_dbus_h_hdr=yes,
                         have_dbus_dbus_h_hdr=no)
-        CFLAGS="$save_CFLAGS"
+        CPPFLAGS="$save_CPPFLAGS"
         if test x$have_dbus_dbus_h_hdr = xyes; then
             AC_DEFINE(HAVE_DBUS_DBUS_H, 1, [ ])
             EXTRA_CFLAGS="$EXTRA_CFLAGS $DBUS_CFLAGS"
@@ -2816,12 +2838,12 @@ AS_HELP_STRING([--enable-ibus], [enable IBus support [[default=yes]]]),
                   , enable_ibus=yes)
     if test x$enable_ibus = xyes; then
         PKG_CHECK_MODULES([IBUS], [ibus-1.0], have_ibus=yes, have_ibus=no)
-        save_CFLAGS="$CFLAGS"
-        CFLAGS="$save_CFLAGS $IBUS_CFLAGS"
+        save_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$save_CPPFLAGS $IBUS_CFLAGS"
         AC_CHECK_HEADER(ibus-1.0/ibus.h,
                         have_ibus_ibus_h_hdr=yes,
                         have_ibus_ibus_h_hdr=no)
-        CFLAGS="$save_CFLAGS"
+        CPPFLAGS="$save_CPPFLAGS"
         if test x$have_ibus_ibus_h_hdr = xyes; then
             if test x$enable_ime != xyes; then
                 AC_MSG_WARN([IME support is required for IBus.])
@@ -3170,7 +3192,7 @@ CheckDIRECTX()
 {
     AC_ARG_ENABLE(directx,
 AS_HELP_STRING([--enable-directx], [use DirectX for Windows audio/video [[default=yes]]]),
-                  , enable_directx=yes)
+                                 , enable_directx=yes)
     if test x$enable_directx = xyes; then
         AC_CHECK_HEADER(d3d9.h, have_d3d=yes)
         AC_CHECK_HEADER(d3d11_1.h, have_d3d11=yes)
@@ -3178,17 +3200,6 @@ AS_HELP_STRING([--enable-directx], [use DirectX for Windows audio/video [[defaul
         AC_CHECK_HEADER(dsound.h, have_dsound=yes)
         AC_CHECK_HEADER(dinput.h, have_dinput=yes)
         AC_CHECK_HEADER(dxgi.h, have_dxgi=yes)
-        AC_CHECK_HEADER(xinput.h, have_xinput=yes)
-        AC_TRY_COMPILE([
-#include <windows.h>
-#include <xinput.h>
-XINPUT_GAMEPAD_EX x1;
-        ],[],[have_xinput_gamepadex=yes])
-        AC_TRY_COMPILE([
-#include <windows.h>
-#include <xinput.h>
-XINPUT_STATE_EX s1;
-        ],[],[have_xinput_stateex=yes])
 
         if test x$have_ddraw = xyes; then
             AC_DEFINE(HAVE_DDRAW_H, 1, [ ])
@@ -3202,6 +3213,38 @@ XINPUT_STATE_EX s1;
         if test x$have_dxgi = xyes; then
             AC_DEFINE(HAVE_DXGI_H, 1, [ ])
         fi
+
+        # FIXME: latest Cygwin finds dinput headers, but we die on other win32 headers.
+        # FIXME:  ...so force it off for now.
+        case "$host" in
+            *-*-cygwin*)
+            have_dinput=false
+            ;;
+        esac
+    fi
+
+    AC_ARG_ENABLE(xinput,
+AS_HELP_STRING([--enable-xinput], [use Xinput for Windows [[default=yes]]]),
+                                , enable_xinput=yes)
+    if test x$enable_xinput = xyes; then
+        have_xinput_gamepadex=no
+        have_xinput_stateex=no
+        AC_CHECK_HEADER(xinput.h, have_xinput=yes)
+        AC_MSG_CHECKING(for struct XINPUT_GAMEPAD_EX)
+        AC_TRY_COMPILE([
+#include <windows.h>
+#include <xinput.h>
+XINPUT_GAMEPAD_EX x1;
+            ],[],[have_xinput_gamepadex=yes])
+        AC_MSG_RESULT($have_xinput_gamepadex)
+        AC_MSG_CHECKING(for struct XINPUT_STATE_EX)
+        AC_TRY_COMPILE([
+#include <windows.h>
+#include <xinput.h>
+XINPUT_STATE_EX s1;
+            ],[],[have_xinput_stateex=yes])
+        AC_MSG_RESULT($have_xinput_stateex)
+
         if test x$have_xinput = xyes; then
             AC_DEFINE(HAVE_XINPUT_H, 1, [ ])
         fi
@@ -3211,14 +3254,6 @@ XINPUT_STATE_EX s1;
         if test x$have_xinput_stateex = xyes; then
             AC_DEFINE(HAVE_XINPUT_STATE_EX, 1, [ ])
         fi
-
-        # FIXME: latest Cygwin finds dinput headers, but we die on other win32 headers.
-        # FIXME:  ...so force it off for now.
-        case "$host" in
-            *-*-cygwin*)
-            have_dinput=false
-            ;;
-        esac
     fi
 
     AC_CHECK_HEADER(mmdeviceapi.h, have_wasapi=yes)
@@ -3390,7 +3425,7 @@ CheckUSBHID()
                     have_machine_joystick=yes
                     ])
                     if test x$have_machine_joystick = xyes; then
-                        AC_DEFINE(SDL_JOYSTICK_USBHID_MACHINE_JOYSTICK_H, 1, [ ])
+                        AC_DEFINE(SDL_HAVE_MACHINE_JOYSTICK_H, 1, [ ])
                     fi
                     AC_MSG_RESULT($have_machine_joystick)
 
@@ -3400,6 +3435,7 @@ CheckUSBHID()
                     EXTRA_LDFLAGS="$EXTRA_LDFLAGS $USB_LIBS"
                     have_joystick=yes
                 fi
+
                 CFLAGS="$save_CFLAGS"
             fi
         ;;
@@ -3436,10 +3472,10 @@ AS_HELP_STRING([--enable-hidapi-libusb], [use libusb for low level joystick driv
         hidapi_support=yes
         if test x$enable_hidapi_libusb = xyes; then
             PKG_CHECK_MODULES([LIBUSB], [libusb-1.0], have_libusb=yes, have_libusb=no)
-            save_CFLAGS="$CFLAGS"
-            CFLAGS="$save_CFLAGS $LIBUSB_CFLAGS"
-            AC_CHECK_HEADER(libusb.h, have_libusb_h=yes)
-            CFLAGS="$save_CFLAGS"
+            save_CPPFLAGS="$CPPFLAGS"
+            CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
+            AC_CHECK_HEADER(libusb.h, have_libusb_h=yes, have_libusb_h=no)
+            CPPFLAGS="$save_CPPFLAGS"
             if test x$have_libusb_h = xno && test x$require_hidapi_libusb = xyes; then
                 hidapi_support=no
             fi
@@ -3647,6 +3683,9 @@ case "$host" in
           freebsd)
               CheckInputKBIO
           ;;
+          openbsd|netbsd)
+              CheckInputWSCONS
+          ;;
         esac
         CheckUSBHID
         CheckHIDAPI
@@ -3792,6 +3831,11 @@ case "$host" in
             SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_kbd.c"
             SOURCES="$SOURCES $srcdir/src/core/freebsd/SDL_evdev_kbd_freebsd.c"
         fi
+        # Set up files for wscons input
+        if test x$use_input_wscons = xyes; then
+            SOURCES="$SOURCES $srcdir/src/core/openbsd/SDL_wscons_kbd.c"
+            SOURCES="$SOURCES $srcdir/src/core/openbsd/SDL_wscons_mouse.c"
+        fi
         # Set up other core UNIX files
         SOURCES="$SOURCES $srcdir/src/core/linux/SDL_evdev_capabilities.c"
         SOURCES="$SOURCES $srcdir/src/core/linux/SDL_threadprio.c"
@@ -3915,6 +3959,7 @@ AS_HELP_STRING([--enable-render-d3d], [enable the Direct3D render driver [[defau
         fi
         # Set up files for the thread library
         if test x$enable_threads = xyes; then
+            AC_DEFINE(SDL_THREAD_GENERIC_COND_SUFFIX, 1, [ ])
             AC_DEFINE(SDL_THREAD_WINDOWS, 1, [ ])
             SOURCES="$SOURCES $srcdir/src/thread/windows/*.c"
             SOURCES="$SOURCES $srcdir/src/thread/generic/SDL_syscond.c"
@@ -4445,27 +4490,27 @@ fi
 SDLTEST_SOURCES="$srcdir/src/test/*.c"
 
 if test x$video_wayland = xyes; then
-    WAYLAND_PROTOCOLS=`cd $srcdir/wayland-protocols ; for p in *.xml ; do echo -n "\$p" |sed 's,\\.xml\$, ,g' ; done`
-    WAYLAND_PROTOCOLS_SOURCES=`for p in $WAYLAND_PROTOCOLS ; do echo -n "\\$(gen)/\$p-protocol.c " ; done`
-    WAYLAND_PROTOCOLS_HEADERS=`for p in $WAYLAND_PROTOCOLS ; do echo -n "\\$(gen)/\$p-client-protocol.h " ; done`
+    WAYLAND_PROTOCOLS=`cd $srcdir/wayland-protocols ; for p in *.xml ; do printf '%s' "\$p" |sed 's,\\.xml\$, ,g' ; done`
+    WAYLAND_PROTOCOLS_SOURCES=`for p in $WAYLAND_PROTOCOLS ; do printf '%s' "\\$(gen)/\$p-protocol.c " ; done`
+    WAYLAND_PROTOCOLS_HEADERS=`for p in $WAYLAND_PROTOCOLS ; do printf '%s' "\\$(gen)/\$p-client-protocol.h " ; done`
     GEN_SOURCES="$GEN_SOURCES $WAYLAND_PROTOCOLS_SOURCES"
     GEN_HEADERS="$GEN_HEADERS $WAYLAND_PROTOCOLS_HEADERS"
 
     WAYLAND_PROTOCOLS_DEPENDS=`for p in $WAYLAND_PROTOCOLS ; do\
         echo ;\
-        echo "\\$(gen)/\$p-client-protocol.h: \\$(srcdir)/wayland-protocols/\$p.xml" ;\
-        echo "	@\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)" ;\
-        echo "	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) client-header \\$< \\$@" ;\
+        printf '%s\n' "\\$(gen)/\$p-client-protocol.h: \\$(srcdir)/wayland-protocols/\$p.xml" ;\
+        printf '%s\n' "	@\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)" ;\
+        printf '%s\n' "	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) client-header \\$< \\$@" ;\
         echo ;\
-        echo "\\$(gen)/\$p-protocol.c: \\$(srcdir)/wayland-protocols/\$p.xml" ;\
-        echo "	@\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)" ;\
-        echo "	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) code \\$< \\$@" ;\
+        printf '%s\n' "\\$(gen)/\$p-protocol.c: \\$(srcdir)/wayland-protocols/\$p.xml" ;\
+        printf '%s\n' "	@\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)" ;\
+        printf '%s\n' "	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) \\$(WAYLAND_SCANNER_CODE_MODE) \\$< \\$@" ;\
         echo ;\
-        echo "\\$(objects)/\$p-protocol.lo: \\$(gen)/\$p-protocol.c \\$(gen)/\$p-client-protocol.h" ;\
-        echo "	\\$(RUN_CMD_CC)\\$(LIBTOOL) --tag=CC --mode=compile \\$(CC) \\$(CFLAGS) \\$(EXTRA_CFLAGS) $DEPENDENCY_TRACKING_OPTIONS -c \\$< -o \\$@" ;\
+        printf '%s\n' "\\$(objects)/\$p-protocol.lo: \\$(gen)/\$p-protocol.c \\$(gen)/\$p-client-protocol.h" ;\
+        printf '%s\n' "	\\$(RUN_CMD_CC)\\$(LIBTOOL) --tag=CC --mode=compile \\$(CC) \\$(CFLAGS) \\$(EXTRA_CFLAGS) $DEPENDENCY_TRACKING_OPTIONS -c \\$< -o \\$@" ;\
         done ;\
         echo ;\
-        for s in $WAYLAND_SOURCES ; do echo -n "\$s:" ; for p in $WAYLAND_PROTOCOLS ; do echo -n " \\$(gen)/\$p-client-protocol.h" ; done ; echo ; done ; echo`
+        for s in $WAYLAND_SOURCES ; do printf '%s' "\$s:" ; printf ' \$(gen)/%s-client-protocol.h' $WAYLAND_PROTOCOLS ; echo ; done ; echo`
 fi
 
 OBJECTS=`echo $SOURCES`
@@ -4573,6 +4618,7 @@ AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(BUILD_LDFLAGS)
 AC_SUBST(EXTRA_LDFLAGS)
 AC_SUBST(WAYLAND_SCANNER)
+AC_SUBST(WAYLAND_SCANNER_CODE_MODE)
 
 cat >Makefile.rules <<__EOF__
 

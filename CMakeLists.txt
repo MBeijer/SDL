@@ -34,6 +34,7 @@ include(CheckSymbolExists)
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
 include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(CheckTypeSize)
 include(CheckStructHasMember)
 include(CMakeDependentOption)
@@ -389,6 +390,7 @@ foreach(_SUB ${SDL_X11_OPTIONS})
 endforeach()
 set_option(VIDEO_COCOA         "Use Cocoa video driver" ${APPLE})
 set_option(DIRECTX             "Use DirectX for Windows audio/video" ${WINDOWS})
+set_option(XINPUT              "Use Xinput for Windows" ${WINDOWS})
 set_option(WASAPI              "Use the Windows WASAPI audio driver" ${WINDOWS})
 set_option(RENDER_D3D          "Enable the Direct3D render driver" ${WINDOWS})
 set_option(RENDER_METAL        "Enable the Metal render driver" ${APPLE})
@@ -402,6 +404,7 @@ option_string(BACKGROUNDING_SIGNAL "number to use for magic backgrounding signal
 option_string(FOREGROUNDING_SIGNAL "number to use for magic foregrounding signal or 'OFF'" "OFF")
 set_option(HIDAPI              "Use HIDAPI for low level joystick drivers" ${OPT_DEF_HIDAPI})
 set_option(JOYSTICK_VIRTUAL    "Enable the virtual-joystick driver" ON)
+set_option(ASAN                "Use AddressSanitizer to detect memory errors" OFF)
 
 set(SDL_SHARED ${SDL_SHARED_ENABLED_BY_DEFAULT} CACHE BOOL "Build a shared version of the library")
 set(SDL_STATIC ${SDL_STATIC_ENABLED_BY_DEFAULT} CACHE BOOL "Build a static version of the library")
@@ -531,7 +534,7 @@ if(USE_GCC OR USE_CLANG)
     list(APPEND EXTRA_LDFLAGS "-Wl,-undefined,error")
     list(APPEND EXTRA_LDFLAGS "-Wl,-compatibility_version,${DYLIB_COMPATIBILITY_VERSION}")
     list(APPEND EXTRA_LDFLAGS "-Wl,-current_version,${DYLIB_CURRENT_VERSION}")
-  else()
+  elseif(NOT OPENBSD)
     set(CMAKE_REQUIRED_FLAGS "-Wl,--no-undefined")
     check_c_compiler_flag("" HAVE_NO_UNDEFINED)
     set(CMAKE_REQUIRED_FLAGS ${ORIG_CMAKE_REQUIRED_FLAGS})
@@ -786,10 +789,10 @@ if(LIBC)
     set(HAVE_SIGNAL_H 1)
     foreach(_FN
             malloc calloc realloc free qsort abs memset memcpy memmove memcmp
-            wcslen wcsdup wcsstr wcscmp wcsncmp _wcsicmp _wcsnicmp
+            wcslen _wcsdup wcsdup wcsstr wcscmp wcsncmp _wcsicmp _wcsnicmp
             strlen _strrev _strupr _strlwr strchr strrchr strstr itoa _ltoa
             _ultoa strtol strtoul strtoll strtod atoi atof strcmp strncmp
-            _stricmp _strnicmp strtok_s sscanf
+            _stricmp _strnicmp sscanf
             acos acosf asin asinf atan atanf atan2 atan2f ceil ceilf
             copysign copysignf cos cosf exp expf fabs fabsf floor floorf fmod fmodf
             log logf log10 log10f lround lroundf pow powf round roundf scalbn scalbnf
@@ -825,10 +828,10 @@ if(LIBC)
     foreach(_FN
             strtod malloc calloc realloc free getenv setenv putenv unsetenv
             qsort abs bcopy memset memcpy memmove memcmp strlen strlcpy strlcat
-            _strrev _strupr _strlwr strchr strrchr strstr strtok_r itoa _ltoa
-            _uitoa _ultoa strtol strtoul _i64toa _ui64toa strtoll strtoull
+            _strrev _strupr _strlwr index rindex strchr strrchr strstr strtok_r
+            itoa _ltoa _uitoa _ultoa strtol strtoul _i64toa _ui64toa strtoll strtoull
             atoi atof strcmp strncmp _stricmp strcasecmp _strnicmp strncasecmp
-            wcscmp wcsdup wcslcat wcslcpy wcslen wcsncmp wcsstr
+            wcscmp _wcsdup wcsdup wcslcat wcslcpy wcslen wcsncmp wcsstr
             wcscasecmp _wcsicmp wcsncasecmp _wcsnicmp
             sscanf vsscanf vsnprintf fopen64 fseeko fseeko64 _Exit
             )
@@ -1411,8 +1414,13 @@ elseif(WINDOWS)
     endif()
   endif()
 
+  if(WINDOWS_STORE)
+    file(GLOB WINRT_MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/winrt/*.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${WINRT_MISC_SOURCES})
+  else()
   file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/windows/*.c)
   set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  endif()
   set(HAVE_SDL_MISC TRUE)
 
   # Check for DirectX
@@ -1425,26 +1433,6 @@ elseif(WINDOWS)
         message_error("DIRECTX requires the \$DXSDK_DIR environment variable to be set")
       endif()
       set(CMAKE_REQUIRED_FLAGS "/I\"$ENV{DXSDK_DIR}\\Include\"")
-    endif()
-
-    if(HAVE_WIN32_CC)
-      # xinput.h may need windows.h, but doesn't include it itself.
-      check_c_source_compiles("
-        #include <windows.h>
-        #include <xinput.h>
-        int main(int argc, char **argv) { }" HAVE_XINPUT_H)
-      check_c_source_compiles("
-        #include <windows.h>
-        #include <xinput.h>
-        XINPUT_GAMEPAD_EX x1;
-        int main(int argc, char **argv) { }" HAVE_XINPUT_GAMEPAD_EX)
-      check_c_source_compiles("
-        #include <windows.h>
-        #include <xinput.h>
-        XINPUT_STATE_EX s1;
-        int main(int argc, char **argv) { }" HAVE_XINPUT_STATE_EX)
-    else()
-      check_include_file(xinput.h HAVE_XINPUT_H)
     endif()
 
     check_include_file(d3d9.h HAVE_D3D_H)
@@ -1465,6 +1453,24 @@ elseif(WINDOWS)
       endif()
     endif()
     set(CMAKE_REQUIRED_FLAGS ${ORIG_CMAKE_REQUIRED_FLAGS})
+  endif()
+
+  if(XINPUT)
+    # xinput.h may need windows.h, but does not include it itself.
+    check_c_source_compiles("
+      #include <windows.h>
+      #include <xinput.h>
+      int main(int argc, char **argv) { }" HAVE_XINPUT_H)
+    check_c_source_compiles("
+      #include <windows.h>
+      #include <xinput.h>
+      XINPUT_GAMEPAD_EX x1;
+      int main(int argc, char **argv) { }" HAVE_XINPUT_GAMEPAD_EX)
+    check_c_source_compiles("
+      #include <windows.h>
+      #include <xinput.h>
+      XINPUT_STATE_EX s1;
+      int main(int argc, char **argv) { }" HAVE_XINPUT_STATE_EX)
   endif()
 
   # headers needed elsewhere
@@ -1523,17 +1529,19 @@ elseif(WINDOWS)
   endif()
 
   if(SDL_THREADS)
+    set(SDL_THREAD_GENERIC_COND_SUFFIX 1)
     set(SDL_THREAD_WINDOWS 1)
     set(SOURCE_FILES ${SOURCE_FILES}
+      ${SDL2_SOURCE_DIR}/src/thread/generic/SDL_syscond.c
+      ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_syscond_srw.c
       ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_sysmutex.c
       ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_syssem.c
       ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_systhread.c
-      ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_systls.c
-      ${SDL2_SOURCE_DIR}/src/thread/generic/SDL_syscond.c)
+      ${SDL2_SOURCE_DIR}/src/thread/windows/SDL_systls.c)
     set(HAVE_SDL_THREADS TRUE)
   endif()
 
-  if(SDL_SENSOR AND HAVE_SENSORSAPI_H)
+  if(SDL_SENSOR AND HAVE_SENSORSAPI_H AND NOT WINDOWS_STORE)
     set(SDL_SENSOR_WINDOWS 1)
     set(HAVE_SDL_SENSORS TRUE)
     file(GLOB WINDOWS_SENSOR_SOURCES ${SDL2_SOURCE_DIR}/src/sensor/windows/*.c)
@@ -1681,7 +1689,12 @@ elseif(APPLE)
     message_error("SDL_FILE must be enabled to build on MacOS X")
   endif()
 
-  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/macosx/*.m)
+  if(IOS OR TVOS)
+    file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/ios/*.m)
+    file(GLOB SDLMAIN_SOURCES ${SDL2_SOURCE_DIR}/src/main/uikit/*.c)
+  else()
+    file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/macosx/*.m)
+  endif()
   set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
   set(HAVE_SDL_MISC TRUE)
 
@@ -2366,6 +2379,60 @@ if(SDL_STATIC)
   if(IOS OR TVOS)
     set_property(TARGET SDL2-static APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
   endif()
+endif()
+
+macro(check_add_debug_flag FLAG SUFFIX)
+    check_c_compiler_flag(${FLAG} HAS_C_FLAG_${SUFFIX})
+    if (HAS_C_FLAG_${SUFFIX})
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
+    endif()
+
+    check_cxx_compiler_flag(${FLAG} HAS_CXX_${SUFFIX})
+    if (HAS_CXX_${SUFFIX})
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
+    endif()
+endmacro()
+
+macro(asan_check_add_debug_flag ASAN_FLAG)
+    check_add_debug_flag("-fsanitize=${ASAN_FLAG}" "${ASAN_FLAG}")
+endmacro()
+
+macro(asan_check_add_debug_flag2 ASAN_FLAG)
+    # for some sanitize flags we have to manipulate the CMAKE_REQUIRED_LIBRARIES:
+    # http://cmake.3232098.n2.nabble.com/CHECK-CXX-COMPILER-FLAG-doesn-t-give-correct-result-for-fsanitize-address-tp7600216p7600217.html
+
+    set(FLAG "-fsanitize=${ASAN_FLAG}")
+
+    set (STORED_REQLIBS ${CMAKE_REQUIRED_LIBRARIES})
+    set (CMAKE_REQUIRED_LIBRARIES "${FLAG};asan")
+    check_c_compiler_flag (${FLAG} HAS_C_FLAG_${ASAN_FLAG})
+    check_cxx_compiler_flag (${FLAG} HAS_CXX_FLAG_${ASAN_FLAG})
+    set (CMAKE_REQUIRED_LIBRARIES ${STORED_REQLIBS})
+
+    if (HAS_C_FLAG_${ASAN_FLAG})
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
+    endif()
+
+    if (HAS_CXX_${ASAN_FLAG})
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
+    endif()
+endmacro()
+
+# enable AddressSanitizer if supported
+if (ASAN)
+  asan_check_add_debug_flag2("address")
+  asan_check_add_debug_flag("bool")
+  asan_check_add_debug_flag("bounds")
+  asan_check_add_debug_flag("enum")
+  asan_check_add_debug_flag("float-cast-overflow")
+  asan_check_add_debug_flag("float-divide-by-zero")
+  asan_check_add_debug_flag("nonnull-attribute")
+  asan_check_add_debug_flag("returns-nonnull-attribute")
+  asan_check_add_debug_flag("signed-integer-overflow")
+  asan_check_add_debug_flag("undefined")
+  asan_check_add_debug_flag("vla-bound")
+  asan_check_add_debug_flag("leak")
+  asan_check_add_debug_flag("object-size")
 endif()
 
 ##### Tests #####

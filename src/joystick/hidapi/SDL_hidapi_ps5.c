@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -159,6 +159,7 @@ typedef struct {
     IMUCalibrationData calibration[6];
     Uint32 last_packet;
     int player_index;
+    SDL_bool player_lights;
     Uint8 rumble_left;
     Uint8 rumble_right;
     SDL_bool color_set;
@@ -445,7 +446,11 @@ HIDAPI_DriverPS5_UpdateEffects(SDL_HIDAPI_Device *device, int effect_mask)
     if ((effect_mask & k_EDS5EffectPadLights) != 0) {
         effects->ucEnableBits2 |= 0x10; /* Enable touchpad lights */
 
-        SetLightsForPlayerIndex(effects, ctx->player_index);
+        if (ctx->player_lights) {
+            SetLightsForPlayerIndex(effects, ctx->player_index);
+        } else {
+            effects->ucPadLights = 0x00;
+        }
     }
     if ((effect_mask & k_EDS5EffectMicLight) != 0) {
         effects->ucEnableBits2 |= 0x01; /* Enable microphone light */
@@ -547,6 +552,18 @@ static void SDLCALL SDL_PS5RumbleHintChanged(void *userdata, const char *name, c
     }
 }
 
+static void SDLCALL SDL_PS5PlayerLEDHintChanged(void *userdata, const char *name, const char *oldValue, const char *hint)
+{
+    SDL_DriverPS5_Context *ctx = (SDL_DriverPS5_Context *)userdata;
+    SDL_bool player_lights = SDL_GetStringBoolean(hint, SDL_TRUE);
+
+    if (player_lights != ctx->player_lights) {
+        ctx->player_lights = player_lights;
+
+        HIDAPI_DriverPS5_UpdateEffects(ctx->device, k_EDS5EffectPadLights);
+    }
+}
+
 static void
 HIDAPI_DriverPS5_SetDevicePlayerIndex(SDL_HIDAPI_Device *device, SDL_JoystickID instance_id, int player_index)
 {
@@ -607,7 +624,13 @@ HIDAPI_DriverPS5_OpenJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystick)
     } else {
         /* Connected over Bluetooth, using simple reports (DirectInput enabled) */
         ctx->is_bluetooth = SDL_TRUE;
-        enhanced_mode = SDL_GetHintBoolean(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, SDL_FALSE);
+
+        /* Games written prior the introduction of PS5 controller support in SDL will not be aware of
+           SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, but they did know SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE.
+           To support apps that only knew about the PS4 hint, we'll use the PS4 hint as the default.
+        */
+        enhanced_mode = SDL_GetHintBoolean(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE,
+                                           SDL_GetHintBoolean(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, SDL_FALSE));
     }
 
     if (enhanced_mode) {
@@ -641,6 +664,7 @@ HIDAPI_DriverPS5_OpenJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystick)
 
     /* Initialize player index (needed for setting LEDs) */
     ctx->player_index = SDL_JoystickGetPlayerIndex(joystick);
+    ctx->player_lights = SDL_GetHintBoolean(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED, SDL_TRUE);
 
     /* Initialize the joystick capabilities
      *
@@ -656,6 +680,8 @@ HIDAPI_DriverPS5_OpenJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystick)
         SDL_AddHintCallback(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE,
                             SDL_PS5RumbleHintChanged, ctx);
     }
+    SDL_AddHintCallback(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED,
+                        SDL_PS5PlayerLEDHintChanged, ctx);
     return SDL_TRUE;
 }
 
@@ -1022,11 +1048,18 @@ HIDAPI_DriverPS5_CloseJoystick(SDL_HIDAPI_Device *device, SDL_Joystick *joystick
     SDL_DelHintCallback(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE,
                         SDL_PS5RumbleHintChanged, ctx);
 
-    hid_close(device->dev);
-    device->dev = NULL;
+    SDL_DelHintCallback(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED,
+                        SDL_PS5PlayerLEDHintChanged, ctx);
 
-    SDL_free(device->context);
-    device->context = NULL;
+    SDL_LockMutex(device->dev_lock);
+    {
+        hid_close(device->dev);
+        device->dev = NULL;
+
+        SDL_free(device->context);
+        device->context = NULL;
+    }
+    SDL_UnlockMutex(device->dev_lock);
 }
 
 static void
