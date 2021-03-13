@@ -806,7 +806,7 @@ OS4_SetWindowGrabPrivate(_THIS, struct Window * w, SDL_bool activate)
 }
 
 void
-OS4_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
+OS4_SetWindowMouseGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
 {
     SDL_WindowData *data = window->driverdata;
 

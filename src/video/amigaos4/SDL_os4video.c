@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -298,6 +298,7 @@ OS4_SetMiniGLFunctions(SDL_VideoDevice * device)
     device->GL_SwapWindow = OS4_GL_SwapWindow;
     device->GL_CreateContext = OS4_GL_CreateContext;
     device->GL_DeleteContext = OS4_GL_DeleteContext;
+    //device->GL_DefaultProfileConfig = OS4_GL_DefaultProfileConfig;
 
     OS4_ResizeGlContext = OS4_GL_ResizeContext;
     OS4_UpdateGlWindowPointer = OS4_GL_UpdateWindowPointer;
@@ -317,6 +318,7 @@ OS4_SetGLESFunctions(SDL_VideoDevice * device)
     device->GL_SwapWindow = OS4_GLES_SwapWindow;
     device->GL_CreateContext = OS4_GLES_CreateContext;
     device->GL_DeleteContext = OS4_GLES_DeleteContext;
+    //device->GL_DefaultProfileConfig = OS4_GL(ES)_DefaultProfileConfig;
 
     OS4_ResizeGlContext = OS4_GLES_ResizeContext;
     OS4_UpdateGlWindowPointer = OS4_GLES_UpdateWindowPointer;
@@ -381,8 +383,12 @@ OS4_SetFunctionPointers(SDL_VideoDevice * device)
 {
     device->VideoInit = OS4_VideoInit;
     device->VideoQuit = OS4_VideoQuit;
+    //device->ResetTouch = OS4_ResetTouch;
 
     device->GetDisplayBounds = OS4_GetDisplayBounds;
+    //device->GetDisplayUsableBounds = OS4_GetDisplayUsableBounds;
+    //device->GetDisplayDPI = OS4_GetDisplayDPI;
+
     device->GetDisplayModes = OS4_GetDisplayModes;
     device->SetDisplayMode = OS4_SetDisplayMode;
 
@@ -392,24 +398,33 @@ OS4_SetFunctionPointers(SDL_VideoDevice * device)
     //device->SetWindowIcon = OS4_SetWindowIcon;
     device->SetWindowPosition = OS4_SetWindowPosition;
     device->SetWindowSize = OS4_SetWindowSize;
-    device->ShowWindow = OS4_ShowWindow;
-    device->HideWindow = OS4_HideWindow;
-    device->RaiseWindow = OS4_RaiseWindow;
 
     device->SetWindowMinimumSize = OS4_SetWindowMinMaxSize;
     device->SetWindowMaximumSize = OS4_SetWindowMinMaxSize;
+    device->GetWindowBordersSize = OS4_GetWindowBordersSize;
+
+    device->SetWindowOpacity = OS4_SetWindowOpacity;
+    // device->SetWindowModalFor = OS4_SetWindowModalFor;
+    // device->SetWindowInputFocus = OS4_SetWindowInputFocus;
+
+    device->ShowWindow = OS4_ShowWindow;
+    device->HideWindow = OS4_HideWindow;
+    device->RaiseWindow = OS4_RaiseWindow;
 
     device->MaximizeWindow = OS4_MaximizeWindow;
     device->MinimizeWindow = OS4_MinimizeWindow;
     device->RestoreWindow = OS4_RestoreWindow;
 
+    //device->SetWindowBordered = OS4_SetWindowBordered; // Not supported by SetWindowAttrs()?
     device->SetWindowResizable = OS4_SetWindowResizable;
 
-    //device->SetWindowBordered = OS4_SetWindowBordered; // Not supported by SetWindowAttrs()?
     device->SetWindowFullscreen = OS4_SetWindowFullscreen;
     //device->SetWindowGammaRamp = OS4_SetWindowGammaRamp;
     //device->GetWindowGammaRamp = OS4_GetWindowGammaRamp;
-    device->SetWindowGrab = OS4_SetWindowGrab;
+
+    device->SetWindowMouseGrab = OS4_SetWindowMouseGrab;
+    // device->SetWindowKeyboardGrab = OS4_SetWindowKeyboardGrab;
+
     device->DestroyWindow = OS4_DestroyWindow;
 
     device->CreateWindowFramebuffer = OS4_CreateWindowFramebuffer;
@@ -417,10 +432,6 @@ OS4_SetFunctionPointers(SDL_VideoDevice * device)
     device->DestroyWindowFramebuffer = OS4_DestroyWindowFramebuffer;
 
     //device->OnWindowEnter = OS4_OnWindowEnter;
-    device->SetWindowHitTest = OS4_SetWindowHitTest;
-
-    device->SetWindowOpacity = OS4_SetWindowOpacity;
-    device->GetWindowBordersSize = OS4_GetWindowBordersSize;
 
     device->shape_driver.CreateShaper = OS4_CreateShaper;
     device->shape_driver.SetWindowShape = OS4_SetWindowShape;
@@ -433,10 +444,23 @@ OS4_SetFunctionPointers(SDL_VideoDevice * device)
 
     device->PumpEvents = OS4_PumpEvents;
     //device->SuspendScreenSaver = OS4_SuspendScreenSaver;
+
+    //device->StartTextInput = OS4_StartTextInput;
+    //device->StopTextInput = OS4_StopTextInput;
+    //device->SetTextInputRect = OS4_SetTextInputRect;
+
+    //device->SetTextInputRect = OS4_SetTextInputRect;
+    //device->ShowScreenKeyboard = OS4_ShowScreenKeyboard;
+    //device->HideScreenKeyboard = OS4_HideScreenKeyboard;
+    //device->IsScreenKeyboardShown = OS4_IsScreenKeyboardShown;
+
     device->SetClipboardText = OS4_SetClipboardText;
     device->GetClipboardText = OS4_GetClipboardText;
     device->HasClipboardText = OS4_HasClipboardText;
     //device->ShowMessageBox = OS4_ShowMessageBox; Can be called without video initialization
+
+    device->SetWindowHitTest = OS4_SetWindowHitTest;
+    //device->AcceptDragAndDrop = OS4_AcceptDragAndDrop;
 
     device->free = OS4_DeleteDevice;
 }

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2019 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -84,7 +84,7 @@ extern void OS4_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay
 //extern int OS4_GetWindowGammaRamp(_THIS, SDL_Window * window, Uint16 * ramp);
 
 extern void OS4_SetWindowGrabPrivate(_THIS, struct Window * w, SDL_bool activate);
-extern void OS4_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed);
+extern void OS4_SetWindowMouseGrab(_THIS, SDL_Window * window, SDL_bool grabbed);
 extern void OS4_DestroyWindow(_THIS, SDL_Window * window);
 extern SDL_bool OS4_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info);
 
