@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,11 +30,12 @@ static const char *video_usage[] = {
     "[--video driver]", "[--renderer driver]", "[--gldebug]",
     "[--info all|video|modes|render|event]",
     "[--log all|error|system|audio|video|render|input]", "[--display N]",
+    "[--metal-window | --opengl-window | --vulkan-window]",
     "[--fullscreen | --fullscreen-desktop | --windows N]", "[--title title]",
     "[--icon icon.bmp]", "[--center | --position X,Y]", "[--geometry WxH]",
     "[--min-geometry WxH]", "[--max-geometry WxH]", "[--logical WxH]",
     "[--scale N]", "[--depth N]", "[--refresh R]", "[--vsync]", "[--noframe]",
-    "[--resize]", "[--minimize]", "[--maximize]", "[--grab]",
+    "[--resize]", "[--minimize]", "[--maximize]", "[--grab]", "[--keyboard-grab]",
     "[--allow-highdpi]", "[--usable-bounds]"
 };
 
@@ -217,6 +218,18 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
             state->window_y = SDL_WINDOWPOS_CENTERED_DISPLAY(state->display);
         }
         return 2;
+    }
+    if (SDL_strcasecmp(argv[index], "--metal-window") == 0) {
+        state->window_flags |= SDL_WINDOW_METAL;
+        return 1;
+    }
+    if (SDL_strcasecmp(argv[index], "--opengl-window") == 0) {
+        state->window_flags |= SDL_WINDOW_OPENGL;
+        return 1;
+    }
+    if (SDL_strcasecmp(argv[index], "--vulkan-window") == 0) {
+        state->window_flags |= SDL_WINDOW_VULKAN;
+        return 1;
     }
     if (SDL_strcasecmp(argv[index], "--fullscreen") == 0) {
         state->window_flags |= SDL_WINDOW_FULLSCREEN;
@@ -412,7 +425,11 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         return 1;
     }
     if (SDL_strcasecmp(argv[index], "--grab") == 0) {
-        state->window_flags |= SDL_WINDOW_INPUT_GRABBED;
+        state->window_flags |= SDL_WINDOW_MOUSE_GRABBED;
+        return 1;
+    }
+    if (SDL_strcasecmp(argv[index], "--keyboard-grab") == 0) {
+        state->window_flags |= SDL_WINDOW_KEYBOARD_GRABBED;
         return 1;
     }
     if (SDL_strcasecmp(argv[index], "--rate") == 0) {
@@ -1764,10 +1781,19 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
             break;
         case SDLK_g:
             if (withControl) {
-                /* Ctrl-G toggle grab */
+                /* Ctrl-G toggle mouse grab */
                 SDL_Window *window = SDL_GetWindowFromID(event->key.windowID);
                 if (window) {
                     SDL_SetWindowGrab(window, !SDL_GetWindowGrab(window) ? SDL_TRUE : SDL_FALSE);
+                }
+            }
+            break;
+        case SDLK_k:
+            if (withControl) {
+                /* Ctrl-K toggle keyboard grab */
+                SDL_Window* window = SDL_GetWindowFromID(event->key.windowID);
+                if (window) {
+                    SDL_SetWindowKeyboardGrab(window, !SDL_GetWindowKeyboardGrab(window) ? SDL_TRUE : SDL_FALSE);
                 }
             }
             break;

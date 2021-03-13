@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -133,7 +133,11 @@
 #define HAVE_SYSCONF    1
 #define HAVE_CLOCK_GETTIME  1
 
+#ifdef __LP64__
+#define SIZEOF_VOIDP 8
+#else
 #define SIZEOF_VOIDP 4
+#endif
 
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_ANDROID    1

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,55 +31,32 @@
  */
 
 
-#include "../../core/windows/SDL_windows.h"
-
 #include "SDL_hints.h"
-#include "SDL_mutex.h"
 
-typedef SDL_mutex * (*pfnSDL_CreateMutex)(void);
-typedef int (*pfnSDL_LockMutex)(SDL_mutex *);
-typedef int (*pfnSDL_TryLockMutex)(SDL_mutex *);
-typedef int (*pfnSDL_UnlockMutex)(SDL_mutex *);
-typedef void (*pfnSDL_DestroyMutex)(SDL_mutex *);
+#include "SDL_sysmutex_c.h"
 
-typedef struct SDL_mutex_impl_t
-{
-    pfnSDL_CreateMutex Create;
-    pfnSDL_DestroyMutex Destroy;
-    pfnSDL_LockMutex Lock;
-    pfnSDL_TryLockMutex TryLock;
-    pfnSDL_UnlockMutex Unlock;
-} SDL_mutex_impl_t;
 
 /* Implementation will be chosen at runtime based on available Kernel features */
-static SDL_mutex_impl_t SDL_mutex_impl_active = {0};
+SDL_mutex_impl_t SDL_mutex_impl_active = {0};
 
 
 /**
  * Implementation based on Slim Reader/Writer (SRW) Locks for Win 7 and newer.
  */
 
-#ifndef SRWLOCK_INIT
-#define SRWLOCK_INIT {0}
-typedef struct _SRWLOCK {
-    PVOID Ptr;
-} SRWLOCK, *PSRWLOCK;
-#endif
-
+#if __WINRT__
+/* Functions are guaranteed to be available */
+#define pReleaseSRWLockExclusive ReleaseSRWLockExclusive
+#define pAcquireSRWLockExclusive AcquireSRWLockExclusive
+#define pTryAcquireSRWLockExclusive TryAcquireSRWLockExclusive
+#else
 typedef VOID(WINAPI *pfnReleaseSRWLockExclusive)(PSRWLOCK);
 typedef VOID(WINAPI *pfnAcquireSRWLockExclusive)(PSRWLOCK);
 typedef BOOLEAN(WINAPI *pfnTryAcquireSRWLockExclusive)(PSRWLOCK);
 static pfnReleaseSRWLockExclusive pReleaseSRWLockExclusive = NULL;
 static pfnAcquireSRWLockExclusive pAcquireSRWLockExclusive = NULL;
 static pfnTryAcquireSRWLockExclusive pTryAcquireSRWLockExclusive = NULL;
-
-typedef struct SDL_mutex_srw
-{
-    SRWLOCK srw;
-    /* SRW Locks are not recursive, that has to be handled by SDL: */
-    DWORD count;
-    DWORD owner;
-} SDL_mutex_srw;
+#endif
 
 static SDL_mutex *
 SDL_CreateMutex_srw(void)
@@ -123,8 +100,9 @@ SDL_LockMutex_srw(SDL_mutex * _mutex)
            so unlocks from other threads will fail.
          */
         pAcquireSRWLockExclusive(&mutex->srw);
+        SDL_assert(mutex->count == 0 && mutex->owner == 0);
         mutex->owner = this_thread;
-        ++mutex->count;
+        mutex->count = 1;
     }
     return 0;
 }
@@ -145,8 +123,9 @@ SDL_TryLockMutex_srw(SDL_mutex * _mutex)
         ++mutex->count;
     } else {
         if (pTryAcquireSRWLockExclusive(&mutex->srw) != 0) {
+            SDL_assert(mutex->count == 0 && mutex->owner == 0);
             mutex->owner = this_thread;
-            ++mutex->count;
+            mutex->count = 1;
         } else {
             retval = SDL_MUTEX_TIMEDOUT;
         }
@@ -182,6 +161,7 @@ static const SDL_mutex_impl_t SDL_mutex_impl_srw =
     &SDL_LockMutex_srw,
     &SDL_TryLockMutex_srw,
     &SDL_UnlockMutex_srw,
+    SDL_MUTEX_SRW,
 };
 
 
@@ -276,6 +256,7 @@ static const SDL_mutex_impl_t SDL_mutex_impl_cs =
     &SDL_LockMutex_cs,
     &SDL_TryLockMutex_cs,
     &SDL_UnlockMutex_cs,
+    SDL_MUTEX_CS,
 };
 
 
@@ -291,8 +272,12 @@ SDL_CreateMutex(void)
         const SDL_mutex_impl_t * impl = &SDL_mutex_impl_cs;
 
         if (!SDL_GetHintBoolean(SDL_HINT_WINDOWS_FORCE_MUTEX_CRITICAL_SECTIONS, SDL_FALSE)) {
+#if __WINRT__
+            /* Link statically on this platform */
+            impl = &SDL_mutex_impl_srw;
+#else
             /* Try faster implementation for Windows 7 and newer */
-            HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+            HMODULE kernel32 = GetModuleHandle(TEXT("kernel32.dll"));
             if (kernel32) {
                 /* Requires Vista: */
                 pReleaseSRWLockExclusive = (pfnReleaseSRWLockExclusive) GetProcAddress(kernel32, "ReleaseSRWLockExclusive");
@@ -303,6 +288,7 @@ SDL_CreateMutex(void)
                     impl = &SDL_mutex_impl_srw;
                 }
             }
+#endif
         }
 
         /* Copy instead of using pointer to save one level of indirection */

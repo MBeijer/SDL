@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -174,7 +174,7 @@ void KMSDRM_Vulkan_GetDrawableSize(_THIS, SDL_Window *window, int *w, int *h)
 /* Instead, programs using SDL and Vulkan create their Vulkan instance */
 /* and we get it here, ready to use.                                   */
 /* Extensions specific for this platform are activated in              */
-/* KMSDRM_Vulkan_GetInstanceExtensions(), like we do with              */
+/* KMSDRM_Vulkan_GetInstanceExtensions(), like we do with       */
 /* VK_KHR_DISPLAY_EXTENSION_NAME, which is what we need for x-less VK. */                
 /***********************************************************************/
 SDL_bool KMSDRM_Vulkan_CreateSurface(_THIS,
@@ -361,22 +361,22 @@ SDL_bool KMSDRM_Vulkan_CreateSurface(_THIS,
         new_mode_parameters.visibleRegion.width = window->w;
         new_mode_parameters.visibleRegion.height = window->h;
         new_mode_parameters.refreshRate = 60000; /* Always use 60Hz for now. */
-	display_mode_create_info.sType = VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR;
-	display_mode_create_info.parameters = new_mode_parameters;
-	result = vkCreateDisplayModeKHR(gpu,
-				  displays_props[display_index].display,
-				  &display_mode_create_info,
-				  NULL, display_mode);
-	if (result != VK_SUCCESS) {
-	    SDL_SetError("Vulkan couldn't find a predefined mode for that window size and couldn't create a suitable mode.");
-	    goto clean;
-	}
+        display_mode_create_info.sType = VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR;
+        display_mode_create_info.parameters = new_mode_parameters;
+        result = vkCreateDisplayModeKHR(gpu,
+                                        displays_props[display_index].display,
+                                        &display_mode_create_info,
+                                        NULL, display_mode);
+        if (result != VK_SUCCESS) {
+            SDL_SetError("Vulkan couldn't find a predefined mode for that window size and couldn't create a suitable mode.");
+            goto clean;
+         }
     }
 
     /* Just in case we get here without a display_mode. */
     if (!display_mode) {
-	    SDL_SetError("Vulkan couldn't get a display mode.");
-	    goto clean;
+            SDL_SetError("Vulkan couldn't get a display mode.");
+            goto clean;
     }
 
     /********************************************/
@@ -397,7 +397,7 @@ SDL_bool KMSDRM_Vulkan_CreateSurface(_THIS,
                                      surface);
     if(result != VK_SUCCESS)
     {
-        SDL_SetError("vkCreateKMSDRMSurfaceKHR failed: %s",
+        SDL_SetError("vkCreateDisplayPlaneSurfaceKHR failed: %s",
             SDL_Vulkan_GetResultString(result));
         goto clean;
     }

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,35 +19,9 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef SDL_kmsdrmdyn_h_
-#define SDL_kmsdrmdyn_h_
 
-#include "../../SDL_internal.h"
+void SDL_WSCONS_Init();
+void SDL_WSCONS_Quit();
 
-#include <xf86drm.h>
-#include <xf86drmMode.h>
-#include <gbm.h>
+void SDL_WSCONS_PumpEvents();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int SDL_KMSDRM_LEGACY_LoadSymbols(void);
-void SDL_KMSDRM_LEGACY_UnloadSymbols(void);
-
-/* Declare all the function pointers and wrappers... */
-#define SDL_KMSDRM_LEGACY_SYM(rc,fn,params) \
-    typedef rc (*SDL_DYNKMSDRM_LEGACYFN_##fn) params; \
-    extern SDL_DYNKMSDRM_LEGACYFN_##fn KMSDRM_LEGACY_##fn;
-#define SDL_KMSDRM_LEGACY_SYM_CONST(type, name) \
-    typedef type SDL_DYNKMSDRM_LEGACYCONST_##name; \
-    extern SDL_DYNKMSDRM_LEGACYCONST_##name KMSDRM_LEGACY_##name;
-#include "SDL_kmsdrm_legacy_sym.h"
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* SDL_kmsdrmdyn_h_ */
-
-/* vi: set ts=4 sw=4 expandtab: */
