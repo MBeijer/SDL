@@ -26,6 +26,8 @@
 #include <intuition/imageclass.h>
 #include <intuition/gadgetclass.h>
 
+#include <unistd.h>
+
 #include "SDL_os4video.h"
 #include "SDL_os4shape.h"
 #include "SDL_os4window.h"
@@ -70,6 +72,40 @@ OS4_GetWindowActiveSize(SDL_Window * window, int * width, int * height)
     } else {
         *width = window->w;
         *height = window->h;
+    }
+}
+
+void
+OS4_WaitForResize(_THIS, SDL_Window * window, int * width, int * height)
+{
+    SDL_WindowData * data = window->driverdata;
+
+    int counter = 0;
+    int activeWidth, activeHeight;
+    int w = 0;
+    int h = 0;
+
+    OS4_GetWindowActiveSize(window, &activeWidth, &activeHeight);
+
+    while (counter++ < 100) {
+        OS4_GetWindowSize(_this, data->syswin, &w, &h);
+
+        if (w == activeWidth && h == activeHeight) {
+            break;
+        }
+
+        dprintf("Waiting for Intuition %d\n", counter);
+        dprintf("System window size (%d * %d), SDL window size (%d * %d)\n",
+            w, h, activeWidth, activeHeight);
+        usleep(1000);
+    }
+
+    if (width) {
+        *width = w;
+    }
+
+    if (height) {
+        *height = h;
     }
 }
 
@@ -237,7 +273,7 @@ OS4_BackFill(const struct Hook *hook, struct RastPort *rastport, struct BackFill
 
 static struct Hook OS4_BackFillHook = {
     {0, 0},       /* h_MinNode */
-    OS4_BackFill, /* h_Entry */
+    (void *)OS4_BackFill, /* h_Entry */
     0,            /* h_SubEntry */
     0             /* h_Data */
 };
@@ -534,6 +570,8 @@ OS4_ResizeWindow(_THIS, SDL_Window * window, int width, int height)
             if (ret) {
                 dprintf("SetWindowAttrs() returned %d\n", ret);
             }
+
+            OS4_WaitForResize(_this, window, NULL, NULL);
 
             if (SDL_IsShapedWindow(window)) {
                 OS4_ResizeWindowShape(window);

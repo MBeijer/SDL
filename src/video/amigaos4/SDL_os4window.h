@@ -58,6 +58,7 @@ typedef struct
 
 extern void OS4_GetWindowSize(_THIS, struct Window * window, int * width, int * height);
 extern void OS4_GetWindowActiveSize(SDL_Window * window, int * width, int * height);
+extern void OS4_WaitForResize(_THIS, SDL_Window * window, int * width, int * height);
 
 extern int OS4_CreateWindow(_THIS, SDL_Window * window);
 extern int OS4_CreateWindowFrom(_THIS, SDL_Window * window, const void *data);

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2019 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -31,8 +31,6 @@
 
 #include <GL/gl.h>
 //#include <mgl/gl.h>
-
-#include <unistd.h> // usleep
 
 #define DEBUG
 #include "../../main/amigaos4/SDL_os4debug.h"
@@ -269,38 +267,7 @@ OS4_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 void
 OS4_GL_GetDrawableSize(_THIS, SDL_Window * window, int * w, int * h)
 {
-    SDL_WindowData * data = window->driverdata;
-
-    int width = 0;
-    int height = 0;
-    int counter = 0;
-
-    int activeWidth, activeHeight;
-
-    OS4_GetWindowActiveSize(window, &activeWidth, &activeHeight);
-
-    while (counter++ < 100) {
-        OS4_GetWindowSize(_this, data->syswin, &width, &height);
-
-        if (width != activeWidth || height != activeHeight) {
-            dprintf("Waiting for Intuition %d\n", counter);
-            dprintf("w %d (active width %d), h %d (active height %d)\n",
-                width, activeWidth, height, activeHeight);
-            usleep(1000); // TODO FIXME: this is slow (opens timer.device) currently
-        } else {
-            break;
-        }
-    }
-
-    if (w) {
-        *w = width;
-        //dprintf("w=%d\n", *w);
-    }
-
-    if (h) {
-        *h = height;
-        //dprintf("h=%d\n", *h);
-    }
+    OS4_WaitForResize(_this, window, w, h);
 }
 
 int
