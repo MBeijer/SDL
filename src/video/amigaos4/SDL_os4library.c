@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,22 +29,34 @@
 
 #include <proto/exec.h>
 
-struct ExecIFace* IExec; // Need the symbol for .so linkage
+// These symbols are required when libSDL2.so is loaded manually using elf.library (RebelSDL).
+struct ExecIFace* IExec;
 struct Interface* INewlib;
 
-struct Library* NewlibBase;
+static struct Library* NewlibBase = NULL;
+
+static BOOL newlibOpened = FALSE;
 
 void _OS4_INIT(void) __attribute__((constructor));
 void _OS4_EXIT(void) __attribute__((destructor));
 
 void _OS4_INIT(void)
 {
-    IExec = ((struct ExecIFace *)((*(struct ExecBase **)4)->MainInterface));
+    if (IExec) {
+        dprintf("IExec %p\n", IExec);
+    } else {
+        IExec = ((struct ExecIFace *)((*(struct ExecBase **)4)->MainInterface));
+    }
 
-    NewlibBase = OS4_OpenLibrary("newlib.library", 53);
+    if (INewlib) {
+        dprintf("INewlib %p\n", INewlib);
+    } else {
+        NewlibBase = OS4_OpenLibrary("newlib.library", 53);
 
-    if (NewlibBase) {
-        INewlib = OS4_GetInterface(NewlibBase);
+        if (NewlibBase) {
+            INewlib = OS4_GetInterface(NewlibBase);
+            newlibOpened = INewlib != NULL;
+        }
     }
 
     dprintf("IExec %p, INewlib %p\n", IExec, INewlib);
@@ -52,7 +64,7 @@ void _OS4_INIT(void)
 
 void _OS4_EXIT(void)
 {
-    if (INewlib) {
+    if (newlibOpened && INewlib) {
         OS4_DropInterface(&INewlib);
     }
 
