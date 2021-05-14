@@ -32,6 +32,9 @@ static NativeWindowFactory *factories[] = {
 #ifdef TEST_NATIVE_COCOA
     &CocoaWindowFactory,
 #endif
+#ifdef TEST_NATIVE_AMIGAOS4
+    &AmigaOS4WindowFactory,
+#endif
 #ifdef TEST_NATIVE_OS2
     &OS2WindowFactory,
 #endif
@@ -40,15 +43,22 @@ static NativeWindowFactory *factories[] = {
 static NativeWindowFactory *factory = NULL;
 static void *native_window;
 static SDL_Rect *positions, *velocities;
+static SDL_Renderer *renderer;
 
 /* Call this instead of exit(), so we can clean up SDL: atexit() is evil. */
 static void
 quit(int rc)
 {
-    SDL_VideoQuit();
+    if (renderer) {
+        SDL_DestroyRenderer(renderer);
+    }
+
     if (native_window) {
         factory->DestroyNativeWindow(native_window);
     }
+
+    SDL_VideoQuit();
+    SDL_Quit();
     exit(rc);
 }
 
@@ -128,7 +138,6 @@ main(int argc, char *argv[])
     int i, done;
     const char *driver;
     SDL_Window *window;
-    SDL_Renderer *renderer;
     SDL_Texture *sprite;
     int window_w, window_h;
     int sprite_w, sprite_h;

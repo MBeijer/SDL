@@ -10,8 +10,10 @@ LIBS	= @LIBS@
 TARGETS = \
 	checkkeys$(EXE) \
 	controllermap$(EXE) \
+	helloworld$(EXE) \
 	loopwave$(EXE) \
 	loopwavequeue$(EXE) \
+	sdl2benchmark$(EXE) \
 	testatomic$(EXE) \
 	testaudiocapture$(EXE) \
 	testaudiohotplug$(EXE) \
@@ -69,7 +71,7 @@ TARGETS = \
 	testyuv$(EXE) \
 	torturethread$(EXE) \
 
-	
+
 @OPENGL_TARGETS@ += testgl2$(EXE) testshader$(EXE)
 @OPENGLES1_TARGETS@ += testgles$(EXE)
 @OPENGLES2_TARGETS@ += testgles2$(EXE)
@@ -83,10 +85,16 @@ Makefile: $(srcdir)/Makefile.in
 checkkeys$(EXE): $(srcdir)/checkkeys.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
+helloworld$(EXE): $(srcdir)/helloworld.c
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
 loopwave$(EXE): $(srcdir)/loopwave.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 loopwavequeue$(EXE): $(srcdir)/loopwavequeue.c
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+sdl2benchmark$(EXE): $(srcdir)/sdl2benchmark.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 testresample$(EXE): $(srcdir)/testresample.c
@@ -114,7 +122,7 @@ testautomation$(EXE): $(srcdir)/testautomation.c \
 		      $(srcdir)/testautomation_timer.c \
 		      $(srcdir)/testautomation_video.c \
 		      $(srcdir)/testautomation_hints.c
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) 
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 testmultiaudio$(EXE): $(srcdir)/testmultiaudio.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
@@ -157,10 +165,10 @@ testfile$(EXE): $(srcdir)/testfile.c
 
 testgamecontroller$(EXE): $(srcdir)/testgamecontroller.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
- 
+
 testgesture$(EXE): $(srcdir)/testgesture.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) @MATHLIB@
- 
+
 testgl2$(EXE): $(srcdir)/testgl2.c
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) @MATHLIB@
 
@@ -222,11 +230,18 @@ testnative$(EXE): $(srcdir)/testnative.c \
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) @XLIB@
 endif
 
+ifeq (@ISAMIGAOS@,true)
+testnative$(EXE): $(srcdir)/testnative.c $(srcdir)/testnativeamigaos4.c
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+endif
+
 #there's probably a better way of doing this
 ifeq (@ISMACOSX@,false)
 ifeq (@ISWINDOWS@,false)
 ifeq (@ISUNIX@,false)
+ifeq (@ISAMIGAOS@,false)
 testnative$(EXE): ;
+endif
 endif
 endif
 endif

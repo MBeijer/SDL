@@ -129,7 +129,7 @@ static int run_automated_tests(int pattern_size, int extra_pitch)
     Uint8 *yuv2 = (Uint8 *)SDL_malloc(yuv_len);
     int yuv1_pitch, yuv2_pitch;
     int result = -1;
-    
+
     if (!pattern || !yuv1 || !yuv2) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't allocate test surfaces");
         goto done;
@@ -266,6 +266,10 @@ main(int argc, char **argv)
     Uint32 then, now, i, iterations = 100;
     SDL_bool should_run_automated_tests = SDL_FALSE;
 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        return 1;
+    }
+
     while (argv[arg] && *argv[arg] == '-') {
         if (SDL_strcmp(argv[arg], "--jpeg") == 0) {
             SDL_SetYUVConversionMode(SDL_YUV_CONVERSION_JPEG);
@@ -315,7 +319,7 @@ main(int argc, char **argv)
     /* Run automated tests */
     if (should_run_automated_tests) {
         for (i = 0; i < SDL_arraysize(automated_test_params); ++i) {
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Running automated test, pattern size %d, extra pitch %d, intrinsics %s\n", 
+            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Running automated test, pattern size %d, extra pitch %d, intrinsics %s\n",
                 automated_test_params[i].pattern_size,
                 automated_test_params[i].extra_pitch,
                 automated_test_params[i].enable_intrinsics ? "enabled" : "disabled");
@@ -380,7 +384,7 @@ main(int argc, char **argv)
         return 5;
     }
     SDL_UpdateTexture(output[2], NULL, raw_yuv, pitch);
-    
+
     yuv_name = SDL_GetPixelFormatName(yuv_format);
     if (SDL_strncmp(yuv_name, "SDL_PIXELFORMAT_", 16) == 0) {
         yuv_name += 16;
@@ -448,6 +452,15 @@ main(int argc, char **argv)
             SDL_Delay(10);
         }
     }
+
+    SDL_DestroyTexture(output[0]);
+    SDL_DestroyTexture(output[1]);
+    SDL_DestroyTexture(output[2]);
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_VideoQuit();
+
     SDL_Quit();
     return 0;
 }

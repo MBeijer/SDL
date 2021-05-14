@@ -446,7 +446,7 @@ main(int argc, char *argv[])
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s\n", SDL_GetError());
         return 1;
     }
-    
+
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 
     /* Print information about the mappings */
@@ -568,6 +568,7 @@ main(int argc, char *argv[])
     SDL_DestroyRenderer(screen);
     SDL_DestroyWindow(window);
     SDL_QuitSubSystem(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+    SDL_Quit();
 
     return 0;
 }

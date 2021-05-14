@@ -1117,7 +1117,7 @@ static SDL_bool render(void)
 
 int main(int argc, char *argv[])
 {
-    int fsaa, accel;
+    //int fsaa, accel;
     int done;
     SDL_DisplayMode mode;
     SDL_Event event;
@@ -1128,8 +1128,8 @@ int main(int argc, char *argv[])
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 
     /* Initialize parameters */
-    fsaa = 0;
-    accel = -1;
+    //fsaa = 0;
+    //accel = -1;
 
     /* Initialize test framework */
     state = SDLTest_CommonCreateState(argv, SDL_INIT_VIDEO);
