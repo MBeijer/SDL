@@ -98,6 +98,9 @@ static SDL_JoystickDriver *SDL_joystick_drivers[] = {
 #if defined(SDL_JOYSTICK_AMIGAINPUT)
     &SDL_AMIGAINPUT_JoystickDriver,
 #endif
+#ifdef SDL_JOYSTICK_VITA
+    &SDL_VITA_JoystickDriver
+#endif
 #if defined(SDL_JOYSTICK_DUMMY) || defined(SDL_JOYSTICK_DISABLED)
     &SDL_DUMMY_JoystickDriver
 #endif
@@ -416,6 +419,7 @@ SDL_JoystickOpen(int device_index)
     joystick->instance_id = instance_id;
     joystick->attached = SDL_TRUE;
     joystick->epowerlevel = SDL_JOYSTICK_POWER_UNKNOWN;
+    joystick->led_expiration = SDL_GetTicks();
 
     if (driver->Open(joystick, device_index) < 0) {
         SDL_free(joystick);
@@ -954,6 +958,7 @@ int
 SDL_JoystickSetLED(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
 {
     int result;
+    SDL_bool isfreshvalue;
 
     if (!SDL_PrivateJoystickValid(joystick)) {
         return -1;
@@ -961,13 +966,17 @@ SDL_JoystickSetLED(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
 
     SDL_LockJoysticks();
 
-    if (red == joystick->led_red &&
-        green == joystick->led_green &&
-        blue == joystick->led_blue) {
+    isfreshvalue = red != joystick->led_red ||
+        green != joystick->led_green ||
+        blue != joystick->led_blue;
+
+    if ( isfreshvalue || SDL_TICKS_PASSED( SDL_GetTicks(), joystick->led_expiration ) ) {
+        result = joystick->driver->SetLED(joystick, red, green, blue);
+        joystick->led_expiration = SDL_GetTicks() + SDL_LED_MIN_REPEAT_MS;
+    }
+    else {
         /* Avoid spamming the driver */
         result = 0;
-    } else {
-        result = joystick->driver->SetLED(joystick, red, green, blue);
     }
 
     /* Save the LED value regardless of success, so we don't spam the driver */
@@ -1815,7 +1824,9 @@ SDL_GetJoystickGameControllerType(const char *name, Uint16 vendor, Uint16 produc
             0x15e4, /* Numark */
             0x162e, /* Joytech */
             0x1689, /* Razer Onza */
+            0x1949, /* Lab126, Inc. */
             0x1bad, /* Harmonix */
+            0x20d6, /* PowerA */
             0x24c6, /* PowerA */
         };
 
@@ -1839,6 +1850,7 @@ SDL_GetJoystickGameControllerType(const char *name, Uint16 vendor, Uint16 produc
             0x0e6f, /* PDP */
             0x0f0d, /* Hori */
             0x1532, /* Razer Wildcat */
+            0x20d6, /* PowerA */
             0x24c6, /* PowerA */
             0x2e24, /* Hyperkin */
         };
@@ -1923,6 +1935,11 @@ SDL_IsJoystickXboxOneSeriesX(Uint16 vendor_id, Uint16 product_id)
     if (vendor_id == USB_VENDOR_MICROSOFT) {
         if (product_id == USB_PRODUCT_XBOX_ONE_SERIES_X ||
             product_id == USB_PRODUCT_XBOX_ONE_SERIES_X_BLUETOOTH) {
+            return SDL_TRUE;
+        }
+    }
+    if (vendor_id == USB_VENDOR_POWERA_ALT) {
+        if (product_id == USB_PRODUCT_XBOX_ONE_SERIES_X_POWERA) {
             return SDL_TRUE;
         }
     }
@@ -2048,6 +2065,7 @@ static SDL_bool SDL_IsJoystickProductWheel(Uint32 vidpid)
         MAKE_VIDPID(0x044f, 0xb65d),    /* Thrustmaster Wheel FFB */
         MAKE_VIDPID(0x044f, 0xb66d),    /* Thrustmaster Wheel FFB */
         MAKE_VIDPID(0x044f, 0xb677),    /* Thrustmaster T150 */
+        MAKE_VIDPID(0x044f, 0xb66e),    /* Thrustmaster T300RS */
         MAKE_VIDPID(0x044f, 0xb664),    /* Thrustmaster TX (initial mode) */
         MAKE_VIDPID(0x044f, 0xb669),    /* Thrustmaster TX (active mode) */
     };

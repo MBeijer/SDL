@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.0.0)
 project(SDL2 C)
 
 # Global settings for all of the test targets
@@ -11,6 +11,12 @@ link_libraries(SDL2_test SDL2-static)
 if(WINDOWS)
     link_libraries(SDL2main)
     add_definitions(-Dmain=SDL_main)
+endif()
+
+find_package(OpenGL)
+
+if (OPENGL_FOUND)
+add_definitions(-DHAVE_OPENGL)
 endif()
 
 add_executable(checkkeys checkkeys.c)
@@ -87,6 +93,13 @@ add_executable(testcustomcursor testcustomcursor.c)
 add_executable(controllermap controllermap.c)
 add_executable(testvulkan testvulkan.c)
 add_executable(testoffscreen testoffscreen.c)
+
+if(OPENGL_FOUND)
+add_dependencies(testshader OpenGL::GL)
+add_dependencies(testgl2 OpenGL::GL)
+target_link_libraries(testshader OpenGL::GL)
+target_link_libraries(testgl2 OpenGL::GL)
+endif()
 
 # HACK: Dummy target to cause the resource files to be copied to the build directory.
 # Need to make it an executable so we can use the TARGET_FILE_DIR generator expression.

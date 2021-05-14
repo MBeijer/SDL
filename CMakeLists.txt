@@ -6,15 +6,8 @@ cmake_minimum_required(VERSION 3.0.0)
 project(SDL2 C CXX)
 
 if(WINDOWS_STORE)
-  enable_language(CXX)
   cmake_minimum_required(VERSION 3.11)
   add_definitions(-DSDL_BUILDING_WINRT=1 -ZW)
-  link_libraries(
-    -nodefaultlib:vccorlib$<$<CONFIG:Debug>:d>
-    -nodefaultlib:msvcrt$<$<CONFIG:Debug>:d>
-    vccorlib$<$<CONFIG:Debug>:d>.lib
-    msvcrt$<$<CONFIG:Debug>:d>.lib
-  )
 endif()
 
 # !!! FIXME: this should probably do "MACOSX_RPATH ON" as a target property
@@ -156,20 +149,17 @@ else()
   set(UNIX_OR_MAC_SYS OFF)
 endif()
 
-if (AMIGA OR (UNIX_OR_MAC_SYS AND NOT EMSCRIPTEN)) # JavaScript does not yet have threading support, so disable pthreads when building for Emscripten.
+# Emscripten pthreads work, but you need to have a non-pthread fallback build
+#  for systems without support. It's not currently enough to not use
+#  pthread functions in a pthread-build; it won't start up on unsupported
+#  browsers. As such, you have to explicitly enable it on Emscripten builds
+#  for the time being. This default with change to ON once this becomes
+#  commonly supported in browsers or the Emscripten teams makes a single
+#  binary work everywhere.
+if (AMIGA OR (UNIX_OR_MAC_SYS AND NOT EMSCRIPTEN))
   set(SDL_PTHREADS_ENABLED_BY_DEFAULT ON)
 else()
   set(SDL_PTHREADS_ENABLED_BY_DEFAULT OFF)
-endif()
-
-# Default option knobs
-if(APPLE OR ARCH_64)
-  if(NOT "${CMAKE_OSX_ARCHITECTURES}" MATCHES "arm")
-    set(OPT_DEF_SSEMATH ON)
-  endif()
-endif()
-if(UNIX OR MINGW OR MSYS OR AMIGA)
-  set(OPT_DEF_LIBC ON)
 endif()
 
 # The hidraw support doesn't catch Xbox, PS4 and Nintendo controllers,
@@ -194,11 +184,11 @@ else()
 endif()
 
 # Compiler info
-if(CMAKE_COMPILER_IS_GNUCC)
-  set(USE_GCC TRUE)
-  set(OPT_DEF_ASM TRUE)
-elseif(CMAKE_C_COMPILER_ID MATCHES "Clang")
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
   set(USE_CLANG TRUE)
+  set(OPT_DEF_ASM TRUE)
+elseif(CMAKE_COMPILER_IS_GNUCC)
+  set(USE_GCC TRUE)
   set(OPT_DEF_ASM TRUE)
 elseif(MSVC_VERSION GREATER 1400) # VisualStudio 8.0+
   set(OPT_DEF_ASM TRUE)
@@ -209,6 +199,16 @@ endif()
 
 if(USE_GCC OR USE_CLANG)
   set(OPT_DEF_GCC_ATOMICS ON)
+endif()
+
+# Default option knobs
+if(APPLE OR ARCH_64)
+  if(NOT "${CMAKE_OSX_ARCHITECTURES}" MATCHES "arm")
+    set(OPT_DEF_SSEMATH ON)
+  endif()
+endif()
+if(UNIX OR MINGW OR MSYS OR USE_CLANG OR VITA)
+  set(OPT_DEF_LIBC ON)
 endif()
 
 # Default flags, if not set otherwise
@@ -292,13 +292,22 @@ set(OPT_DEF_ASM TRUE)
 if(EMSCRIPTEN)
   # Set up default values for the currently supported set of subsystems:
   # Emscripten/Javascript does not have assembly support, a dynamic library
-  # loading architecture, low-level CPU inspection or multithreading.
+  # loading architecture, or low-level CPU inspection.
+
+  # SDL_THREADS_ENABLED_BY_DEFAULT now defaults to ON, but pthread support might be disabled by default.
+  # !!! FIXME: most of these subsystems should default to ON if there are dummy implementations to be used.
+
   set(OPT_DEF_ASM FALSE)
   set(SDL_SHARED_ENABLED_BY_DEFAULT OFF)
   set(SDL_ATOMIC_ENABLED_BY_DEFAULT OFF)
-  set(SDL_THREADS_ENABLED_BY_DEFAULT OFF)
   set(SDL_LOADSO_ENABLED_BY_DEFAULT OFF)
   set(SDL_CPUINFO_ENABLED_BY_DEFAULT OFF)
+  set(SDL_DLOPEN_ENABLED_BY_DEFAULT OFF)
+endif()
+
+if(VITA)
+  set(SDL_SHARED_ENABLED_BY_DEFAULT OFF)
+  set(SDL_LOADSO_ENABLED_BY_DEFAULT OFF)
   set(SDL_DLOPEN_ENABLED_BY_DEFAULT OFF)
 endif()
 
@@ -363,6 +372,8 @@ set_option(JACK                "Support the JACK audio API" ${UNIX_SYS})
 dep_option(JACK_SHARED         "Dynamically load JACK audio support" ON "JACK" OFF)
 set_option(ESD                 "Support the Enlightened Sound Daemon" ${UNIX_SYS})
 dep_option(ESD_SHARED          "Dynamically load ESD audio support" ON "ESD" OFF)
+set_option(PIPEWIRE            "Use Pipewire audio" ${UNIX_SYS})
+dep_option(PIPEWIRE_SHARED     "Dynamically load Pipewire support" ON "PIPEWIRE" OFF)
 set_option(PULSEAUDIO          "Use PulseAudio" ${UNIX_SYS})
 dep_option(PULSEAUDIO_SHARED   "Dynamically load PulseAudio support" ON "PULSEAUDIO" OFF)
 set_option(ARTS                "Support the Analog Real Time Synthesizer" ${UNIX_SYS})
@@ -538,7 +549,7 @@ if(USE_GCC OR USE_CLANG)
     set(CMAKE_REQUIRED_FLAGS "-Wl,--no-undefined")
     check_c_compiler_flag("" HAVE_NO_UNDEFINED)
     set(CMAKE_REQUIRED_FLAGS ${ORIG_CMAKE_REQUIRED_FLAGS})
-    if(HAVE_NO_UNDEFINED)
+    if(HAVE_NO_UNDEFINED AND NOT (USE_CLANG AND WINDOWS))
       list(APPEND EXTRA_LDFLAGS "-Wl,--no-undefined")
     endif()
   endif()
@@ -769,11 +780,6 @@ if(ASSEMBLY)
     set(HAVE_SSE3 TRUE)
     set(SDL_ASSEMBLY_ROUTINES 1)
   endif()
-# TODO:
-#else()
-#  if(USE_GCC OR USE_CLANG)
-#    list(APPEND EXTRA_CFLAGS "-mno-sse" "-mno-sse2" "-mno-sse3" "-mno-mmx")
-#  endif()
 endif()
 
 # TODO: Can't deactivate on FreeBSD? w/o LIBC, SDL_stdinc.h can't define
@@ -862,7 +868,9 @@ if(LIBC)
         check_symbol_exists("${_FN}" "math.h" ${_HAVEVAR})
       endforeach()
       set(CMAKE_REQUIRED_LIBRARIES)
-      list(APPEND EXTRA_LIBS m)
+      if(NOT VITA)
+        list(APPEND EXTRA_LIBS m)
+      endif()
     endif()
 
     if(NOT AMIGA) # we don't have libiconv
@@ -997,6 +1005,18 @@ if(ANDROID)
     set(SDL_AUDIO_DRIVER_ANDROID 1)
     file(GLOB ANDROID_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/android/*.c)
     set(SOURCE_FILES ${SOURCE_FILES} ${ANDROID_AUDIO_SOURCES})
+
+    set(SDL_AUDIO_DRIVER_OPENSLES 1)
+    file(GLOB OPENSLES_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/openslES/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${OPENSLES_AUDIO_SOURCES})
+
+    find_library(ANDROID_OPENSLES_LIBRARY OpenSLES)
+    list(APPEND EXTRA_LIBS ${ANDROID_DL_LIBRARY} ${ANDROID_OPENSLES_LIBRARY})
+
+    set(SDL_AUDIO_DRIVER_AAUDIO 0)
+    file(GLOB AAUDIO_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/aaudio/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${AAUDIO_AUDIO_SOURCES})
+
     set(HAVE_SDL_AUDIO TRUE)
   endif()
   if(SDL_FILESYSTEM)
@@ -1155,6 +1175,8 @@ elseif(EMSCRIPTEN)
     endif()
   endif()
 
+  CheckPTHREAD()
+
 elseif(UNIX AND NOT APPLE AND NOT ANDROID AND NOT RISCOS)
   if(SDL_AUDIO)
     if(SYSV5 OR SOLARIS OR HPUX)
@@ -1176,6 +1198,7 @@ elseif(UNIX AND NOT APPLE AND NOT ANDROID AND NOT RISCOS)
     CheckOSS()
     CheckALSA()
     CheckJACK()
+    CheckPipewire()
     CheckPulseAudio()
     CheckESD()
     CheckARTS()
@@ -1197,6 +1220,7 @@ elseif(UNIX AND NOT APPLE AND NOT ANDROID AND NOT RISCOS)
     # Need to check EGL before checking KMSDRM because KMSDRM depends on it.
     CheckEGLKMSDRM()
     CheckKMSDRM()
+    CheckOpenGLKMSDRM()
   endif()
 
   if(UNIX)
@@ -1492,9 +1516,12 @@ elseif(WINDOWS)
       set(SOURCE_FILES ${SOURCE_FILES} ${DSOUND_AUDIO_SOURCES})
     endif()
 
-    if(WASAPI AND HAVE_AUDIOCLIENT_H AND HAVE_MMDEVICEAPI_H AND NOT WINDOWS_STORE)
+    if(WASAPI AND HAVE_AUDIOCLIENT_H AND HAVE_MMDEVICEAPI_H)
       set(SDL_AUDIO_DRIVER_WASAPI 1)
       file(GLOB WASAPI_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/wasapi/*.c)
+      if(WINDOWS_STORE)
+        list(APPEND WASAPI_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/wasapi/SDL_wasapi_winrt.cpp)
+      endif()
       set(SOURCE_FILES ${SOURCE_FILES} ${WASAPI_AUDIO_SOURCES})
     endif()
   endif()
@@ -1507,7 +1534,7 @@ elseif(WINDOWS)
     if(WINDOWS_STORE)
       set(SDL_VIDEO_DRIVER_WINRT 1)
       file(GLOB WIN_VIDEO_SOURCES
-        ${SDL2_SOURCE_DIR}/src/video/winrt/*.c 
+        ${SDL2_SOURCE_DIR}/src/video/winrt/*.c
         ${SDL2_SOURCE_DIR}/src/video/winrt/*.cpp
         ${SDL2_SOURCE_DIR}/src/render/direct3d11/*.cpp
         )
@@ -1560,7 +1587,11 @@ elseif(WINDOWS)
   endif()
 
   if(SDL_LOCALE)
-    file(GLOB LOCALE_SOURCES ${SDL2_SOURCE_DIR}/src/locale/windows/*.c)
+    if(WINDOWS_STORE)
+      file(GLOB LOCALE_SOURCES ${SDL2_SOURCE_DIR}/src/locale/winrt/*.c)
+    else()
+      file(GLOB LOCALE_SOURCES ${SDL2_SOURCE_DIR}/src/locale/windows/*.c)
+    endif()
     set(SOURCE_FILES ${SOURCE_FILES} ${LOCALE_SOURCES})
     set(HAVE_SDL_LOCALE TRUE)
   endif()
@@ -1579,6 +1610,15 @@ elseif(WINDOWS)
   # Libraries for Win32 native and MinGW
   if(NOT WINDOWS_STORE)
     list(APPEND EXTRA_LIBS user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32)
+  endif()
+
+  if(WINDOWS_STORE)
+    list(APPEND EXTRA_LIBS
+      -nodefaultlib:vccorlib$<$<CONFIG:Debug>:d>
+      -nodefaultlib:msvcrt$<$<CONFIG:Debug>:d>
+      vccorlib$<$<CONFIG:Debug>:d>.lib
+      msvcrt$<$<CONFIG:Debug>:d>.lib
+    )
   endif()
 
   # TODO: in configure.ac the check for timers is set on
@@ -1725,6 +1765,7 @@ elseif(APPLE)
         set(SDL_FRAMEWORK_COREMOTION 1)
       endif()
       set(SDL_FRAMEWORK_GAMECONTROLLER 1)
+      set(SDL_FRAMEWORK_COREHAPTICS 1)
       set(HAVE_SDL_SENSORS 1)
     else()
       file(GLOB JOYSTICK_SOURCES ${SDL2_SOURCE_DIR}/src/joystick/darwin/*.c ${SDL2_SOURCE_DIR}/src/joystick/iphoneos/*.m)
@@ -1949,6 +1990,12 @@ elseif(APPLE)
     find_library(UIKIT UIKit)
     list(APPEND EXTRA_LIBS ${UIKIT})
   endif()
+  if(SDL_FRAMEWORK_COREHAPTICS)
+    find_library(COREHAPTICS CoreHaptics)
+    if(COREHAPTICS)
+      list(APPEND EXTRA_LDFLAGS "-Wl,-weak_framework,CoreHaptics")
+    endif()
+  endif()
 
   CheckPTHREAD()
 
@@ -2071,6 +2118,120 @@ elseif(RISCOS)
   if(SDL_AUDIO)
     CheckOSS()
   endif()
+elseif(VITA)
+  # SDL_spinlock.c Needs to be compiled in ARM mode.
+  check_c_compiler_flag(-marm HAVE_ARM_MODE)
+  if(HAVE_ARM_MODE)
+    set_source_files_properties(${SDL2_SOURCE_DIR}/src/atomic/SDL_spinlock.c PROPERTIES COMPILE_FLAGS -marm)
+  endif()
+
+  file(GLOB MISC_SOURCES ${SDL2_SOURCE_DIR}/src/misc/vita/*.c)
+  set(SOURCE_FILES ${SOURCE_FILES} ${MISC_SOURCES})
+  set(HAVE_SDL_MISC TRUE)
+
+  if(SDL_AUDIO)
+    set(SDL_AUDIO_DRIVER_VITA 1)
+    file(GLOB VITA_AUDIO_SOURCES ${SDL2_SOURCE_DIR}/src/audio/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_AUDIO_SOURCES})
+    set(HAVE_SDL_AUDIO TRUE)
+  endif()
+  if(SDL_FILESYSTEM)
+    set(SDL_FILESYSTEM_VITA 1)
+    file(GLOB VITA_FILESYSTEM_SOURCES ${SDL2_SOURCE_DIR}/src/filesystem/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_FILESYSTEM_SOURCES})
+    set(HAVE_SDL_FILESYSTEM TRUE)
+  endif()
+  if(SDL_JOYSTICK)
+    set(SDL_JOYSTICK_VITA 1)
+    file(GLOB VITA_JOYSTICK_SOURCES ${SDL2_SOURCE_DIR}/src/joystick/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_JOYSTICK_SOURCES})
+    set(HAVE_SDL_JOYSTICK TRUE)
+  endif()
+  if(SDL_POWER)
+    set(SDL_POWER_VITA 1)
+    file(GLOB VITA_POWER_SOURCES ${SDL2_SOURCE_DIR}/src/power/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_POWER_SOURCES})
+    set(HAVE_SDL_POWER TRUE)
+  endif()
+  if(SDL_THREADS)
+    set(SDL_THREAD_VITA 1)
+    set(SOURCE_FILES ${SOURCE_FILES}
+      ${SDL2_SOURCE_DIR}/src/thread/vita/SDL_sysmutex.c
+      ${SDL2_SOURCE_DIR}/src/thread/vita/SDL_syssem.c
+      ${SDL2_SOURCE_DIR}/src/thread/vita/SDL_systhread.c
+      ${SDL2_SOURCE_DIR}/src/thread/vita/SDL_syscond.c
+      ${SDL2_SOURCE_DIR}/src/thread/generic/SDL_systls.c)
+    set(HAVE_SDL_THREADS TRUE)
+  endif()
+  if(SDL_TIMERS)
+    set(SDL_TIMER_VITA 1)
+    file(GLOB TIMER_SOURCES ${SDL2_SOURCE_DIR}/src/timer/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${TIMER_SOURCES})
+    set(HAVE_SDL_TIMERS TRUE)
+  endif()
+  if(SDL_SENSOR)
+    set(SDL_SENSOR_VITA 1)
+    set(HAVE_SDL_SENSORS TRUE)
+    file(GLOB VITA_SENSOR_SOURCES ${SDL2_SOURCE_DIR}/src/sensor/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_SENSOR_SOURCES})
+  endif()
+  if(SDL_VIDEO)
+    set(SDL_VIDEO_DRIVER_VITA 1)
+    file(GLOB VITA_VIDEO_SOURCES ${SDL2_SOURCE_DIR}/src/video/vita/*.c)
+    set(SOURCE_FILES ${SOURCE_FILES} ${VITA_VIDEO_SOURCES})
+    set(HAVE_SDL_VIDEO TRUE)
+
+    check_include_file(pib.h HAVE_PIGS_IN_BLANKET_H)
+
+
+    if(HAVE_PIGS_IN_BLANKET_H)
+      set(SDL_VIDEO_OPENGL_ES2 1)
+      list(APPEND EXTRA_LIBS
+        pib
+      )
+
+    endif()
+    set(SDL_VIDEO_RENDER_VITA_GXM 1)
+
+    list(APPEND EXTRA_LIBS
+      SceGxm_stub
+      SceDisplay_stub
+      SceCtrl_stub
+      SceAppMgr_stub
+      SceAudio_stub
+      SceSysmodule_stub
+      SceDisplay_stub
+      SceCtrl_stub
+      SceIofilemgr_stub
+      SceCommonDialog_stub
+      SceTouch_stub
+      SceHid_stub
+      SceMotion_stub
+      m
+    )
+  endif()
+
+  set(HAVE_ARMSIMD TRUE)
+  set(SDL_ARM_SIMD_BLITTERS 1)
+  file(GLOB ARMSIMD_SOURCES ${SDL2_SOURCE_DIR}/src/video/arm/pixman-arm-simd*.S)
+  set(SOURCE_FILES ${SOURCE_FILES} ${ARMSIMD_SOURCES})
+
+  set(HAVE_ARMNEON TRUE)
+  set(SDL_ARM_NEON_BLITTERS 1)
+  file(GLOB ARMNEON_SOURCES ${SDL2_SOURCE_DIR}/src/video/arm/pixman-arm-neon*.S)
+  set(SOURCE_FILES ${SOURCE_FILES} ${ARMNEON_SOURCES})
+
+  set_property(SOURCE ${SDL2_SOURCE_DIR}/src/video/arm/pixman-arm-simd-asm.S PROPERTY LANGUAGE C)
+  set_property(SOURCE ${SDL2_SOURCE_DIR}/src/video/arm/pixman-arm-neon-asm.S PROPERTY LANGUAGE C)
+
+  add_definitions("-D__VITA__")
+  add_definitions("-Dmemcpy=sceClibMemcpy")
+  add_definitions("-Dmemset=sceClibMemset")
+  add_definitions("-Dmemmove=sceClibMemmove")
+  add_definitions("-Dmemcmp=sceClibMemcmp")
+
+#  CheckPTHREAD()
+
 endif()
 
 if(VIDEO_VULKAN)
@@ -2170,7 +2331,9 @@ if(NOT CMAKE_HOST_WIN32)
     WORKING_DIRECTORY ${SDL2_BINARY_DIR})
 endif()
 if(NOT WINDOWS OR CYGWIN)
+
   set(prefix ${CMAKE_INSTALL_PREFIX})
+
   set(exec_prefix "\${prefix}")
   set(libdir "\${exec_prefix}/lib${LIB_SUFFIX}")
   set(bindir "\${exec_prefix}/bin")
@@ -2183,24 +2346,34 @@ if(NOT WINDOWS OR CYGWIN)
     set(ENABLE_STATIC_FALSE "")
   endif()
   if(SDL_SHARED)
-    set(PKG_CONFIG_LIBS_PRIV "
+    set(PKGCONFIG_LIBS_PRIV "
 Libs.private:")
     set(ENABLE_SHARED_TRUE "")
     set(ENABLE_SHARED_FALSE "#")
   else()
-    set(PKG_CONFIG_LIBS_PRIV "")
+    set(PKGCONFIG_LIBS_PRIV "")
     set(ENABLE_SHARED_TRUE "#")
     set(ENABLE_SHARED_FALSE "")
   endif()
 
   # Clean up the different lists
-  listtostr(EXTRA_LIBS _EXTRA_LIBS "-l")
-  set(SDL_STATIC_LIBS ${EXTRA_LDFLAGS} ${_EXTRA_LIBS})
-  list(REMOVE_DUPLICATES SDL_STATIC_LIBS)
-  listtostr(SDL_STATIC_LIBS _SDL_STATIC_LIBS)
-  set(SDL_STATIC_LIBS ${_SDL_STATIC_LIBS})
-  listtostr(SDL_LIBS _SDL_LIBS)
-  set(SDL_LIBS ${_SDL_LIBS})
+  if (VITA)
+    listtostrrev(EXTRA_LIBS _EXTRA_LIBS "-l")
+    set(SDL_STATIC_LIBS ${SDL_LIBS} ${EXTRA_LDFLAGS} ${_EXTRA_LIBS})
+    list(REMOVE_DUPLICATES SDL_STATIC_LIBS)
+    listtostrrev(SDL_STATIC_LIBS _SDL_STATIC_LIBS)
+    set(SDL_STATIC_LIBS ${_SDL_STATIC_LIBS})
+    listtostrrev(SDL_LIBS _SDL_LIBS)
+    set(SDL_LIBS ${_SDL_LIBS})
+  else()
+    listtostr(EXTRA_LIBS _EXTRA_LIBS "-l")
+    set(SDL_STATIC_LIBS ${SDL_LIBS} ${EXTRA_LDFLAGS} ${_EXTRA_LIBS})
+    list(REMOVE_DUPLICATES SDL_STATIC_LIBS)
+    listtostr(SDL_STATIC_LIBS _SDL_STATIC_LIBS)
+    set(SDL_STATIC_LIBS ${_SDL_STATIC_LIBS})
+    listtostr(SDL_LIBS _SDL_LIBS)
+    set(SDL_LIBS ${_SDL_LIBS})
+  endif()
 
   # MESSAGE(STATUS "SDL_LIBS: ${SDL_LIBS}")
   # MESSAGE(STATUS "SDL_STATIC_LIBS: ${SDL_STATIC_LIBS}")
@@ -2213,6 +2386,71 @@ Libs.private:")
     "${SDL2_BINARY_DIR}/sdl2-config" @ONLY)
   configure_file("${SDL2_SOURCE_DIR}/SDL2.spec.in"
     "${SDL2_BINARY_DIR}/SDL2.spec" @ONLY)
+endif()
+
+macro(check_add_debug_flag FLAG SUFFIX)
+    check_c_compiler_flag(${FLAG} HAS_C_FLAG_${SUFFIX})
+    if (HAS_C_FLAG_${SUFFIX})
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
+    endif()
+
+    check_cxx_compiler_flag(${FLAG} HAS_CXX_${SUFFIX})
+    if (HAS_CXX_${SUFFIX})
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
+    endif()
+endmacro()
+
+macro(asan_check_add_debug_flag ASAN_FLAG)
+    check_add_debug_flag("-fsanitize=${ASAN_FLAG}" "${ASAN_FLAG}")
+    if(HAS_C_${ASAN_FLAG} OR HAS_CXX_${ASAN_FLAG})
+      set(HAVE_ASAN ON)
+    endif()
+endmacro()
+
+macro(asan_check_add_debug_flag2 ASAN_FLAG)
+    # for some sanitize flags we have to manipulate the CMAKE_REQUIRED_LIBRARIES:
+    # http://cmake.3232098.n2.nabble.com/CHECK-CXX-COMPILER-FLAG-doesn-t-give-correct-result-for-fsanitize-address-tp7600216p7600217.html
+
+    set(FLAG "-fsanitize=${ASAN_FLAG}")
+
+    set (STORED_REQLIBS ${CMAKE_REQUIRED_LIBRARIES})
+    set (CMAKE_REQUIRED_LIBRARIES "${FLAG};asan")
+    check_c_compiler_flag (${FLAG} HAS_C_FLAG_${ASAN_FLAG})
+    check_cxx_compiler_flag (${FLAG} HAS_CXX_FLAG_${ASAN_FLAG})
+    set (CMAKE_REQUIRED_LIBRARIES ${STORED_REQLIBS})
+
+    if (HAS_C_FLAG_${ASAN_FLAG})
+        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
+    endif()
+
+    if (HAS_CXX_${ASAN_FLAG})
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
+    endif()
+
+    if(HAS_C_${ASAN_FLAG} OR HAS_CXX_${ASAN_FLAG})
+      set(HAVE_ASAN ON)
+    endif()
+endmacro()
+
+# enable AddressSanitizer if supported
+if (ASAN)
+  asan_check_add_debug_flag2("address")
+  asan_check_add_debug_flag("bool")
+  asan_check_add_debug_flag("bounds")
+  asan_check_add_debug_flag("enum")
+  asan_check_add_debug_flag("float-cast-overflow")
+  asan_check_add_debug_flag("float-divide-by-zero")
+  asan_check_add_debug_flag("nonnull-attribute")
+  asan_check_add_debug_flag("returns-nonnull-attribute")
+  asan_check_add_debug_flag("signed-integer-overflow")
+  asan_check_add_debug_flag("undefined")
+  asan_check_add_debug_flag("vla-bound")
+  asan_check_add_debug_flag("leak")
+  # The object size sanitizer has no effect on unoptimized builds on Clang,
+  # but causes warnings.
+  if((NOT USE_CLANG) OR (CMAKE_BUILD_TYPE STREQUAL ""))
+    asan_check_add_debug_flag("object-size")
+  endif()
 endif()
 
 ##### Info output #####
@@ -2239,6 +2477,11 @@ foreach(_OPT ${ALLOPTIONS})
   string(RANDOM LENGTH ${_PADLEN} ALPHABET " " _PADDING)
   message_tested_option(${_OPT} ${_PADDING})
 endforeach()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(STATUS "")
+  message(STATUS " CMAKE_C_FLAGS_DEBUG:   ${CMAKE_C_FLAGS_DEBUG}")
+  message(STATUS " CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
 message(STATUS "")
 message(STATUS " CFLAGS:        ${CMAKE_C_FLAGS}")
 message(STATUS " EXTRA_CFLAGS:  ${EXTRA_CFLAGS}")
@@ -2282,6 +2525,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS}")
 # Always build SDLmain
 if(NOT WINDOWS_STORE)
 add_library(SDL2main STATIC ${SDLMAIN_SOURCES})
+# alias target for in-tree builds
+add_library(SDL2::SDL2main ALIAS SDL2main)
 target_include_directories(SDL2main PUBLIC "$<BUILD_INTERFACE:${SDL2_SOURCE_DIR}/include>" $<INSTALL_INTERFACE:include> $<INSTALL_INTERFACE:include/SDL2>)
 set(_INSTALL_LIBS "SDL2main")
 if (NOT ANDROID)
@@ -2295,6 +2540,8 @@ endif()
 
 if(SDL_SHARED)
   add_library(SDL2 SHARED ${SOURCE_FILES} ${VERSION_SOURCES})
+  # alias target for in-tree builds
+  add_library(SDL2::SDL2 ALIAS SDL2)
   if(APPLE)
     set_target_properties(SDL2 PROPERTIES
       MACOSX_RPATH 1
@@ -2316,8 +2563,10 @@ if(SDL_SHARED)
   endif()
   if(MSVC AND NOT LIBC)
     # Don't try to link with the default set of libraries.
-    set_target_properties(SDL2 PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB")
-    set_target_properties(SDL2 PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB")
+    if(NOT WINDOWS_STORE)
+      set_target_properties(SDL2 PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB")
+      set_target_properties(SDL2 PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB")
+    endif()
     set_target_properties(SDL2 PROPERTIES STATIC_LIBRARY_FLAGS "/NODEFAULTLIB")
   endif()
   set(_INSTALL_LIBS "SDL2" ${_INSTALL_LIBS})
@@ -2337,6 +2586,8 @@ endif()
 if(ANDROID)
   if(HAVE_HIDAPI)
     add_library(hidapi SHARED ${SDL2_SOURCE_DIR}/src/hidapi/android/hid.cpp)
+    # alias target for in-tree builds
+    add_library(SDL2::hidapi ALIAS hidapi)
   endif()
 
   if(MSVC AND NOT LIBC)
@@ -2353,6 +2604,8 @@ endif()
 if(SDL_STATIC)
   set (BUILD_SHARED_LIBS FALSE)
   add_library(SDL2-static STATIC ${SOURCE_FILES})
+  # alias target for in-tree builds
+  add_library(SDL2::SDL2-static ALIAS SDL2-static)
   if (NOT SDL_SHARED OR NOT WIN32)
     set_target_properties(SDL2-static PROPERTIES OUTPUT_NAME "SDL2")
     # Note: Apparently, OUTPUT_NAME must really be unique; even when
@@ -2379,60 +2632,6 @@ if(SDL_STATIC)
   if(IOS OR TVOS)
     set_property(TARGET SDL2-static APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
   endif()
-endif()
-
-macro(check_add_debug_flag FLAG SUFFIX)
-    check_c_compiler_flag(${FLAG} HAS_C_FLAG_${SUFFIX})
-    if (HAS_C_FLAG_${SUFFIX})
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
-    endif()
-
-    check_cxx_compiler_flag(${FLAG} HAS_CXX_${SUFFIX})
-    if (HAS_CXX_${SUFFIX})
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
-    endif()
-endmacro()
-
-macro(asan_check_add_debug_flag ASAN_FLAG)
-    check_add_debug_flag("-fsanitize=${ASAN_FLAG}" "${ASAN_FLAG}")
-endmacro()
-
-macro(asan_check_add_debug_flag2 ASAN_FLAG)
-    # for some sanitize flags we have to manipulate the CMAKE_REQUIRED_LIBRARIES:
-    # http://cmake.3232098.n2.nabble.com/CHECK-CXX-COMPILER-FLAG-doesn-t-give-correct-result-for-fsanitize-address-tp7600216p7600217.html
-
-    set(FLAG "-fsanitize=${ASAN_FLAG}")
-
-    set (STORED_REQLIBS ${CMAKE_REQUIRED_LIBRARIES})
-    set (CMAKE_REQUIRED_LIBRARIES "${FLAG};asan")
-    check_c_compiler_flag (${FLAG} HAS_C_FLAG_${ASAN_FLAG})
-    check_cxx_compiler_flag (${FLAG} HAS_CXX_FLAG_${ASAN_FLAG})
-    set (CMAKE_REQUIRED_LIBRARIES ${STORED_REQLIBS})
-
-    if (HAS_C_FLAG_${ASAN_FLAG})
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${FLAG}")
-    endif()
-
-    if (HAS_CXX_${ASAN_FLAG})
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${FLAG}")
-    endif()
-endmacro()
-
-# enable AddressSanitizer if supported
-if (ASAN)
-  asan_check_add_debug_flag2("address")
-  asan_check_add_debug_flag("bool")
-  asan_check_add_debug_flag("bounds")
-  asan_check_add_debug_flag("enum")
-  asan_check_add_debug_flag("float-cast-overflow")
-  asan_check_add_debug_flag("float-divide-by-zero")
-  asan_check_add_debug_flag("nonnull-attribute")
-  asan_check_add_debug_flag("returns-nonnull-attribute")
-  asan_check_add_debug_flag("signed-integer-overflow")
-  asan_check_add_debug_flag("undefined")
-  asan_check_add_debug_flag("vla-bound")
-  asan_check_add_debug_flag("leak")
-  asan_check_add_debug_flag("object-size")
 endif()
 
 ##### Tests #####
