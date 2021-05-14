@@ -260,7 +260,7 @@ int FB_OpenKeyboard(_THIS)
 		}
 		ioctl(tty0_fd, VT_OPENQRY, &current_vt);
 		close(tty0_fd);
-		if ( (geteuid() == 0) && (current_vt > 0) ) {
+		if ( current_vt > 0 ) {
 			for ( i=0; vcs[i] && (keyboard_fd < 0); ++i ) {
 				char vtpath[12];
 
@@ -270,17 +270,6 @@ int FB_OpenKeyboard(_THIS)
 				fprintf(stderr, "vtpath = %s, fd = %d\n",
 					vtpath, keyboard_fd);
 #endif /* DEBUG_KEYBOARD */
-
-				/* This needs to be our controlling tty
-				   so that the kernel ioctl() calls work
-				*/
-				if ( keyboard_fd >= 0 ) {
-					tty0_fd = open("/dev/tty", O_RDWR, 0);
-					if ( tty0_fd >= 0 ) {
-						ioctl(tty0_fd, TIOCNOTTY, 0);
-						close(tty0_fd);
-					}
-				}
 			}
 		}
  		if ( keyboard_fd < 0 ) {

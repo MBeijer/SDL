@@ -155,6 +155,12 @@ static void FB_FreeHWSurface(_THIS, SDL_Surface *surface);
 static void FB_WaitVBL(_THIS);
 static void FB_WaitIdle(_THIS);
 static int FB_FlipHWSurface(_THIS, SDL_Surface *surface);
+#if !SDL_THREADS_DISABLED
+static int FB_TripleBufferingThread(void *d);
+static void FB_TripleBufferInit(_THIS);
+static void FB_TripleBufferStop(_THIS);
+static void FB_TripleBufferQuit(_THIS);
+#endif
 
 /* Internal palette functions */
 static void FB_SavePalette(_THIS, struct fb_fix_screeninfo *finfo,
@@ -589,6 +595,9 @@ static int FB_VideoInit(_THIS, SDL_PixelFormat *vformat)
 		return(-1);
 	}
 
+	/* Clear the mapped area */
+	memset(mapped_mem, 0, mapped_memlen);
+
 	/* Determine the current screen depth */
 	if ( ioctl(console_fd, FBIOGET_VSCREENINFO, &vinfo) < 0 ) {
 		SDL_SetError("Couldn't get console pixel format");
@@ -808,6 +817,10 @@ static int FB_VideoInit(_THIS, SDL_PixelFormat *vformat)
 		}
 	}
 
+#if !SDL_THREADS_DISABLED
+	FB_TripleBufferInit(this);
+#endif
+
 	/* We're done! */
 	return(0);
 }
@@ -1024,6 +1037,14 @@ static SDL_Surface *FB_SetVideoMode(_THIS, SDL_Surface *current,
 	fprintf(stderr, "Printing original vinfo:\n");
 	print_vinfo(&vinfo);
 #endif
+
+#if SDL_THREADS_DISABLED
+	if ( (flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+		flags &= ~SDL_TRIPLEBUF;
+		flags |= SDL_DOUBLEBUF; /* Double buffering doesn't require threads */
+	}
+#endif
+
 	/* Do not use double buffering with shadow buffer */
 	if (shadow_fb) {
 		flags &= ~SDL_DOUBLEBUF;
@@ -1037,7 +1058,9 @@ static SDL_Surface *FB_SetVideoMode(_THIS, SDL_Surface *current,
 		vinfo.xres = width;
 		vinfo.xres_virtual = width;
 		vinfo.yres = height;
-		if ( flags & SDL_DOUBLEBUF ) {
+		if ( (flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+			vinfo.yres_virtual = height*3;
+		} else if ( flags & SDL_DOUBLEBUF ) {
 			vinfo.yres_virtual = height*2;
 		} else {
 			vinfo.yres_virtual = height;
@@ -1067,7 +1090,9 @@ static SDL_Surface *FB_SetVideoMode(_THIS, SDL_Surface *current,
 		int maxheight;
 
 		/* Figure out how much video memory is available */
-		if ( flags & SDL_DOUBLEBUF ) {
+		if ( (flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+			maxheight = height*3;
+		} else if ( flags & SDL_DOUBLEBUF ) {
 			maxheight = height*2;
 		} else {
 			maxheight = height;
@@ -1165,14 +1190,41 @@ static SDL_Surface *FB_SetVideoMode(_THIS, SDL_Surface *current,
 		break;
 	}
 
+#if !SDL_THREADS_DISABLED
+	if ( triplebuf_thread )
+		FB_TripleBufferStop(this);
+
+	if ( (flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+		current->flags |= SDL_TRIPLEBUF;
+		current_page = 0;
+		new_page = 2;
+		triplebuf_thread_stop = 0;
+
+		SDL_LockMutex(triplebuf_mutex);
+		triplebuf_thread = SDL_CreateThread(FB_TripleBufferingThread, this);
+
+		/* Wait until the triplebuf thread is ready */
+		SDL_CondWait(triplebuf_cond, triplebuf_mutex);
+		SDL_UnlockMutex(triplebuf_mutex);
+	}
+#endif
+
 	/* Update for double-buffering, if we can */
 	if ( flags & SDL_DOUBLEBUF ) {
-		if ( vinfo.yres_virtual == (height*2) ) {
+		if ( vinfo.yres_virtual >= (height*2) ) {
 			current->flags |= SDL_DOUBLEBUF;
-			flip_page = 0;
 			flip_address[0] = (char *)current->pixels;
 			flip_address[1] = (char *)current->pixels+
 				current->h*current->pitch;
+			flip_address[2] = (char *)current->pixels+
+				current->h*current->pitch*2;
+
+			if ( (flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+				flip_page = 1;
+			} else {
+				flip_page = 0;
+			}
+
 			this->screen = current;
 			FB_FlipHWSurface(this, current);
 			this->screen = NULL;
@@ -1409,16 +1461,74 @@ static void FB_UnlockHWSurface(_THIS, SDL_Surface *surface)
 
 static void FB_WaitVBL(_THIS)
 {
-#ifdef FBIOWAITRETRACE /* Heheh, this didn't make it into the main kernel */
-	ioctl(console_fd, FBIOWAITRETRACE, 0);
-#endif
-	return;
 }
 
 static void FB_WaitIdle(_THIS)
 {
 	return;
 }
+
+#if !SDL_THREADS_DISABLED
+static int FB_TripleBufferingThread(void *d)
+{
+	SDL_VideoDevice *this = d;
+
+	SDL_LockMutex(triplebuf_mutex);
+	SDL_CondSignal(triplebuf_cond);
+
+	for (;;) {
+		unsigned int page;
+
+		SDL_CondWait(triplebuf_cond, triplebuf_mutex);
+		if (triplebuf_thread_stop)
+			break;
+
+		/* Flip the most recent back buffer with the front buffer */
+		page = current_page;
+		current_page = new_page;
+		new_page = page;
+
+		/* flip display */
+		cache_vinfo.yoffset = current_page * cache_vinfo.yres;
+
+		wait_vbl(this);
+
+		if ( ioctl(console_fd, FBIOPAN_DISPLAY, &cache_vinfo) < 0 ) {
+			SDL_SetError("ioctl(FBIOPAN_DISPLAY) failed");
+			return(-1);
+		}
+	}
+
+	SDL_UnlockMutex(triplebuf_mutex);
+	return 0;
+}
+
+static void FB_TripleBufferInit(_THIS)
+{
+	triplebuf_mutex = SDL_CreateMutex();
+	triplebuf_cond = SDL_CreateCond();
+	triplebuf_thread = NULL;
+}
+
+static void FB_TripleBufferStop(_THIS)
+{
+	SDL_LockMutex(triplebuf_mutex);
+	triplebuf_thread_stop = 1;
+	SDL_CondSignal(triplebuf_cond);
+	SDL_UnlockMutex(triplebuf_mutex);
+
+	SDL_WaitThread(triplebuf_thread, NULL);
+	triplebuf_thread = NULL;
+}
+
+static void FB_TripleBufferQuit(_THIS)
+{
+	if (triplebuf_thread)
+		FB_TripleBufferStop(this);
+	SDL_DestroyMutex(triplebuf_mutex);
+	SDL_DestroyCond(triplebuf_cond);
+}
+#endif
 
 static int FB_FlipHWSurface(_THIS, SDL_Surface *surface)
 {
@@ -1427,18 +1537,40 @@ static int FB_FlipHWSurface(_THIS, SDL_Surface *surface)
 	}
 
 	/* Wait for vertical retrace and then flip display */
-	cache_vinfo.yoffset = flip_page*surface->h;
+	cache_vinfo.yoffset = flip_page * cache_vinfo.yres;
 	if ( FB_IsSurfaceBusy(this->screen) ) {
 		FB_WaitBusySurfaces(this);
 	}
-	wait_vbl(this);
-	if ( ioctl(console_fd, FBIOPAN_DISPLAY, &cache_vinfo) < 0 ) {
-		SDL_SetError("ioctl(FBIOPAN_DISPLAY) failed");
-		return(-1);
-	}
-	flip_page = !flip_page;
 
-	surface->pixels = flip_address[flip_page];
+	if ( (surface->flags & SDL_TRIPLEBUF) == SDL_TRIPLEBUF ) {
+#if !SDL_THREADS_DISABLED
+		unsigned int page;
+
+		/* Flip the two back buffers */
+		SDL_LockMutex(triplebuf_mutex);
+		page = new_page;
+		new_page = flip_page;
+		flip_page = page;
+
+		surface->pixels = flip_address[flip_page];
+		SDL_CondSignal(triplebuf_cond);
+		SDL_UnlockMutex(triplebuf_mutex);
+#endif
+	} else {
+		/* Wait for vertical retrace and then flip display */
+		cache_vinfo.yoffset = flip_page * cache_vinfo.yres;
+
+		wait_vbl(this);
+
+		if ( ioctl(console_fd, FBIOPAN_DISPLAY, &cache_vinfo) < 0 ) {
+			SDL_SetError("ioctl(FBIOPAN_DISPLAY) failed");
+			return(-1);
+		}
+
+		flip_page = !flip_page;
+		surface->pixels = flip_address[flip_page];
+	}
+
 	return(0);
 }
 
@@ -1907,15 +2039,16 @@ static int FB_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 static void FB_VideoQuit(_THIS)
 {
 	int i, j;
+	const char *dontClearPixels = SDL_getenv("SDL_FBCON_DONT_CLEAR");
+
+#if !SDL_THREADS_DISABLED
+	FB_TripleBufferQuit(this);
+#endif
 
 	if ( this->screen ) {
-		/* Clear screen and tell SDL not to free the pixels */
-
-		const char *dontClearPixels = SDL_getenv("SDL_FBCON_DONT_CLEAR");
-
 		/* If the framebuffer is not to be cleared, make sure that we won't
 		 * display the previous frame when disabling double buffering. */
-		if ( dontClearPixels && flip_page == 0 ) {
+		if ( dontClearPixels && (this->screen->flags & SDL_DOUBLEBUF) && flip_page == 0 ) {
 			SDL_memcpy(flip_address[0], flip_address[1], this->screen->pitch * this->screen->h);
 		}
 
@@ -1969,7 +2102,13 @@ static void FB_VideoQuit(_THIS)
 
 		/* Restore the original video mode and palette */
 		if ( FB_InGraphicsMode(this) ) {
-			FB_RestorePalette(this);
+			if (dontClearPixels) {
+				/* Restore only panning, keep current mode */
+				ioctl(console_fd, FBIOGET_VSCREENINFO, &saved_vinfo);
+				saved_vinfo.yoffset = saved_vinfo.xoffset = 0;
+			} else {
+				FB_RestorePalette(this);
+			}
 			ioctl(console_fd, FBIOPUT_VSCREENINFO, &saved_vinfo);
 		}
 

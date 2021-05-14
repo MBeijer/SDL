@@ -25,6 +25,7 @@
 
 /* This is the system specific header for the SDL joystick API */
 
+#include <math.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -290,7 +291,8 @@ struct joystick_hwdata {
 	Uint8 abs_map[ABS_MAX];
 	struct axis_correct {
 		int used;
-		int coef[3];
+		int minimum;
+		int maximum;
 	} abs_correct[ABS_MAX];
 #endif
 };
@@ -389,7 +391,8 @@ static int EV_IsJoystick(int fd)
 		return(0);
 	}
 	if (!(test_bit(EV_KEY, evbit) && test_bit(EV_ABS, evbit) &&
-	      test_bit(ABS_X, absbit) && test_bit(ABS_Y, absbit) &&
+	     ((test_bit(ABS_X, absbit) && test_bit(ABS_Y, absbit)) ||
+		  (test_bit(ABS_HAT0X, absbit) && test_bit(ABS_HAT0Y, absbit))) &&
 	     (test_bit(BTN_TRIGGER, keybit) || test_bit(BTN_A, keybit) || test_bit(BTN_1, keybit)))) return 0;
 	return(1);
 }
@@ -582,7 +585,7 @@ static SDL_bool JS_ConfigJoystick(SDL_Joystick *joystick, int fd)
 	SDL_bool handled;
 	unsigned char n;
 	int tmp_naxes, tmp_nhats, tmp_nballs;
-	const char *name;
+	const char *name, *ptr;
 	char *env, env_name[128];
 	int i;
 
@@ -603,8 +606,9 @@ static SDL_bool JS_ConfigJoystick(SDL_Joystick *joystick, int fd)
 	name = SDL_SYS_JoystickName(joystick->index);
 
 	/* Generic analog joystick support */
-	if ( SDL_strstr(name, "Analog") == name && SDL_strstr(name, "-hat") ) {
-		if ( SDL_sscanf(name,"Analog %d-axis %*d-button %d-hat",
+	ptr = SDL_strstr(name, "Analog");
+	if ( ptr != NULL && SDL_strstr(ptr, "-hat") ) {
+		if ( SDL_sscanf(ptr,"Analog %d-axis %*d-button %d-hat",
 			&tmp_naxes, &tmp_nhats) == 2 ) {
 
 			joystick->naxes = tmp_naxes;
@@ -670,7 +674,7 @@ static SDL_bool JS_ConfigJoystick(SDL_Joystick *joystick, int fd)
 
 static SDL_bool EV_ConfigJoystick(SDL_Joystick *joystick, int fd)
 {
-	int i, t;
+	int i;
 	unsigned long keybit[NBITS(KEY_MAX)] = { 0 };
 	unsigned long absbit[NBITS(ABS_MAX)] = { 0 };
 	unsigned long relbit[NBITS(REL_MAX)] = { 0 };
@@ -724,16 +728,8 @@ static SDL_bool EV_ConfigJoystick(SDL_Joystick *joystick, int fd)
 				    joystick->hwdata->abs_correct[i].used = 0;
 				} else {
 				    joystick->hwdata->abs_correct[i].used = 1;
-				    joystick->hwdata->abs_correct[i].coef[0] =
-					(absinfo.maximum + absinfo.minimum) / 2 - absinfo.flat;
-				    joystick->hwdata->abs_correct[i].coef[1] =
-					(absinfo.maximum + absinfo.minimum) / 2 + absinfo.flat;
-				    t = ((absinfo.maximum - absinfo.minimum) / 2 - 2 * absinfo.flat);
-				    if ( t != 0 ) {
-					joystick->hwdata->abs_correct[i].coef[2] = (1 << 29) / t;
-				    } else {
-					joystick->hwdata->abs_correct[i].coef[2] = 0;
-				    }
+				    joystick->hwdata->abs_correct[i].minimum = absinfo.minimum;
+				    joystick->hwdata->abs_correct[i].maximum = absinfo.maximum;
 				}
 				++joystick->naxes;
 			}
@@ -1058,16 +1054,18 @@ static __inline__ int EV_AxisCorrect(SDL_Joystick *joystick, int which, int valu
 
 	correct = &joystick->hwdata->abs_correct[which];
 	if ( correct->used ) {
-		if ( value > correct->coef[0] ) {
-			if ( value < correct->coef[1] ) {
-				return 0;
-			}
-			value -= correct->coef[1];
-		} else {
-			value -= correct->coef[0];
-		}
-		value *= correct->coef[2];
-		value >>= 14;
+		const int original_value = value;
+		const float ideal_minimum = -32768;
+		const float ideal_maximum = +32767;
+		const float ideal_range = ideal_maximum - ideal_minimum;
+		const float actual_range = (correct->maximum - correct->minimum);
+		const float coefficient = ideal_range / actual_range;
+		const float new_float = (original_value - correct->minimum) * coefficient + ideal_minimum;
+		const int new_integer = round(new_float);
+		/*
+		if (which == 0) printf("Axis %d: old=%+6d new=%+6d\n", which, value, new_integer);
+		*/
+		value = new_integer;
 	}
 
 	/* Clamp and return */

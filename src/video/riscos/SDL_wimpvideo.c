@@ -169,7 +169,7 @@ void WIMP_ReadModeInfo(_THIS)
 	vars[1] = 5;  /* YEig */
 	vars[2] = 9;  /* Log base 2 bpp */
 	vars[3] = 11; /* Screen Width - 1 */
-	vars[4] = 12; /* Screen Depth - 1 */
+	vars[4] = 12; /* Screen Height - 1 */
 	vars[5] = -1; /* Terminate list */
 
 	regs.r[0] = (int)vars;
@@ -177,8 +177,8 @@ void WIMP_ReadModeInfo(_THIS)
 	_kernel_swi(OS_ReadVduVariables, &regs, &regs);
 	this->hidden->xeig = vals[0];
 	this->hidden->yeig = vals[1];
-	this->hidden->screen_width = vals[3] + 1;
-	this->hidden->screen_height = vals[4] + 1;
+	this->hidden->screen_width = vals[3];
+	this->hidden->screen_height = vals[4];
 }
 
 /* Set device function to call the correct versions for running
@@ -214,8 +214,8 @@ unsigned int WIMP_SetupWindow(_THIS, SDL_Surface *surface)
 	_kernel_oserror *error;
 	int window_data[23];
     int	*window_block = window_data+1;
-	int x = ((this->hidden->screen_width << this->hidden->xeig) - (surface->w << 1)) / 2;
-	int y = ((this->hidden->screen_height << this->hidden->yeig) - (surface->h << 1)) / 2;    
+	int x = (((this->hidden->screen_width + 1) << this->hidden->xeig) - (surface->w << 1)) / 2;
+	int y = (((this->hidden->screen_height + 1) << this->hidden->yeig) - (surface->h << 1)) / 2;
 
 	/* Always delete the window and recreate on a change */
 	if (this->hidden->window_handle) WIMP_DeleteWindow(this);
@@ -231,7 +231,7 @@ unsigned int WIMP_SetupWindow(_THIS, SDL_Surface *surface)
    window_block[5] = 0;
    window_block[6] = -1;			  /* Open on top of window stack */
 
-   window_block[7] = 0x80040042;      /* Window flags */
+   window_block[7] = 0x80040242;      /* Window flags */
    if (!(surface->flags & SDL_NOFRAME)) {
       window_block[7] |= 0x5000000;
       if (riscos_closeaction != 0) window_block[7] |= 0x2000000;
@@ -239,8 +239,8 @@ unsigned int WIMP_SetupWindow(_THIS, SDL_Surface *surface)
 
    /* TODO: Take into account surface->flags */
 
-   window_block[8] = 0xff070207;      /* Window colours */
-   window_block[9] = 0x000c0103;
+   window_block[8] = 0xff070207;      /* Window colours and extra flags */
+   window_block[9] = 0x020c0103;
    window_block[10] = 0;                    /* Work area minimum */
    window_block[11] = -surface->h << 1;
    window_block[12] = surface->w << 1;   /* Work area maximum */
